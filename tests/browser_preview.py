@@ -16,10 +16,13 @@ with sync_playwright() as p:
     assert page.locator('#coverage').inner_text()=='100 / 0'
     checks.append('100 unchanged seeds and explicit 0 valid forecasts')
     page.screenshot(path=str(ROOT/'tests/preview-desktop.png'),full_page=False)
-    for title,label in [('风险从小到大','风险：从小到大'),('机会从小到大','机会：从小到大'),('机会从大到小','机会：从大到小'),('风险从大到小','风险：从大到小')]:
-        page.get_by_role('button',name=title,exact=True).click()
-        assert label in page.locator('#sortLabel').inner_text()
-    checks.append('all four original arrow controls')
+    for field,label in [('risk_value','风险'),('stage_probability','阶段顶底概率'),('opportunity_value','机会')]:
+        button=page.locator(f"[data-field='{field}']")
+        button.click()
+        assert f'{label}：从大到小' in page.locator('#sortLabel').inner_text()
+        button.click()
+        assert f'{label}：从小到大' in page.locator('#sortLabel').inner_text()
+    checks.append('single-button direction toggle for opportunity, stage probability and risk')
     page.locator('[data-horizon="5"]').click()
     assert '5个交易日' in page.locator('#horizonLabel').inner_text()
     page.select_option('#bucketFilter','科技与成长主题');assert page.locator('#stockRows tr').count()==60
@@ -42,11 +45,11 @@ with sync_playwright() as p:
     assert page.locator('#storageSubFilter').input_value()==''
     checks.append('incompatible theme changes clear storage subfilter')
     page.locator('#clearFilters').click();assert page.locator('#stockRows tr').count()==100
-    assert '风险：从大到小' in page.locator('#sortLabel').inner_text()
+    assert '机会：从小到大' in page.locator('#sortLabel').inner_text()
     assert '5个交易日' in page.locator('#horizonLabel').inner_text()
     checks.append('clear filter preserves sort and horizon')
     page.locator('#storageQuick').click();page.locator('[data-horizon="10"]').click()
-    page.get_by_role('button',name='机会从大到小',exact=True).click()
+    page.locator("[data-field='opportunity_value']").click()
     page.screenshot(path=str(ROOT/'tests/preview-storage-desktop.png'),full_page=False)
     page.locator('#stockRows .symbol-button').filter(has_text='SNDK').click()
     detail=page.locator('#detailBody').inner_text()
@@ -67,12 +70,12 @@ with sync_playwright() as p:
     checks.append('positive-edge filter does not promote uncalibrated seeds')
     # Ephemeral synthetic data: discarded before preview screenshots and never written to JSON.
     page.evaluate("""() => {
-      const fixture={MU:[.1,.3,21],SNDK:[.3,.1,87],WDC:[-.1,.2,4],STX:[null,null,null]};
-      for(const r of regular){if(fixture[r.symbol]){const [o,k,score]=fixture[r.symbol];r.metrics['10']={status:o===null?'uncalibrated':'calibrated',opportunity_value:o,risk_value:k,opportunity_score:score,risk_score:score,expected_return:o,es95:k,positive_edge:o>0};}}
+      const fixture={MU:[.1,.3,21,.2,.4],SNDK:[.3,.1,87,.7,.1],WDC:[-.1,.2,4,.3,.5],STX:[null,null,null,null,null]};
+      for(const r of regular){if(fixture[r.symbol]){const [o,k,score,bottom,top]=fixture[r.symbol];r.metrics['10']={status:o===null?'uncalibrated':'calibrated',opportunity_value:o,risk_value:k,p_bottom:bottom,p_top:top,opportunity_score:score,risk_score:score,expected_return:o,es95:k,positive_edge:o>0};}}
       render();
     }""")
-    for name,expected in [('机会从大到小',['SNDK','MU','WDC','STX']),('机会从小到大',['WDC','MU','SNDK','STX']),('风险从大到小',['MU','WDC','SNDK','STX']),('风险从小到大',['SNDK','WDC','MU','STX'])]:
-        page.get_by_role('button',name=name,exact=True).click()
+    for field,expected in [('opportunity_value',['WDC','MU','SNDK','STX']),('opportunity_value',['SNDK','MU','WDC','STX']),('risk_value',['MU','WDC','SNDK','STX']),('risk_value',['SNDK','WDC','MU','STX']),('stage_probability',['SNDK','WDC','MU','STX']),('stage_probability',['MU','WDC','SNDK','STX'])]:
+        page.locator(f"[data-field='{field}']").click()
         assert page.locator('#stockRows .symbol-button').all_text_contents()==expected
     page.select_option('#storageSubFilter','nand-ssd')
     assert page.locator('#stockRows tr').count()==2

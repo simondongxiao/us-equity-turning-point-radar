@@ -19,8 +19,9 @@
 <div class="input-row"><label for="tickerInput" class="control-label">临时个股</label><input id="tickerInput" class="ticker-input" maxlength="100" placeholder="输入美股代码或公司名称，例如 SNDK、MU、JPM" autocomplete="off"><button id="runBtn" class="btn primary">运行完整分析</button></div>
 <div class="controls">
 <div class="control-group" id="horizonControls"><span class="control-label">周期</span><button class="toggle" data-horizon="5" aria-pressed="false">1周</button><button class="toggle" data-horizon="10" aria-pressed="true">2周</button><button class="toggle" data-horizon="21" aria-pressed="false">约1月</button></div>
-<div class="control-group"><span class="control-label">机会</span><button class="toggle" data-field="opportunity_value" data-dir="desc" aria-pressed="true" aria-label="机会从大到小">↓ 大到小</button><button class="toggle" data-field="opportunity_value" data-dir="asc" aria-pressed="false" aria-label="机会从小到大">↑ 小到大</button></div>
-<div class="control-group"><span class="control-label">风险</span><button class="toggle" data-field="risk_value" data-dir="desc" aria-pressed="false" aria-label="风险从大到小">↓ 大到小</button><button class="toggle" data-field="risk_value" data-dir="asc" aria-pressed="false" aria-label="风险从小到大">↑ 小到大</button></div>
+<div class="control-group"><span class="control-label">机会</span><button class="toggle sort-toggle" data-field="opportunity_value" aria-pressed="true" aria-label="机会排序：从大到小" title="点击切换从大到小 / 从小到大">↓ 大到小</button></div>
+<div class="control-group"><span class="control-label">阶段顶底概率</span><button class="toggle sort-toggle" data-field="stage_probability" aria-pressed="false" aria-label="阶段顶底概率排序：从大到小" title="按同一周期 p_bottom 与 p_top 的较高值排序；点击切换方向">↓ 大到小</button></div>
+<div class="control-group"><span class="control-label">风险</span><button class="toggle sort-toggle" data-field="risk_value" aria-pressed="false" aria-label="风险排序：从大到小" title="点击切换从大到小 / 从小到大">↓ 大到小</button></div>
 <select id="bucketFilter" class="filter" aria-label="研究覆盖分类"><option value="">全部研究主题</option><option>科技与成长主题</option><option>非科技主题</option></select>
 <select id="groupFilter" class="filter" aria-label="研究组"><option value="">全部研究组</option></select>
 <button id="storageQuick" class="toggle" aria-pressed="false" aria-label="查看存储与内存研究组">存储与内存 · 4</button>
@@ -44,7 +45,7 @@
 const DATA=JSON.parse(document.getElementById('radarData').textContent);
 const PUBLIC_CONFIG=DATA.public_config||{};
 let state={horizon:10,field:'opportunity_value',direction:'desc',view:'regular'};
-try{const saved=JSON.parse(localStorage.getItem('radar-ui-v1')||'null');if(saved&&[5,10,21].includes(saved.horizon)&&['opportunity_value','risk_value'].includes(saved.field)&&['asc','desc'].includes(saved.direction))state={...state,...saved,view:'regular'};}catch{}
+try{const saved=JSON.parse(localStorage.getItem('radar-ui-v1')||'null');if(saved&&[5,10,21].includes(saved.horizon)&&['opportunity_value','stage_probability','risk_value'].includes(saved.field)&&['asc','desc'].includes(saved.direction))state={...state,...saved,view:'regular'};}catch{}
 let regular=DATA.records||[],temporary=DATA.temporary||[];
 const $=id=>document.getElementById(id), txt=(el,t)=>{el.textContent=t;return el;};
 function node(tag,text,cls){const n=document.createElement(tag);if(text!==undefined)n.textContent=text;if(cls)n.className=cls;return n;}
@@ -91,9 +92,14 @@ function render(){
  refreshGroupOptions();renderStoragePanel();
  const period={5:'1周',10:'2周',21:'约1月'}[state.horizon];
  document.querySelectorAll('[data-horizon]').forEach(b=>b.setAttribute('aria-pressed',Number(b.dataset.horizon)===state.horizon));
- document.querySelectorAll('[data-field]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.field===state.field&&b.dataset.dir===state.direction));
+ document.querySelectorAll('.sort-toggle').forEach(b=>{
+  const active=b.dataset.field===state.field, direction=active?state.direction:'desc';
+  const name={opportunity_value:'机会',stage_probability:'阶段顶底概率',risk_value:'风险'}[b.dataset.field];
+  b.setAttribute('aria-pressed',active);b.textContent=direction==='desc'?'↓ 大到小':'↑ 小到大';b.setAttribute('aria-label',`${name}排序：${direction==='desc'?'从大到小':'从小到大'}`);
+ });
  txt($('horizonLabel'),`${period} · ${state.horizon}个交易日`);
- txt($('sortLabel'),`${state.field==='opportunity_value'?'机会':'风险'}：${state.direction==='desc'?'从大到小':'从小到大'} · ${period}`);
+ const sortName={opportunity_value:'机会',stage_probability:'阶段顶底概率',risk_value:'风险'}[state.field];
+ txt($('sortLabel'),`${sortName}：${state.direction==='desc'?'从大到小':'从小到大'} · ${period}`);
  txt($('coverage'),`${regular.length} / ${regular.filter(r=>ready(selectedMetrics(r))).length}`);
  $('regularTab').setAttribute('aria-pressed',state.view==='regular');$('temporaryTab').setAttribute('aria-pressed',state.view==='temporary');
  txt($('temporaryTab'),`临时观察 · ${temporary.length}`);
@@ -167,7 +173,7 @@ async function runAnalysis(){
   if(!finished)showStatus(`停止页面轮询。任务 ${job.job_id} 未确认完成，请通过已部署任务状态入口核查；不能按成功处理。`);
  }catch(e){showStatus(`分析未完成：${e.message}`);}finally{$('runBtn').disabled=false;}
 }
-document.querySelectorAll('[data-field]').forEach(b=>b.onclick=()=>{state.field=b.dataset.field;state.direction=b.dataset.dir;render();});
+document.querySelectorAll('[data-field]').forEach(b=>b.onclick=()=>{if(state.field===b.dataset.field)state.direction=state.direction==='desc'?'asc':'desc';else{state.field=b.dataset.field;state.direction='desc';}render();});
 document.querySelectorAll('[data-horizon]').forEach(b=>b.onclick=()=>{state.horizon=Number(b.dataset.horizon);render();});
 ['bucketFilter','groupFilter','storageSubFilter','edgeOnly'].forEach(id=>$(id).onchange=render);
 $('storageQuick').onclick=()=>{$('bucketFilter').value='科技与成长主题';refreshGroupOptions();$('groupFilter').value='存储与内存';$('storageSubFilter').value='';render();};

@@ -2,7 +2,7 @@
   "test_type": "synthetic_ui_only",
   "checks": [
     "100 unchanged seeds and explicit 0 valid forecasts",
-    "all four original arrow controls",
+    "single-button direction toggle for opportunity, stage probability and risk",
     "60 tech / 40 non-tech theme filters",
     "storage shortcut shows the four original names, no invented rotation",
     "DRAM/HBM, NAND/SSD, HDD filters; overlapping MU not duplicated",
