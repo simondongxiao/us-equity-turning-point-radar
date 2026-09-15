@@ -27,6 +27,12 @@ def run() -> None:
             page.locator("#clearFilters").click()
             assert page.locator("#storageQuick").get_attribute("aria-pressed") == "false"
             assert page.locator("#stockRows tr").count() == 100
+            page.locator("#stockRows button.symbol-button", has_text="SNDK").click()
+            detail = page.locator("#detailDialog")
+            detail_text = detail.inner_text()
+            for required in ("存储与内存", "剔除自身后的同行", "市场与板块是否同步", "基本面与事件证据", "尾部风险与执行"):
+                assert required in detail_text
+            page.locator("#closeDetail").click()
             page.locator("#tickerInput").fill("SNDK")
             page.locator("#runBtn").click()
             assert "任务接口尚未部署" in page.locator("#jobStatus").inner_text()
