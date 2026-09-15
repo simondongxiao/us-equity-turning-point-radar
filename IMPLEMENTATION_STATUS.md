@@ -11,6 +11,6 @@
 - B3：已用真实历史训练/独立时间校准并生成测试指标；不等于盈利证明
 - 存储增量因子：BLOCKED/shadow-only，未套用旧校准器
 - 本地网关：已完成鉴权、持久任务、池内MU和池外IBM链路测试；公开HTTPS部署未配置
-- Pages：本地日更页面已重建，待本次workflow成功后复核线上run_id；地址仍为 https://simondongxiao.github.io/us-equity-turning-point-radar/
+- Pages：已发布并复核 https://simondongxiao.github.io/us-equity-turning-point-radar/；本次workflow `34971172538` 成功，线上run_id为 `radar-20260914-a71108f7`，线上100/100有效预测、存储四只及B2/B3时点比较均存在
 - 外部HTTPS鉴权网关：BLOCKED；仓库提供标准库本地网关实现，但当前没有可用的云端OAuth/OIDC、持久对象存储或网关域名配置，Pages输入按钮保持诚实提示，不开放匿名收费任务
 - 本次刷新：Yahoo 对 AAPL 瞬时限流，沿用已验证到 2026-09-14 的本地历史并在来源清单标注；未填零值，最终覆盖保持 100/100
