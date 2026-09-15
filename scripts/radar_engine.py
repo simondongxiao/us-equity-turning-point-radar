@@ -663,7 +663,9 @@ def build(refresh: bool = False, run_id: str | None = None, extra_symbol: str | 
     print(f"[radar] prices ready: {len(frames)}/{len(symbols)}", flush=True)
     if "SPY" not in frames:
         raise RuntimeError("SPY market benchmark unavailable; cannot build a live radar")
-    as_of = max(frames["SPY"].index)
+    # Use the intersection date already filtered to a completed New York
+    # session, rather than SPY's own latest row (which may be an intraday bar).
+    as_of = pd.Timestamp(source["common_latest_date"]) if source.get("common_latest_date") else max(frames["SPY"].index)
     sec = fetch_sec_identities(seed_symbols)
     groups = {r.get("research_group", "") for r in seeds}
     group_series = {g: build_group_series(frames, seeds, g) for g in groups}
