@@ -27,9 +27,3 @@ SKILL.md为运行编排；references含模型、股票池、页面/网关、回�
 本次只交付规范、元数据、前端和经合成测试的辅助函数，不包含已训练存储概率模型。离线HTML可验证筛选和详情，任务网关仍未部署。新轮动模块对预测质量的增益仍待真实回测。
 
 附加检查：`python -m unittest discover -s tests -p "test_*.py" -v`；`python tests/browser_preview.py`（需Playwright/Chromium）；`python scripts/verify_package.py`。验证明细见`tests/validation-report.json`和`VALIDATION_REPORT.md`。
-
-## 首次真实构建状态（2026-09-15）
-
-已在本项目原地补齐真实公开日线适配、时间切分B3模型与独立校准、共同历史路径场景集、SQLite追加台账、周更覆盖审计、静态Pages构建和标准库鉴权任务网关。最新本地快照写入`site/index.html`，运行数据保存于`outputs/`（不提交原始行情）。
-
-模型状态为`calibrated_low_confidence`：五年Yahoo Finance日线可用于B3时间检验，存储LOO/细分特征已计算但仍是shadow challenger；由于taxonomy生效日为2026-09-15，没有成熟点时样本外窗口，因此不宣称存储因子带来精度提升。GitHub Pages和外部HTTPS网关仍需实际远端配置后才能标记上线。
