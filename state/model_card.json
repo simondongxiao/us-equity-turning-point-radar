@@ -11,37 +11,76 @@
     "strategy_version": "next-open-atr-1x-cost-15bp-v1",
     "horizons": {
       "5": {
-        "horizon": 5,
-        "train_n": 93163,
-        "calibration_n": 12348,
-        "test_n": 12861,
-        "ambiguous_excluded": 310,
-        "brier_multiclass": 0.5986573642660361,
-        "log_loss": 0.9832314750860233,
-        "test_start": "2026-03-04",
-        "test_end": "2026-09-04"
+        "b2_technical": {
+          "horizon": 5,
+          "train_n": 93255,
+          "calibration_n": 12348,
+          "test_n": 12861,
+          "ambiguous_excluded": 310,
+          "brier_multiclass": 0.5982198072548072,
+          "log_loss": 0.9826361046742468,
+          "test_start": "2026-03-04",
+          "test_end": "2026-09-04"
+        },
+        "b3_market_rotation": {
+          "horizon": 5,
+          "train_n": 93163,
+          "calibration_n": 12348,
+          "test_n": 12861,
+          "ambiguous_excluded": 310,
+          "brier_multiclass": 0.5986573642660361,
+          "log_loss": 0.9832314750860233,
+          "test_start": "2026-03-04",
+          "test_end": "2026-09-04"
+        }
       },
       "10": {
-        "horizon": 10,
-        "train_n": 92753,
-        "calibration_n": 12543,
-        "test_n": 12562,
-        "ambiguous_excluded": 324,
-        "brier_multiclass": 0.5189512865716231,
-        "log_loss": 0.7934189477127289,
-        "test_start": "2026-03-02",
-        "test_end": "2026-08-28"
+        "b2_technical": {
+          "horizon": 10,
+          "train_n": 92845,
+          "calibration_n": 12543,
+          "test_n": 12562,
+          "ambiguous_excluded": 324,
+          "brier_multiclass": 0.5184384846785342,
+          "log_loss": 0.7918684060513713,
+          "test_start": "2026-03-02",
+          "test_end": "2026-08-28"
+        },
+        "b3_market_rotation": {
+          "horizon": 10,
+          "train_n": 92753,
+          "calibration_n": 12543,
+          "test_n": 12562,
+          "ambiguous_excluded": 324,
+          "brier_multiclass": 0.5189512865716231,
+          "log_loss": 0.7934189477127289,
+          "test_start": "2026-03-02",
+          "test_end": "2026-08-28"
+        }
       },
       "21": {
-        "horizon": 21,
-        "train_n": 91656,
-        "calibration_n": 12640,
-        "test_n": 12463,
-        "ambiguous_excluded": 323,
-        "brier_multiclass": 0.4971177669080187,
-        "log_loss": 0.712054560258395,
-        "test_start": "2026-02-13",
-        "test_end": "2026-08-13"
+        "b2_technical": {
+          "horizon": 21,
+          "train_n": 91748,
+          "calibration_n": 12640,
+          "test_n": 12463,
+          "ambiguous_excluded": 323,
+          "brier_multiclass": 0.4973202292493458,
+          "log_loss": 0.7118971146943225,
+          "test_start": "2026-02-13",
+          "test_end": "2026-08-13"
+        },
+        "b3_market_rotation": {
+          "horizon": 21,
+          "train_n": 91656,
+          "calibration_n": 12640,
+          "test_n": 12463,
+          "ambiguous_excluded": 323,
+          "brier_multiclass": 0.4971177669080187,
+          "log_loss": 0.712054560258395,
+          "test_start": "2026-02-13",
+          "test_end": "2026-08-13"
+        }
       }
     },
     "storage_incremental": {
@@ -51,14 +90,14 @@
   },
   "source": {
     "source": "Yahoo Finance chart OHLCV via yfinance; SEC company_tickers.json for issuer identity",
-    "requested_symbols": 103,
-    "usable_symbols": 103,
+    "requested_symbols": 102,
+    "usable_symbols": 102,
     "missing_symbols": [],
     "errors": {},
     "common_latest_date": "2026-09-14",
     "start_requested": "2021-09-15",
     "end_requested": "2026-09-16",
-    "retrieved_at": "2026-09-15T10:22:09.922466+00:00",
+    "retrieved_at": "2026-09-15T10:32:00.062705+00:00",
     "mother_pool": {
       "source": "us-share-daily-market-html/all_metrics.csv",
       "available_symbols": 5509,
