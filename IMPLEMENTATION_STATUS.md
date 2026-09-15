@@ -2,7 +2,7 @@
 
 最后本地构建：`2026-09-15`
 
-- 最新 run：见 `outputs/dashboard-radar-*.json` 与 `site/data.json`
+- 最新本地 run：`radar-20260914-0d8258e7`（刷新时间 2026-09-15 20:48 Asia/Shanghai）
 - 数据截止：2026-09-14（纽约市场日线收盘）
 - 常态池：100；科技与成长60；非科技40
 - 可用价格记录：100/100；有效低可信预测：100/100
@@ -11,5 +11,6 @@
 - B3：已用真实历史训练/独立时间校准并生成测试指标；不等于盈利证明
 - 存储增量因子：BLOCKED/shadow-only，未套用旧校准器
 - 本地网关：已完成鉴权、持久任务、池内MU和池外IBM链路测试；公开HTTPS部署未配置
-- Pages：已发布并验证 https://simondongxiao.github.io/us-equity-turning-point-radar/；成功workflow `34958524757`，线上run_id为该次Actions重新生成的 `radar-20260914-24bf68c2`
+- Pages：本地日更页面已重建，待本次workflow成功后复核线上run_id；地址仍为 https://simondongxiao.github.io/us-equity-turning-point-radar/
 - 外部HTTPS鉴权网关：BLOCKED；仓库提供标准库本地网关实现，但当前没有可用的云端OAuth/OIDC、持久对象存储或网关域名配置，Pages输入按钮保持诚实提示，不开放匿名收费任务
+- 本次刷新：Yahoo 对 AAPL 瞬时限流，沿用已验证到 2026-09-14 的本地历史并在来源清单标注；未填零值，最终覆盖保持 100/100

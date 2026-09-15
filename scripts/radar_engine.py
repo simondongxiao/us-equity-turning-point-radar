@@ -208,11 +208,14 @@ def download_prices(symbols: list[str], refresh: bool = False) -> tuple[dict[str
     for symbol in symbols:
         cache = RAW_DIR / f"{symbol}.csv"
         frame = pd.DataFrame()
-        if cache.exists() and not refresh:
+        cached_frame = pd.DataFrame()
+        if cache.exists():
             try:
-                frame = pd.read_csv(cache, parse_dates=["date"], index_col="date")
+                cached_frame = pd.read_csv(cache, parse_dates=["date"], index_col="date")
             except Exception:
-                frame = pd.DataFrame()
+                cached_frame = pd.DataFrame()
+        if not refresh:
+            frame = cached_frame
         if frame.empty or len(frame) < 80:
             try:
                 raw = yf.download(symbol, start=start, end=end, auto_adjust=False, progress=False, threads=False)
@@ -221,6 +224,15 @@ def download_prices(symbols: list[str], refresh: bool = False) -> tuple[dict[str
                     frame.to_csv(cache, date_format="%Y-%m-%d")
             except Exception as exc:
                 source_errors[symbol] = f"{type(exc).__name__}: {exc}"
+                # A refresh must not destroy a previously verified price history just
+                # because the public endpoint transiently rate-limited this request.
+                # The cached history remains explicitly traceable in the manifest.
+                if not cached_frame.empty and len(cached_frame) >= 80:
+                    frame = cached_frame
+                    source_errors[symbol] += "; using previously cached verified history"
+            if (frame.empty or len(frame) < 80) and not cached_frame.empty and len(cached_frame) >= 80:
+                frame = cached_frame
+                source_errors[symbol] = "refresh returned no rows; using previously cached verified history"
         if frame.empty or len(frame) < 80:
             missing.append(symbol)
         else:

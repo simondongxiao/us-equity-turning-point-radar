@@ -17,8 +17,8 @@
           "calibration_n": 12348,
           "test_n": 12861,
           "ambiguous_excluded": 310,
-          "brier_multiclass": 0.5982198072548072,
-          "log_loss": 0.9826361046742468,
+          "brier_multiclass": 0.598194306744934,
+          "log_loss": 0.982600489705868,
           "test_start": "2026-03-04",
           "test_end": "2026-09-04"
         },
@@ -28,8 +28,8 @@
           "calibration_n": 12348,
           "test_n": 12861,
           "ambiguous_excluded": 310,
-          "brier_multiclass": 0.5986573642660361,
-          "log_loss": 0.9832314750860233,
+          "brier_multiclass": 0.5986379950488505,
+          "log_loss": 0.9832056722207063,
           "test_start": "2026-03-04",
           "test_end": "2026-09-04"
         }
@@ -41,8 +41,8 @@
           "calibration_n": 12543,
           "test_n": 12562,
           "ambiguous_excluded": 324,
-          "brier_multiclass": 0.5184384846785342,
-          "log_loss": 0.7918684060513713,
+          "brier_multiclass": 0.5184102251313453,
+          "log_loss": 0.7918143555381068,
           "test_start": "2026-03-02",
           "test_end": "2026-08-28"
         },
@@ -52,8 +52,8 @@
           "calibration_n": 12543,
           "test_n": 12562,
           "ambiguous_excluded": 324,
-          "brier_multiclass": 0.5189512865716231,
-          "log_loss": 0.7934189477127289,
+          "brier_multiclass": 0.5189544061281887,
+          "log_loss": 0.7934732578963025,
           "test_start": "2026-03-02",
           "test_end": "2026-08-28"
         }
@@ -65,8 +65,8 @@
           "calibration_n": 12640,
           "test_n": 12463,
           "ambiguous_excluded": 323,
-          "brier_multiclass": 0.4973202292493458,
-          "log_loss": 0.7118971146943225,
+          "brier_multiclass": 0.49736838402641925,
+          "log_loss": 0.7119553145093585,
           "test_start": "2026-02-13",
           "test_end": "2026-08-13"
         },
@@ -76,8 +76,8 @@
           "calibration_n": 12640,
           "test_n": 12463,
           "ambiguous_excluded": 323,
-          "brier_multiclass": 0.4971177669080187,
-          "log_loss": 0.712054560258395,
+          "brier_multiclass": 0.49707323229276107,
+          "log_loss": 0.7120069943487077,
           "test_start": "2026-02-13",
           "test_end": "2026-08-13"
         }
@@ -93,11 +93,13 @@
     "requested_symbols": 102,
     "usable_symbols": 102,
     "missing_symbols": [],
-    "errors": {},
+    "errors": {
+      "AAPL": "refresh returned no rows; using previously cached verified history"
+    },
     "common_latest_date": "2026-09-14",
     "start_requested": "2021-09-15",
     "end_requested": "2026-09-16",
-    "retrieved_at": "2026-09-15T10:32:00.062705+00:00",
+    "retrieved_at": "2026-09-15T12:48:08.953729+00:00",
     "mother_pool": {
       "source": "us-share-daily-market-html/all_metrics.csv",
       "available_symbols": 5509,
