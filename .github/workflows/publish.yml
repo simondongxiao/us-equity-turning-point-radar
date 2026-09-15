@@ -1,0 +1,28 @@
+name: radar-daily-build
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "30 22 * * 1-5"
+
+permissions:
+  contents: write
+
+jobs:
+  build-pages:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install -r requirements.txt
+      - run: python scripts/radar_engine.py --output site/data.json
+      - run: python scripts/render_preview.py --input site/data.json --output site/index.html
+      - run: python scripts/validate_delivery.py --dashboard site/data.json --production
+      - name: Publish Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+      - name: Deploy to GitHub Pages
+        uses: actions/deploy-pages@v4

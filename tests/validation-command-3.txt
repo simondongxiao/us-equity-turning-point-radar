@@ -1,0 +1,34 @@
+$ python -m unittest discover -s tests -p test_*.py -v
+test_csv_json_same_metadata (test_storage.PackageTests.test_csv_json_same_metadata) ... ok
+test_no_fabricated_financials (test_storage.PackageTests.test_no_fabricated_financials) ... ok
+test_original_symbols_and_buckets_preserved (test_storage.PackageTests.test_original_symbols_and_buckets_preserved) ... ok
+test_preview_schema (test_storage.PackageTests.test_preview_schema) ... ok
+test_required_original_research_sections (test_storage.PackageTests.test_required_original_research_sections) ... ok
+test_schema_legacy_records_accepted (test_storage.PackageTests.test_schema_legacy_records_accepted) ... ok
+test_seed_integrity (test_storage.PackageTests.test_seed_integrity) ... ok
+test_subgroup_membership_unique (test_storage.PackageTests.test_subgroup_membership_unique) ... ok
+test_concentrated_weights_downgraded (test_storage.PeerTests.test_concentrated_weights_downgraded) ... ok
+test_duplicate_peer_issuer_rejected (test_storage.PeerTests.test_duplicate_peer_issuer_rejected) ... ok
+test_equal_weight (test_storage.PeerTests.test_equal_weight) ... ok
+test_expired_membership (test_storage.PeerTests.test_expired_membership) ... ok
+test_future_membership (test_storage.PeerTests.test_future_membership) ... ok
+test_future_observation (test_storage.PeerTests.test_future_observation) ... ok
+test_future_weight (test_storage.PeerTests.test_future_weight) ... ok
+test_mismatched_return_window (test_storage.PeerTests.test_mismatched_return_window) ... ok
+test_missing_not_zero (test_storage.PeerTests.test_missing_not_zero) ... ok
+test_naive_time_rejected (test_storage.PeerTests.test_naive_time_rejected) ... ok
+test_negative_weight_rejected (test_storage.PeerTests.test_negative_weight_rejected) ... ok
+test_no_peers (test_storage.PeerTests.test_no_peers) ... ok
+test_nonfinite_rejected (test_storage.PeerTests.test_nonfinite_rejected) ... ok
+test_self_and_share_class_exclusion (test_storage.PeerTests.test_self_and_share_class_exclusion) ... ok
+test_single_peer (test_storage.PeerTests.test_single_peer) ... ok
+test_subgroup_filters (test_storage.PeerTests.test_subgroup_filters) ... ok
+test_two_peers (test_storage.PeerTests.test_two_peers) ... ok
+test_unknown_peer_identity (test_storage.PeerTests.test_unknown_peer_identity) ... ok
+test_unknown_target (test_storage.PeerTests.test_unknown_target) ... ok
+test_window_after_prediction (test_storage.PeerTests.test_window_after_prediction) ... ok
+
+----------------------------------------------------------------------
+Ran 28 tests in 0.037s
+
+OK

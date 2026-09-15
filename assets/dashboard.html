@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="light">
+<title>美股阶段顶底雷达</title>
+<style>
+:root{--ink:#172638;--muted:#627185;--line:#dbe3ec;--paper:#f3f6fa;--blue:#1d5078;--green:#196c60;--amber:#855708;--white:#fff}*{box-sizing:border-box}body{margin:0;color:var(--ink);background:var(--paper);font:14px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI","Microsoft YaHei",sans-serif}button,input,select{font:inherit}button{cursor:pointer}button:focus-visible,input:focus-visible,select:focus-visible{outline:3px solid #e7b447;outline-offset:2px}button:disabled{cursor:not-allowed;opacity:.5}.wrap{max-width:1560px;margin:auto;padding:28px 30px 54px}.mast{display:flex;justify-content:space-between;align-items:center;gap:20px;margin-bottom:18px}.eyebrow{font-size:11px;font-weight:750;letter-spacing:.16em;color:var(--green)}h1{font-size:29px;letter-spacing:-.04em;line-height:1.2;margin:8px 0}h2{font-size:17px;margin:0 0 12px}p{margin:6px 0}.small,.muted{color:var(--muted);font-size:12px}.badge{display:inline-block;padding:4px 10px;border-radius:5px;background:#e8eef5;color:var(--blue);font-size:12px}.notice{border:1px solid #decfa5;background:#fff9e9;padding:11px 15px;color:#745018;border-radius:7px;margin-bottom:18px}.panel{background:white;border:1px solid var(--line);border-radius:9px;margin-bottom:18px}.overview{display:grid;grid-template-columns:repeat(3,1fr);gap:0}.stat{padding:17px 22px;min-height:105px}.stat+.stat{border-left:1px solid var(--line)}.stat-value{font-size:24px;font-weight:750;line-height:1.4}.stat-label{font-size:12px;color:var(--muted)}.rotation{padding:16px 22px}.rotation-title{font-weight:700;color:var(--blue);margin-right:12px}.toolbar{padding:18px 20px}.input-row{display:flex;gap:9px;align-items:center;margin-bottom:15px;flex-wrap:wrap}.ticker-input{flex:1;min-width:220px;padding:10px 12px;border:1px solid var(--line);border-radius:6px}.btn{padding:9px 13px;border:1px solid var(--line);background:white;color:var(--ink);border-radius:6px;font-weight:600}.primary{background:var(--blue);border-color:var(--blue);color:white}.controls{display:flex;flex-wrap:wrap;align-items:center;gap:15px}.control-group{display:flex;align-items:center;gap:6px}.control-label{font-size:12px;font-weight:700;color:var(--muted);margin-right:3px}.toggle{padding:6px 10px;border:1px solid var(--line);border-radius:5px;background:white;color:var(--ink)}.toggle[aria-pressed=true]{background:var(--blue);border-color:var(--blue);color:white}.filter{padding:6px 9px;border:1px solid var(--line);border-radius:5px;max-width:200px}.status{padding:10px 12px;border-radius:5px;background:#edf3f9;margin-top:12px;display:none}.status.show{display:block}.board-head{padding:16px 20px;display:flex;flex-wrap:wrap;justify-content:space-between;gap:10px;align-items:center;border-bottom:1px solid var(--line)}.tabs{display:flex;gap:8px}.table-scroll{overflow:auto;max-height:72vh}table{border-collapse:collapse;width:100%;min-width:1190px;text-align:left}th{position:sticky;top:0;background:#edf2f7;color:#4a5c71;font-size:12px;z-index:2;padding:12px 10px;white-space:nowrap;border-bottom:1px solid var(--line)}td{padding:12px 10px;border-bottom:1px solid #ecf0f5;font-size:13px;vertical-align:middle}tbody tr:hover{background:#f8fbfd}td:first-child,th:first-child{padding-left:20px}td:last-child,th:last-child{padding-right:20px}.symbol-button{background:none;border:none;padding:0;color:var(--blue);font-size:14px;font-weight:750}.company{font-size:11px;color:var(--muted);max-width:140px}.num{font-variant-numeric:tabular-nums}.sub{font-size:11px;color:var(--muted)}.empty{padding:35px;text-align:center}.footnote{padding:13px 20px;color:var(--muted);font-size:12px}.footer{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap;margin-top:20px;font-size:11px;color:var(--muted)}dialog{width:min(1050px,94vw);max-height:90vh;border:1px solid var(--line);border-radius:10px;padding:0;box-shadow:0 15px 70px #1233}dialog::backdrop{background:#15273c66}.dialog-head{padding:22px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line)}.dialog-body{padding:22px}.detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:15px}.detail-block{padding:16px;border:1px solid var(--line);border-radius:7px;margin-bottom:15px}.detail-table{min-width:0;width:100%;font-size:12px}.detail-table th{position:static}.detail-table td,.detail-table th{padding:9px 7px}.detail-table th:first-child,.detail-table td:first-child{padding-left:7px}.wide{grid-column:1/-1}.tagline{max-width:770px}.good{color:var(--green)}a{color:var(--blue)}
+@media(max-width:780px){.wrap{padding:18px 12px 30px}.mast{align-items:flex-start}h1{font-size:24px}.overview{grid-template-columns:1fr}.stat{min-height:70px;padding:13px 17px}.stat+.stat{border-left:0;border-top:1px solid var(--line)}.stat-value{font-size:20px}.toolbar{padding:14px}.controls{gap:12px}.input-row{gap:7px}.ticker-input{min-width:170px}.detail-grid{grid-template-columns:1fr}.board-head{padding:14px}.rotation{padding:13px 17px}.wide{grid-column:auto}.dialog-body{padding:14px}.detail-table{font-size:11px}.detail-table td{font-size:11px}}
+</style>
+</head>
+<body>
+<main class="wrap">
+<header class="mast"><div><div class="eyebrow">US EQUITY · TURNING POINT RADAR</div><h1>美股阶段顶底雷达</h1><p class="small tagline">情绪修复 × 板块轮动 × 个股独立强弱。分开看机会与风险，不把人气当成买入理由。</p></div><span class="badge" id="versionBadge">v1.1 · 待接入模型</span></header>
+<div class="notice" id="notice">界面预览：未接入真实行情、已校准概率模型与单股任务接口。所有金融数字均留空，不是实时研究结果。</div>
+<section class="panel overview" aria-label="数据状态"><div class="stat"><div class="stat-label">常态观察池 / 有效预测</div><div class="stat-value" id="coverage">100 / 0</div><div class="small">周更名单，日常更新；临时观察不占名额</div></div><div class="stat"><div class="stat-label">数据截至 · 纽约时间</div><div class="stat-value" id="asOf">尚未接入</div><div class="small" id="beijing">北京时间：—</div></div><div class="stat"><div class="stat-label">当前观察周期</div><div class="stat-value" id="horizonLabel">2周 · 10个交易日</div><div class="small">机会分、风险分与价带随周期同步切换</div></div></section>
+<section class="panel rotation"><span class="rotation-title">Rotation Snapshot</span><span id="rotationText">尚未读取同时间口径的市场与轮动状态；不生成主观轮动结论。</span></section>
+<section class="panel toolbar">
+<div class="input-row"><label for="tickerInput" class="control-label">临时个股</label><input id="tickerInput" class="ticker-input" maxlength="100" placeholder="输入美股代码或公司名称，例如 SNDK、MU、JPM" autocomplete="off"><button id="runBtn" class="btn primary">运行完整分析</button></div>
+<div class="controls">
+<div class="control-group" id="horizonControls"><span class="control-label">周期</span><button class="toggle" data-horizon="5" aria-pressed="false">1周</button><button class="toggle" data-horizon="10" aria-pressed="true">2周</button><button class="toggle" data-horizon="21" aria-pressed="false">约1月</button></div>
+<div class="control-group"><span class="control-label">机会</span><button class="toggle" data-field="opportunity_value" data-dir="desc" aria-pressed="true" aria-label="机会从大到小">↓ 大到小</button><button class="toggle" data-field="opportunity_value" data-dir="asc" aria-pressed="false" aria-label="机会从小到大">↑ 小到大</button></div>
+<div class="control-group"><span class="control-label">风险</span><button class="toggle" data-field="risk_value" data-dir="desc" aria-pressed="false" aria-label="风险从大到小">↓ 大到小</button><button class="toggle" data-field="risk_value" data-dir="asc" aria-pressed="false" aria-label="风险从小到大">↑ 小到大</button></div>
+<select id="bucketFilter" class="filter" aria-label="研究覆盖分类"><option value="">全部研究主题</option><option>科技与成长主题</option><option>非科技主题</option></select>
+<select id="groupFilter" class="filter" aria-label="研究组"><option value="">全部研究组</option></select>
+<button id="storageQuick" class="toggle" aria-pressed="false" aria-label="查看存储与内存研究组">存储与内存 · 4</button>
+<select id="storageSubFilter" class="filter" aria-label="存储细分业务" disabled><option value="">全部存储细分</option><option value="dram-hbm">DRAM / HBM</option><option value="nand-ssd">NAND / SSD</option><option value="hdd">HDD</option></select>
+<button id="clearFilters" class="toggle" aria-label="清空筛选">全部股票</button>
+<label class="small"><input type="checkbox" id="edgeOnly"> 只看正优势</label>
+</div><p class="small" style="margin-top:12px">机会与风险分别排序，可同时偏高。相对分不是胜率；未知/过期结果在任意排序下均置底。筛选不改变全池评分；存储细分标签可重叠。</p>
+<div id="jobStatus" class="status" role="status" aria-live="polite"></div>
+</section>
+<section id="storagePanel" class="panel rotation" hidden aria-label="存储与内存轮动观察"><h2>存储与内存 · 轮动观察</h2><p id="storageSummaryText" class="small"></p><details><summary>展开跨板块与细分观察</summary><div id="storageMatrixBody" class="small"></div></details></section>
+<section class="panel"><div class="board-head"><div class="tabs"><button id="regularTab" class="toggle" aria-pressed="true">常态100股</button><button id="temporaryTab" class="toggle" aria-pressed="false">临时观察 · 0</button></div><div><span id="filterCount" class="small" style="margin-right:12px">显示100/100</span><span class="small" id="sortLabel">机会：从大到小 · 2周</span></div></div>
+<div class="table-scroll"><table><thead><tr><th>序号</th><th>股票 / 公司</th><th>研究组 / 业务标签</th><th>参考价</th><th>阶段</th><th>机会分 / 净期望</th><th>风险分 / ES95</th><th>潜在底部价带</th><th>潜在顶部价带</th><th>阶段底概率</th><th>数据状态</th></tr></thead><tbody id="stockRows"></tbody></table><div class="empty" id="emptyState" hidden>当前筛选下没有匹配结果。</div></div>
+<div class="footnote">点股票代码查看完整价带与条件路径。初始种子为观察对象，不是买入建议；正式资格与人气排名需要真实数据验证。</div></section>
+<footer class="footer"><span id="buildNote">研究与风险管理工具，不执行交易。</span><span>首版观察种子 · 科技成长60 / 非科技40</span></footer>
+</main>
+<dialog id="detailDialog"><div class="dialog-head"><div><h2 id="detailTitle"></h2><p class="small" id="detailSubtitle"></p></div><button class="btn" id="closeDetail">关闭</button></div><div class="dialog-body" id="detailBody"></div></dialog>
+<script id="radarData" type="application/json">__RADAR_DATA__</script>
+<script>__SORT_UTILS__</script>
+<script>
+'use strict';
+const DATA=JSON.parse(document.getElementById('radarData').textContent);
+const PUBLIC_CONFIG=DATA.public_config||{};
+let state={horizon:10,field:'opportunity_value',direction:'desc',view:'regular'};
+try{const saved=JSON.parse(localStorage.getItem('radar-ui-v1')||'null');if(saved&&[5,10,21].includes(saved.horizon)&&['opportunity_value','risk_value'].includes(saved.field)&&['asc','desc'].includes(saved.direction))state={...state,...saved,view:'regular'};}catch{}
+let regular=DATA.records||[],temporary=DATA.temporary||[];
+const $=id=>document.getElementById(id), txt=(el,t)=>{el.textContent=t;return el;};
+function node(tag,text,cls){const n=document.createElement(tag);if(text!==undefined)n.textContent=text;if(cls)n.className=cls;return n;}
+function finite(x){return typeof x==='number'&&Number.isFinite(x);}
+function price(x){return finite(x)?x.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}):'—';}
+function pct(x){return finite(x)?`${(x*100).toFixed(1)}%`:'—';}
+function band(x){return Array.isArray(x)&&x.length===2&&x.every(finite)?`${price(x[0])}–${price(x[1])}`:'—';}
+function ready(m){return m&&['calibrated','calibrated_low_confidence'].includes(m.status);}
+const statusText={calibrated:'已校准',calibrated_low_confidence:'已校准·低可信',uncalibrated:'未校准',structural_only:'仅结构参考',stale:'数据过期',data_error:'数据异常'};
+function selectedMetrics(r){return (r.metrics||{})[String(state.horizon)]||{status:'uncalibrated'};}
+function persist(){try{localStorage.setItem('radar-ui-v1',JSON.stringify({horizon:state.horizon,field:state.field,direction:state.direction}));}catch{}}
+function tagList(r,key){const v=r[key];return Array.isArray(v)?v.filter(x=>typeof x==='string'):typeof v==='string'?v.split('|').filter(Boolean):[];}
+function isStorage(r){return r.research_group_id==='storage-memory'||r.research_group==='存储与内存';}
+const SUBFILTERS={'dram-hbm':['DRAM','HBM'],'nand-ssd':['NAND','SSD'],'hdd':['HDD']};
+function refreshGroupOptions(){
+ const old=$('groupFilter').value,bucket=$('bucketFilter').value;
+ const groups=[...new Set([...regular,...temporary].filter(r=>!bucket||r.coverage_bucket===bucket).map(r=>r.research_group).filter(Boolean))].sort();
+ $('groupFilter').replaceChildren(node('option','全部研究组'));$('groupFilter').firstChild.value='';
+ groups.forEach(g=>{const o=node('option',g);o.value=g;$('groupFilter').append(o);});
+ $('groupFilter').value=groups.includes(old)?old:'';
+ const active=$('groupFilter').value==='存储与内存';
+ $('storageSubFilter').disabled=!active;if(!active)$('storageSubFilter').value='';
+ $('storageQuick').setAttribute('aria-pressed',active);
+ const count=(state.view==='regular'?regular:temporary).filter(isStorage).length;
+ txt($('storageQuick'),`存储与内存 · ${count}`);
+}
+function renderStoragePanel(){
+ const active=$('groupFilter').value==='存储与内存';$('storagePanel').hidden=!active;if(!active)return;
+ const snap=DATA.storage_rotation;
+ const valid=snap&&['observed','validated'].includes(snap.status)&&Boolean(DATA.as_of)&&snap.as_of===DATA.as_of;
+ txt($('storageSummaryText'),valid&&snap.summary?snap.summary:'尚无同一数据时点的存储轮动结果。业务分组不代表走势同步；不能用MU走强代替其他股票见底确认。');
+ $('storageMatrixBody').replaceChildren();
+ if(valid&&Array.isArray(snap.comparisons)&&snap.comparisons.length){
+  snap.comparisons.forEach(c=>{
+   const good=['observed','validated'].includes(c.status);
+   $('storageMatrixBody').append(node('p',`${c.label||'待标注对照'} ｜ 观察窗口 ${c.window_sessions||'—'}交易日 ｜ 相对收益 ${good?pct(c.relative_return):'—'} ｜ ${c.note||c.status||'待核验'}`));
+  });
+ }else{
+  ['跨组观察：存储相对市场、非存储半导体、软件、算力网络与光通信。','细分观察：DRAM/HBM、NAND/SSD、HDD；含相同发行人的篮子不能当独立证据。','单股观察：对剔除自身后的同行。同行不足时仅作代理，不生成板块共振概率。'].forEach(t=>$('storageMatrixBody').append(node('p',t)));
+ }
+}
+
+function render(){
+ refreshGroupOptions();renderStoragePanel();
+ const period={5:'1周',10:'2周',21:'约1月'}[state.horizon];
+ document.querySelectorAll('[data-horizon]').forEach(b=>b.setAttribute('aria-pressed',Number(b.dataset.horizon)===state.horizon));
+ document.querySelectorAll('[data-field]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.field===state.field&&b.dataset.dir===state.direction));
+ txt($('horizonLabel'),`${period} · ${state.horizon}个交易日`);
+ txt($('sortLabel'),`${state.field==='opportunity_value'?'机会':'风险'}：${state.direction==='desc'?'从大到小':'从小到大'} · ${period}`);
+ txt($('coverage'),`${regular.length} / ${regular.filter(r=>ready(selectedMetrics(r))).length}`);
+ $('regularTab').setAttribute('aria-pressed',state.view==='regular');$('temporaryTab').setAttribute('aria-pressed',state.view==='temporary');
+ txt($('temporaryTab'),`临时观察 · ${temporary.length}`);
+ const viewRecords=state.view==='regular'?regular:temporary,subTags=SUBFILTERS[$('storageSubFilter').value]||[];
+ let records=viewRecords.filter(r=>(!$('bucketFilter').value||r.coverage_bucket===$('bucketFilter').value)&&(!$('groupFilter').value||r.research_group===$('groupFilter').value)&&(!subTags.length||tagList(r,'business_tags').some(t=>subTags.includes(t)))&&(!$('edgeOnly').checked||(ready(selectedMetrics(r))&&selectedMetrics(r).positive_edge===true)));
+ txt($('filterCount'),`显示 ${records.length} / ${viewRecords.length} · 全池评分不变`);
+ records=RadarUtils.sorted(records,state.field,state.direction,state.horizon);
+ $('stockRows').replaceChildren();$('emptyState').hidden=records.length!==0;
+ records.forEach((r,i)=>{
+ const m=selectedMetrics(r),ok=ready(m),tr=node('tr');
+ tr.append(node('td',String(i+1),'small'));
+ const nameCell=node('td'),btn=node('button',r.symbol,'symbol-button');btn.onclick=()=>openDetail(r);nameCell.append(btn,node('div',r.name_zh||r.name||'','company'));tr.append(nameCell);
+ const groupCell=node('td',undefined,'small');groupCell.append(node('div',r.research_group||'待解析'));const tags=tagList(r,'business_tags');if(tags.length)groupCell.append(node('div',tags.join(' / '),'sub'));tr.append(groupCell,node('td',price(r.reference_price),'num'),node('td',r.stage||'待分析'));
+ for(const [score,secondary] of [['opportunity_score','expected_return'],['risk_score','es95']]){const td=node('td');td.append(node('div',ok&&finite(m[score])?m[score].toFixed(0):'—','num'),node('div',ok?pct(m[secondary]):'未校准','sub'));tr.append(td);}
+ tr.append(node('td',ok?band(m.bottom_band):'—','num'),node('td',ok?band(m.top_band):'—','num'),node('td',ok?pct(m.p_bottom):'—','num'),node('td',statusText[m.status]||'待分析','small'));
+ $('stockRows').append(tr);
+ });persist();
+}
+function detailBlock(title,body){const b=node('section',undefined,'detail-block');b.append(node('h2',title),node('p',body||'尚无经过验证的结果。'));return b;}
+function openDetail(r){
+ txt($('detailTitle'),`${r.symbol} · ${r.name_zh||r.name||''}`);txt($('detailSubtitle'),`${r.research_group||'待解析'} ｜ 参考价 ${price(r.reference_price)} ｜ ${r.as_of||DATA.as_of||'未接入行情'}`);
+ const body=$('detailBody');body.replaceChildren();
+ body.append(detailBlock('当前判断',r.summary||'尚未运行真实数据与校准模型，不提供虚构的阶段判断或价格区间。'));
+ body.append(detailBlock('研究分组与业务标签',`主研究组：${r.research_group||'待解析'}；业务标签：${tagList(r,'business_tags').join(' / ')||'待核验'}。研究标签不是正式行业分类；多标签不重复占100股名额。`));
+ if(isStorage(r)||r.peer_context){
+  const pc=r.peer_context;
+  const desc=pc?`状态：${pc.status||'待核验'}；剔除自身：${pc.self_excluded===true?'已按发行人排除':'未确认'}；同行：${Array.isArray(pc.peer_symbols)&&pc.peer_symbols.length?pc.peer_symbols.join('、'):'无可用同行'}；有效样本：${finite(pc.effective_n)?pc.effective_n.toFixed(2):'—'}；权重覆盖：${pct(pc.weight_coverage)}。${pc.note||''}`:'同行因子尚未计算。按发行人剔除自身后再比较；只有1—2只同行时降级为代理，不能当可靠板块共振。';
+  body.append(detailBlock('剔除自身后的同行',desc));
+ }
+ const block=node('section',undefined,'detail-block'),table=node('table',undefined,'detail-table');block.append(node('h2','多周期潜在价带与概率'));
+ const head=node('tr');['期限','潜在底部区','潜在顶部区','底部形成','顶部形成'].forEach(v=>head.append(node('th',v)));table.append(head);
+ [5,10,21].forEach(h=>{const m=(r.metrics||{})[String(h)]||{},ok=ready(m),tr=node('tr');[`${h}交易日`,ok?band(m.bottom_band):'—',ok?band(m.top_band):'—',ok?pct(m.p_bottom):'—',ok?pct(m.p_top):'—'].forEach(v=>tr.append(node('td',v)));table.append(tr);});block.append(table,node('p','价带是条件于顶底形成的区域，并不代表一定在此转折；终值区间和期间极值另列。','small'));body.append(block);
+ const grid=node('div',undefined,'detail-grid');
+ grid.append(detailBlock('市场与板块是否同步',r.rotation_explanation),detailBlock('确认与失效条件',r.trigger_summary),detailBlock('基本面与事件证据',r.event_summary),detailBlock('尾部风险与执行',r.risk_summary));body.append(grid);
+ const m=selectedMetrics(r),ok=ready(m);
+ body.append(detailBlock('首次触达路径',ok?`先触及上边界 ${pct(m.p_upfirst)} ｜ 先触及下边界 ${pct(m.p_downfirst)} ｜ 到期未触及 ${pct(m.p_unhit)}`:'未校准，不能凭主观判断给出三分支概率。'));
+ body.append(detailBlock('数据与模型',`模型：${DATA.model_version||'尚未训练'}；状态：${statusText[m.status]||'未校准'}。${r.data_note||'预览模板不包含实时行情或历史金融回测。'}`));
+ if(!$('detailDialog').open)$('detailDialog').showModal();
+}
+function showStatus(t){txt($('jobStatus'),t);$('jobStatus').classList.add('show');}
+function apiUrl(path){const root=PUBLIC_CONFIG.api_base_url;if(!root)return null;const u=new URL(root);if(u.protocol!=='https:')throw new Error('任务接口必须使用HTTPS');return root.replace(/\/$/,'')+path;}
+async function getJSON(url,options={}){const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),20000);try{const response=await fetch(url,{credentials:'include',cache:'no-store',...options,signal:controller.signal});let obj;try{obj=await response.json();}catch{throw new Error('任务接口未返回JSON');}if(!response.ok)throw new Error(obj.message||`接口返回${response.status}`);return obj;}finally{clearTimeout(timer);}}
+async function runAnalysis(){
+ const value=$('tickerInput').value.trim();if(!value){showStatus('请输入股票代码或公司名称。');return;}
+ let url;try{url=apiUrl('/jobs');}catch(e){showStatus(e.message);return;}
+ if(!url){const cached=[...regular,...temporary].find(r=>r.symbol.toUpperCase()===value.toUpperCase());if(cached)openDetail(cached);showStatus('任务接口尚未部署：此模板不能运行新的个股分析。首次构建必须配置鉴权网关与计算runner；不是只过滤已有100行。');return;}
+ $('runBtn').disabled=true;
+ try{
+  showStatus('正在提交分析请求…');
+  const job=await getJSON(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({symbol:value,horizon:[5,10,21],force:false,client_request_id:crypto.randomUUID()})});
+  if(!job.job_id)throw new Error('接口未返回有效任务ID');
+  showStatus(`请求已接受，等待计算。任务 ${job.job_id}`);
+  let finished=false;
+  for(let i=0;i<150;i++){
+   await new Promise(resolve=>setTimeout(resolve,4000));
+   const status=await getJSON(apiUrl('/jobs/'+encodeURIComponent(job.job_id)));
+   if(['failed','timed_out'].includes(status.status))throw new Error(status.message||'计算失败，请查看任务错误信息');
+   if(status.status==='succeeded'){
+    let result=status.result;
+    if(!result&&status.result_id)result=await getJSON(apiUrl('/results/'+encodeURIComponent(status.result_id)));
+    if(!result||typeof result.symbol!=='string'||!result.metrics)throw new Error('任务完成但结果结构无效');
+    const old=regular.findIndex(r=>r.symbol===result.symbol);
+    // Do not mix a fresh single-stock forecast into an older batch's comparative ranks.
+    const sameSnapshot=Boolean(DATA.prediction_snapshot_id)&&result.prediction_snapshot_id===DATA.prediction_snapshot_id;
+    if(old>=0&&sameSnapshot){regular[old]=result;state.view='regular';}
+    else{const j=temporary.findIndex(r=>r.symbol===result.symbol);if(j<0)temporary.push(result);else {const nt=Date.parse(result.as_of||''),ot=Date.parse(temporary[j].as_of||'');if(Number.isFinite(nt)&&(!Number.isFinite(ot)||nt>=ot))temporary[j]=result;}state.view='temporary';}
+    $('bucketFilter').value='';$('groupFilter').value='';$('storageSubFilter').value='';$('edgeOnly').checked=false;render();openDetail(result);showStatus(`分析完成：${result.symbol}；数据截至 ${result.as_of||'未提供'}。`);finished=true;break;
+   }
+   showStatus(`任务 ${job.job_id}：${status.status==='running'?'正在计算':'等待执行'}。`);
+  }
+  if(!finished)showStatus(`停止页面轮询。任务 ${job.job_id} 未确认完成，请通过已部署任务状态入口核查；不能按成功处理。`);
+ }catch(e){showStatus(`分析未完成：${e.message}`);}finally{$('runBtn').disabled=false;}
+}
+document.querySelectorAll('[data-field]').forEach(b=>b.onclick=()=>{state.field=b.dataset.field;state.direction=b.dataset.dir;render();});
+document.querySelectorAll('[data-horizon]').forEach(b=>b.onclick=()=>{state.horizon=Number(b.dataset.horizon);render();});
+['bucketFilter','groupFilter','storageSubFilter','edgeOnly'].forEach(id=>$(id).onchange=render);
+$('storageQuick').onclick=()=>{$('bucketFilter').value='科技与成长主题';refreshGroupOptions();$('groupFilter').value='存储与内存';$('storageSubFilter').value='';render();};
+$('clearFilters').onclick=()=>{$('bucketFilter').value='';$('groupFilter').value='';$('storageSubFilter').value='';$('edgeOnly').checked=false;render();};
+$('regularTab').onclick=()=>{state.view='regular';render();};$('temporaryTab').onclick=()=>{state.view='temporary';render();};$('closeDetail').onclick=()=>$('detailDialog').close();
+$('runBtn').onclick=runAnalysis;$('tickerInput').addEventListener('keydown',e=>{if(e.key==='Enter')runAnalysis();});
+refreshGroupOptions();
+if(DATA.as_of){txt($('asOf'),DATA.as_of);txt($('beijing'),`北京时间：${DATA.as_of_beijing||'待转换'}`);}
+if(DATA.model_version)txt($('versionBadge'),DATA.model_version);
+if(Array.isArray(DATA.rotation_summary)&&DATA.rotation_summary.length)txt($('rotationText'),DATA.rotation_summary.slice(0,3).join(' ｜ '));
+if(DATA.build_mode==='live'){$('notice').hidden=false;txt($('notice'),DATA.status_message||'请结合概率校准状态、数据时间与个股事件使用。预测不保证未来结果。');}
+if(DATA.run_id)txt($('buildNote'),`Run ${DATA.run_id} ｜ 不执行交易`);
+render();
+</script>
+</body></html>

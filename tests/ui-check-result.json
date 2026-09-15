@@ -1,0 +1,23 @@
+{
+  "test_type": "synthetic_ui_only",
+  "checks": [
+    "100 unchanged seeds and explicit 0 valid forecasts",
+    "all four original arrow controls",
+    "60 tech / 40 non-tech theme filters",
+    "storage shortcut shows the four original names, no invented rotation",
+    "DRAM/HBM, NAND/SSD, HDD filters; overlapping MU not duplicated",
+    "incompatible theme changes clear storage subfilter",
+    "clear filter preserves sort and horizon",
+    "SNDK detail retains all original research sections plus taxonomy and LOO",
+    "unchanged missing-gateway honesty; no fake pool-external result",
+    "positive-edge filter does not promote uncalibrated seeds",
+    "numeric four-direction sorting in storage, null always last, scores unchanged by filter",
+    "temporary storage member dynamically filterable without changing 100-stock pool",
+    "mobile storage/subgroup controls, no whole-page horizontal overflow, no JS errors"
+  ],
+  "check_groups": 13,
+  "result": "PASS",
+  "financial_backtest": false,
+  "github_live_test": false,
+  "gateway_test": false
+}

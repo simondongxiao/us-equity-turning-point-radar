@@ -1,0 +1,2 @@
+$ python tests/browser_preview.py
+PASS: 13 browser check groups; synthetic UI only, no financial/deployment validation.

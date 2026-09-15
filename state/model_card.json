@@ -1,0 +1,69 @@
+{
+  "model_version": "champion-b3-calibrated-low-confidence-v1",
+  "feature_version": "b3-point-in-time-v1",
+  "calibration": "independent time calibration window",
+  "status": "calibrated_low_confidence",
+  "champion": "B3 without storage challenger",
+  "challenger": "B3 + storage LOO/subgroup factors shadow-only",
+  "backtest": {
+    "model_version": "champion-b3-calibrated-low-confidence-v1",
+    "feature_version": "b3-point-in-time-v1",
+    "strategy_version": "next-open-atr-1x-cost-15bp-v1",
+    "horizons": {
+      "5": {
+        "horizon": 5,
+        "train_n": 93163,
+        "calibration_n": 12348,
+        "test_n": 12861,
+        "ambiguous_excluded": 310,
+        "brier_multiclass": 0.5986573642660361,
+        "log_loss": 0.9832314750860233,
+        "test_start": "2026-03-04",
+        "test_end": "2026-09-04"
+      },
+      "10": {
+        "horizon": 10,
+        "train_n": 92753,
+        "calibration_n": 12543,
+        "test_n": 12562,
+        "ambiguous_excluded": 324,
+        "brier_multiclass": 0.5189512865716231,
+        "log_loss": 0.7934189477127289,
+        "test_start": "2026-03-02",
+        "test_end": "2026-08-28"
+      },
+      "21": {
+        "horizon": 21,
+        "train_n": 91656,
+        "calibration_n": 12640,
+        "test_n": 12463,
+        "ambiguous_excluded": 323,
+        "brier_multiclass": 0.4971177669080187,
+        "log_loss": 0.712054560258395,
+        "test_start": "2026-02-13",
+        "test_end": "2026-08-13"
+      }
+    },
+    "storage_incremental": {
+      "status": "BLOCKED",
+      "reason": "taxonomy effective_from=2026-09-15 leaves no mature point-in-time storage membership window for a same-window sample-out test; challenger is shadow-only."
+    }
+  },
+  "source": {
+    "source": "Yahoo Finance chart OHLCV via yfinance; SEC company_tickers.json for issuer identity",
+    "requested_symbols": 103,
+    "usable_symbols": 103,
+    "missing_symbols": [],
+    "errors": {},
+    "common_latest_date": "2026-09-14",
+    "start_requested": "2021-09-15",
+    "end_requested": "2026-09-16",
+    "retrieved_at": "2026-09-15T10:22:09.922466+00:00",
+    "mother_pool": {
+      "source": "us-share-daily-market-html/all_metrics.csv",
+      "available_symbols": 5509,
+      "qualification_verified": false,
+      "note": "母池规模来自旧美股行情项目快照；本项目未把它改写成当前人气排名。"
+    }
+  }
+}

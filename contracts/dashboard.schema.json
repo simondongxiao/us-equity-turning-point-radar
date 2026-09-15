@@ -1,0 +1,379 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Turning Point Radar Dashboard",
+  "type": "object",
+  "required": [
+    "build_mode",
+    "records"
+  ],
+  "properties": {
+    "build_mode": {
+      "enum": [
+        "preview",
+        "live"
+      ]
+    },
+    "as_of": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "model_version": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "run_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "records": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/record"
+      }
+    },
+    "temporary": {
+      "type": "array",
+      "items": {
+        "$ref": "#/$defs/record"
+      }
+    },
+    "public_config": {
+      "type": "object",
+      "properties": {
+        "api_base_url": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "taxonomy_version": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "storage_rotation": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "properties": {
+        "status": {
+          "type": "string"
+        },
+        "as_of": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "summary": {
+          "type": "string"
+        },
+        "comparisons": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "label": {
+                "type": "string"
+              },
+              "window_sessions": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "relative_return": {
+                "type": [
+                  "number",
+                  "null"
+                ]
+              },
+              "status": {
+                "type": "string"
+              },
+              "note": {
+                "type": "string"
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "metric": {
+      "type": "object",
+      "required": [
+        "status"
+      ],
+      "properties": {
+        "status": {
+          "enum": [
+            "structural_only",
+            "uncalibrated",
+            "calibrated_low_confidence",
+            "calibrated",
+            "stale",
+            "data_error"
+          ]
+        },
+        "opportunity_value": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "risk_value": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "opportunity_score": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 100
+        },
+        "risk_score": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 100
+        },
+        "expected_return": {
+          "type": [
+            "number",
+            "null"
+          ]
+        },
+        "es95": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "positive_edge": {
+          "type": [
+            "boolean",
+            "null"
+          ]
+        },
+        "p_bottom": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 1
+        },
+        "p_top": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 1
+        },
+        "p_upfirst": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 1
+        },
+        "p_downfirst": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 1
+        },
+        "p_unhit": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "minimum": 0,
+          "maximum": 1
+        },
+        "bottom_band": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "number",
+            "exclusiveMinimum": 0
+          },
+          "minItems": 2,
+          "maxItems": 2
+        },
+        "top_band": {
+          "type": [
+            "array",
+            "null"
+          ],
+          "items": {
+            "type": "number",
+            "exclusiveMinimum": 0
+          },
+          "minItems": 2,
+          "maxItems": 2
+        }
+      }
+    },
+    "record": {
+      "type": "object",
+      "required": [
+        "symbol",
+        "metrics"
+      ],
+      "properties": {
+        "symbol": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 20
+        },
+        "name_zh": {
+          "type": "string"
+        },
+        "coverage_bucket": {
+          "type": "string"
+        },
+        "research_group": {
+          "type": "string"
+        },
+        "as_of": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "reference_price": {
+          "type": [
+            "number",
+            "null"
+          ],
+          "exclusiveMinimum": 0
+        },
+        "metrics": {
+          "type": "object",
+          "required": [
+            "5",
+            "10",
+            "21"
+          ],
+          "properties": {
+            "5": {
+              "$ref": "#/$defs/metric"
+            },
+            "10": {
+              "$ref": "#/$defs/metric"
+            },
+            "21": {
+              "$ref": "#/$defs/metric"
+            }
+          }
+        },
+        "research_group_id": {
+          "type": "string"
+        },
+        "taxonomy_version": {
+          "type": "string"
+        },
+        "taxonomy_effective_from": {
+          "type": "string"
+        },
+        "metadata_as_of": {
+          "type": "string"
+        },
+        "legacy_research_group": {
+          "type": "string"
+        },
+        "business_tags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        },
+        "industry_tags": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "uniqueItems": true
+        },
+        "peer_context": {
+          "type": [
+            "object",
+            "null"
+          ],
+          "properties": {
+            "status": {
+              "enum": [
+                "validated",
+                "proxy_only",
+                "no_peers",
+                "insufficient_coverage",
+                "identity_unverified",
+                "stale",
+                "unavailable"
+              ]
+            },
+            "self_excluded": {
+              "type": "boolean"
+            },
+            "peer_symbols": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              },
+              "uniqueItems": true
+            },
+            "peer_count": {
+              "type": "integer",
+              "minimum": 0
+            },
+            "effective_n": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "minimum": 0
+            },
+            "weight_coverage": {
+              "type": [
+                "number",
+                "null"
+              ],
+              "minimum": 0,
+              "maximum": 1
+            },
+            "note": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    }
+  }
+}

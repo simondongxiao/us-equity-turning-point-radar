@@ -1,0 +1,10 @@
+data/raw_prices/
+state/*.sqlite3
+state/*.db
+__pycache__/
+*.pyc
+outputs/*.json
+!outputs/README.md
+site/data.json
+site/index.html
+local_gateway.log

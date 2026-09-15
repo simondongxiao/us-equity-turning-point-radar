@@ -1,0 +1,2 @@
+$ node tests/sort.test.cjs
+PASS: 9 synthetic sorting assertions. This is not a financial backtest.

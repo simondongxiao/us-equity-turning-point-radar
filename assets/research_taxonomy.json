@@ -1,0 +1,99 @@
+{
+  "taxonomy_version": "research-taxonomy-20260915-v1.1",
+  "version": "1.1.0-storage",
+  "effective_from": "2026-09-15",
+  "known_at": "2026-09-15",
+  "classification_type": "research_not_formal_industry",
+  "historical_backfill_permitted": false,
+  "storage": {
+    "group_id": "storage-memory",
+    "label": "存储与内存",
+    "seed_members": [
+      "MU",
+      "SNDK",
+      "WDC",
+      "STX"
+    ],
+    "members_are_permanent": false,
+    "subfilters": [
+      {
+        "id": "dram-hbm",
+        "label": "DRAM / HBM",
+        "any_tags": [
+          "DRAM",
+          "HBM"
+        ]
+      },
+      {
+        "id": "nand-ssd",
+        "label": "NAND / SSD",
+        "any_tags": [
+          "NAND",
+          "SSD"
+        ]
+      },
+      {
+        "id": "hdd",
+        "label": "HDD",
+        "any_tags": [
+          "HDD"
+        ]
+      }
+    ],
+    "subfilters_overlap": true,
+    "business_tags_by_symbol": {
+      "MU": [
+        "DRAM",
+        "HBM",
+        "NAND",
+        "SSD"
+      ],
+      "SNDK": [
+        "NAND",
+        "SSD"
+      ],
+      "WDC": [
+        "HDD"
+      ],
+      "STX": [
+        "HDD",
+        "HAMR"
+      ]
+    },
+    "peer_policy": {
+      "default_weighting": "lagged_equal_weight",
+      "leave_one_issuer_out": true,
+      "min_multi_name_peers": 3,
+      "min_effective_peers": 2.5,
+      "min_weight_coverage": 0.8,
+      "thin_peer_action": "descriptive_proxy_only_do_not_use_as_broad_confirmation",
+      "default_history_sessions": 60,
+      "parameters_are_engineering_defaults_not_validated_optima": true
+    }
+  },
+  "sources": {
+    "MU": {
+      "url": "https://investors.micron.com/news/press-release/2026/Micron-Powers-AI-Everywhere-at-COMPUTEX-2026/default.aspx",
+      "title": "Micron Powers AI Everywhere at COMPUTEX 2026",
+      "published_at": "2026-06-01",
+      "checked_at": "2026-09-15"
+    },
+    "SNDK": {
+      "url": "https://www.sandisk.com/company/newsroom/press-releases/2026/sandisk-nand-innovation-for-era-of-ai-inference-at-fms-2026",
+      "title": "Sandisk Showcases NAND Innovation for the Era of AI Inference at FMS 2026",
+      "checked_at": "2026-09-15"
+    },
+    "WDC": {
+      "url": "https://www.westerndigital.com/company/newsroom/press-releases/2025/2025-02-24-western-digital-completes-planned-company-separation",
+      "title": "Western Digital Completes Planned Company Separation",
+      "published_at": "2025-02-24",
+      "checked_at": "2026-09-15"
+    },
+    "STX": {
+      "url": "https://investors.seagate.com/news/news-details/2026/Seagate-Delivers-Industrys-Highest-Capacity-Hard-Drives-with-Next-Generation-Mozaic-4/default.aspx",
+      "title": "Seagate Delivers Industry’s Highest Capacity Hard Drives with Next-Generation Mozaic 4+",
+      "published_at": "2026-03-03",
+      "checked_at": "2026-09-15"
+    }
+  }
+}

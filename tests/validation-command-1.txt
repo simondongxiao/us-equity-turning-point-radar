@@ -1,0 +1,3 @@
+$ python scripts/validate_delivery.py --dashboard assets/preview-data.json
+PASS: 100 unique curated seeds; identity/liquidity NOT verified by this test.
+PASS: 100 record interface; financial model accuracy NOT evaluated by this test.

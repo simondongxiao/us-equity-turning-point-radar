@@ -1,0 +1,39 @@
+{
+  "version": "1.1.0-storage",
+  "executed_at": "2026-09-15T04:09:46.496287+00:00",
+  "test_scope": "synthetic_code_metadata_and_ui_only",
+  "commands": [
+    {
+      "command": "python scripts/validate_delivery.py --dashboard assets/preview-data.json",
+      "exit_code": 0,
+      "status": "PASS"
+    },
+    {
+      "command": "node tests/sort.test.cjs",
+      "exit_code": 0,
+      "status": "PASS"
+    },
+    {
+      "command": "python -m unittest discover -s tests -p test_*.py -v",
+      "exit_code": 0,
+      "status": "PASS"
+    },
+    {
+      "command": "python tests/browser_preview.py",
+      "exit_code": 0,
+      "status": "PASS"
+    }
+  ],
+  "python_tests": 28,
+  "node_sort_assertions": 9,
+  "browser_check_groups": 13,
+  "seed_symbols": 100,
+  "priority_seed_count": 60,
+  "nontech_seed_count": 40,
+  "storage_seed_count": 4,
+  "financial_model_backtest": "NOT_RUN",
+  "incremental_storage_alpha_validation": "NOT_RUN",
+  "live_universe_validation": "NOT_RUN",
+  "github_deployment": "NOT_RUN",
+  "authenticated_gateway": "NOT_RUN"
+}

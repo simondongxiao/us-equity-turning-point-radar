@@ -1,0 +1,17 @@
+{
+  "as_of": "2026-09-14",
+  "pool_action": "retain_seed_until_live_popularity_source_is_available",
+  "regular_pool_count": 100,
+  "tech_growth_count": 60,
+  "nontech_count": 40,
+  "mother_pool_observed_count": 5509,
+  "mother_pool_qualification": "not_verified_by_radar; source snapshot is read-only",
+  "storage_members": [
+    "MU",
+    "WDC",
+    "SNDK",
+    "STX"
+  ],
+  "storage_candidate_gap": "No independent current popularity history was available in the new radar adapter; no stock was forced into the pool.",
+  "historical_pool_preserved": true
+}

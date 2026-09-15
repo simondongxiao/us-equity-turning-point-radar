@@ -1,0 +1,44 @@
+{
+  "source_archive_sha256": "a35821f964895eb6de4a73d5f1be526e347686274eca7e4d19b73364b2cb07f3",
+  "original_file_count": 25,
+  "removed_files": [],
+  "original_research_documents_retained_verbatim_before_additions": [
+    "references/model-spec.md",
+    "references/universe-policy.md",
+    "references/backtest-and-iteration.md",
+    "references/frontend-and-runtime.md",
+    "references/acceptance.md",
+    "references/sources.md"
+  ],
+  "sorting_implementation_unchanged": true,
+  "original_100_symbols_and_60_40_buckets_preserved": true,
+  "modified_original_files": [
+    "BOOTSTRAP_PROMPT.txt",
+    "README.md",
+    "SKILL.md",
+    "assets/dashboard.html",
+    "assets/preview-data.json",
+    "assets/universe_seed.csv",
+    "assets/universe_seed.json",
+    "contracts/dashboard.schema.json",
+    "package-status.json",
+    "preview.html",
+    "references/acceptance.md",
+    "references/backtest-and-iteration.md",
+    "references/frontend-and-runtime.md",
+    "references/model-spec.md",
+    "references/sources.md",
+    "references/universe-policy.md",
+    "scripts/render_preview.py",
+    "scripts/validate_delivery.py",
+    "tests/browser_preview.py",
+    "tests/preview-desktop.png",
+    "tests/preview-mobile.png",
+    "tests/ui-check-result.json"
+  ],
+  "unchanged_original_files": [
+    "SHA256SUMS.json",
+    "assets/sort.cjs",
+    "tests/sort.test.cjs"
+  ]
+}
