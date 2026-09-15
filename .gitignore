@@ -6,5 +6,4 @@ __pycache__/
 outputs/*.json
 !outputs/README.md
 site/data.json
-site/index.html
 local_gateway.log
