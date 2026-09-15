@@ -1,8 +1,10 @@
 """Desktop/mobile smoke checks against the generated live Pages artifact."""
 from pathlib import Path
+import os
 from playwright.sync_api import sync_playwright
 
 ROOT = Path(__file__).resolve().parents[1]
+TARGET = os.environ.get("RADAR_LIVE_URL", (ROOT / "site" / "index.html").as_uri())
 
 
 def run() -> None:
@@ -12,7 +14,7 @@ def run() -> None:
         for viewport in ((1440, 900), (390, 844)):
             page = browser.new_page(viewport={"width": viewport[0], "height": viewport[1]})
             page.on("pageerror", lambda exc: errors.append(str(exc)))
-            page.goto((ROOT / "site" / "index.html").as_uri(), wait_until="load")
+            page.goto(TARGET, wait_until="load")
             assert page.locator("#stockRows tr").count() == 100
             assert page.locator("#storageQuick").inner_text().startswith("存储与内存 · 4")
             assert page.locator("[aria-label='机会从大到小']").get_attribute("aria-pressed") == "true"
