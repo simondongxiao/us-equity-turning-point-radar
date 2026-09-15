@@ -17,13 +17,19 @@ def run() -> None:
             page.goto(TARGET, wait_until="load")
             assert page.locator("#stockRows tr").count() == 100
             assert page.locator("#storageQuick").inner_text().startswith("存储与内存 · 4")
-            assert page.locator("[aria-label='机会从大到小']").get_attribute("aria-pressed") == "true"
+            assert page.locator("[aria-label='机会排序：从大到小']").get_attribute("aria-pressed") == "true"
+            page.locator("[aria-label='机会排序：从大到小']").click()
+            assert page.locator("[aria-label='机会排序：从小到大']").get_attribute("aria-pressed") == "true"
+            assert page.locator("#sortLabel").inner_text().startswith("机会：从小到大")
+            page.locator("[aria-label='机会排序：从小到大']").click()
             page.locator("#storageQuick").click()
             assert page.locator("#stockRows tr").count() == 4
             page.locator("#storageSubFilter").select_option("nand-ssd")
             assert page.locator("#stockRows tr").count() == 2
-            page.locator("[aria-label='机会从小到大']").click()
-            assert page.locator("#sortLabel").inner_text().startswith("机会：从小到大")
+            page.locator("[aria-label='阶段顶底概率排序：从大到小']").click()
+            assert page.locator("#sortLabel").inner_text().startswith("阶段顶底概率：从大到小")
+            page.locator("[aria-label='阶段顶底概率排序：从大到小']").click()
+            assert page.locator("#sortLabel").inner_text().startswith("阶段顶底概率：从小到大")
             page.locator("#clearFilters").click()
             assert page.locator("#storageQuick").get_attribute("aria-pressed") == "false"
             assert page.locator("#stockRows tr").count() == 100
