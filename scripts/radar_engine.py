@@ -19,9 +19,10 @@ import sqlite3
 import sys
 import uuid
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import datetime, time, timedelta, timezone
 from pathlib import Path
 from typing import Any, Iterable
+from zoneinfo import ZoneInfo
 
 import numpy as np
 import pandas as pd
@@ -239,7 +240,13 @@ def download_prices(symbols: list[str], refresh: bool = False) -> tuple[dict[str
             frame.index = pd.to_datetime(frame.index).tz_localize(None)
             frames[symbol] = frame.sort_index()
     dates = sorted(set.intersection(*(set(f.index) for f in frames.values()))) if frames else []
-    latest = max(dates).strftime("%Y-%m-%d") if dates else None
+    # Yahoo can expose a partial bar for the current New York date before the
+    # regular session closes.  Never promote that partial bar to a daily radar
+    # snapshot; the scheduled runner runs after the close and may include it.
+    now_ny = datetime.now(ZoneInfo("America/New_York"))
+    cutoff_date = now_ny.date() if now_ny.time() >= time(16, 15) else now_ny.date() - timedelta(days=1)
+    complete_dates = [d for d in dates if d.date() <= cutoff_date]
+    latest = max(complete_dates).strftime("%Y-%m-%d") if complete_dates else None
     return frames, {
         "source": SOURCE_NAME,
         "requested_symbols": len(symbols),
@@ -247,6 +254,7 @@ def download_prices(symbols: list[str], refresh: bool = False) -> tuple[dict[str
         "missing_symbols": missing,
         "errors": source_errors,
         "common_latest_date": latest,
+        "complete_session_cutoff_ny": cutoff_date.isoformat(),
         "start_requested": start,
         "end_requested": end,
         "retrieved_at": iso(utc_now()),
