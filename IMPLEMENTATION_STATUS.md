@@ -11,4 +11,5 @@
 - B3：已用真实历史训练/独立时间校准并生成测试指标；不等于盈利证明
 - 存储增量因子：BLOCKED/shadow-only，未套用旧校准器
 - 本地网关：已完成鉴权、持久任务、池内MU和池外IBM链路测试；公开HTTPS部署未配置
-- Pages：仓库发布和实际Pages URL验收待执行；没有真实URL时不宣称上线
+- Pages：已发布并验证 https://simondongxiao.github.io/us-equity-turning-point-radar/；成功workflow `34957901068`，线上run_id为该次Actions重新生成的 `radar-20260914-29dd2048`
+- 外部HTTPS鉴权网关：BLOCKED；仓库提供标准库本地网关实现，但当前没有可用的云端OAuth/OIDC、持久对象存储或网关域名配置，Pages输入按钮保持诚实提示，不开放匿名收费任务
