@@ -58,6 +58,7 @@ BASE_FEATURES = [
     "market_ret_5", "market_ret_20", "qqq_rs_5", "group_ret_5",
     "group_ret_20", "group_residual_5", "group_residual_20",
 ]
+TECHNICAL_FEATURES = BASE_FEATURES[:10]
 STORAGE_FEATURES = BASE_FEATURES + [
     "storage_loo_ret_5", "storage_loo_ret_20", "subgroup_ret_5",
     "subgroup_ret_20", "storage_breadth_5",
@@ -652,9 +653,10 @@ def build(refresh: bool = False, run_id: str | None = None, extra_symbol: str | 
     bundles: dict[int, ModelBundle | None] = {}
     backtest: dict[str, Any] = {"model_version": MODEL_VERSION, "feature_version": FEATURE_VERSION, "strategy_version": STRATEGY_VERSION, "horizons": {}, "storage_incremental": {"status": "BLOCKED", "reason": "taxonomy effective_from=2026-09-15 leaves no mature point-in-time storage membership window for a same-window sample-out test; challenger is shadow-only."}}
     for h in HORIZONS:
+        b2 = train_bundle(samples[h], TECHNICAL_FEATURES, h)
         bundle = train_bundle(samples[h], BASE_FEATURES, h)
         bundles[h] = bundle
-        backtest["horizons"][str(h)] = bundle.test_metrics if bundle else {"status": "insufficient_training_data"}
+        backtest["horizons"][str(h)] = {"b2_technical": b2.test_metrics if b2 else {"status": "insufficient_training_data"}, "b3_market_rotation": bundle.test_metrics if bundle else {"status": "insufficient_training_data"}}
         print(f"[radar] model {h}d ready", flush=True)
     records = []
     latest_metrics = {h: {} for h in HORIZONS}
