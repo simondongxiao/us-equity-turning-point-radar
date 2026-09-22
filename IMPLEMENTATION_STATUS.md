@@ -6,7 +6,7 @@
 - 三层显示已接入现有主表与SNDK等个股详情：第一层期权ATM IV算术一标准差边界；第二层确认摆动/SMA/Fib/ATR技术共振；第三层RV20、RV-IV、Put/Call偏斜、期限结构与事件重锚提示。
 - 期权链构建快照：`2026-09-22T15:10:21Z`；100/100常态股票返回可读取期权快照，缺失时页面保留原因，不用B3价带补假IV。期权层是风险中性描述性范围，未进入B3概率、机会/风险排序或校准器。
 - MU、SNDK、WDC、STX三周期均有期权层与技术层结果；MU可在DRAM/HBM、NAND/SSD细分视图重叠，但主表不重复计数。存储因子仍shadow/challenger，未宣称增益。
-- 线上发布：同一 `main` 分支 Pages workflow `35745700922` 成功；线上 URL 为 `https://simondongxiao.github.io/us-equity-turning-point-radar/`。线上基准日 `2026-09-21`、run `radar-20260921-724b8d83`、常态池100、有效预测100、期权快照100/100；线上桌面/手机与SNDK三层详情已复核。
+- 线上发布：同一 `main` 分支 Pages workflow `35747083211` 成功；线上 URL 为 `https://simondongxiao.github.io/us-equity-turning-point-radar/`。线上基准日 `2026-09-21`、run `radar-20260921-a40e0a72`、常态池100、有效预测100、期权快照100/100；线上桌面/手机与SNDK五步候选详情已复核。
 
 ## 五步候选区域修正
 
