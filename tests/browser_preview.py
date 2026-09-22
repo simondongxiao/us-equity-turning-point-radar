@@ -53,7 +53,7 @@ with sync_playwright() as p:
     page.screenshot(path=str(ROOT/'tests/preview-storage-desktop.png'),full_page=False)
     page.locator('#stockRows .symbol-button').filter(has_text='SNDK').click()
     detail=page.locator('#detailBody').inner_text()
-    for title in ['研究分组与业务标签','NAND / SSD','剔除自身后的同行','多周期潜在价带与概率','三层潜在顶底体系','第一层·期权波动率算术边界','第二层·技术共振','第三层·偏斜/波动差','市场与板块是否同步','确认与失效条件','基本面与事件证据','尾部风险与执行','首次触达路径','数据与模型']:assert title in detail,title
+    for title in ['研究分组与业务标签','NAND / SSD','剔除自身后的同行','多周期潜在价带与概率','候选顶底五步体系','第一步·Price Structure','第二步·Options Distribution','第三步·候选位是否处于合理概率区间','第四步·Options Skew / Put-Call','第五步·Event / Catalyst','最终候选底部区域','最终候选顶部区域','市场与板块是否同步','确认与失效条件','基本面与事件证据','尾部风险与执行','首次触达路径','数据与模型']:assert title in detail,title
     page.screenshot(path=str(ROOT/'tests/preview-sndk-detail.png'),full_page=False)
     page.locator('#closeDetail').click()
     checks.append('SNDK detail retains all original research sections plus taxonomy and LOO')

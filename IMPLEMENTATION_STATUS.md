@@ -8,6 +8,13 @@
 - MU、SNDK、WDC、STX三周期均有期权层与技术层结果；MU可在DRAM/HBM、NAND/SSD细分视图重叠，但主表不重复计数。存储因子仍shadow/challenger，未宣称增益。
 - 线上发布：同一 `main` 分支 Pages workflow `35745700922` 成功；线上 URL 为 `https://simondongxiao.github.io/us-equity-turning-point-radar/`。线上基准日 `2026-09-21`、run `radar-20260921-724b8d83`、常态池100、有效预测100、期权快照100/100；线上桌面/手机与SNDK三层详情已复核。
 
+## 五步候选区域修正
+
+- `potential_range_version`：`five-step-candidate-constraint-v2`。
+- 顺序改为：Price Structure（前高前低、Volume Profile、AVWAP、Gap、MA、Fib、趋势结构）→ Options Distribution（市场允许波动区间）→ 候选技术位与期权区间重叠约束 → Options Skew / Put-Call → Event / Catalyst。
+- 最终输出候选底部/顶部区域、B3共同路径到达概率、阶段顶/底概率和反转确认条件；到达概率不等于反转概率，期权不代表绝对顶底。
+- 事件正文本轮仍未抓取，页面明确显示缺失，不补造事件催化或概率。
+
 最后本地构建：`2026-09-15`
 
 - 最新本地 run：`radar-20260914-0d8258e7`（刷新时间 2026-09-15 20:48 Asia/Shanghai）

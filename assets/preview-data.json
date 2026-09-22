@@ -1,10 +1,10 @@
 {
   "build_mode": "preview",
-  "generated_at": "2026-09-22T15:11:19.198090+00:00",
+  "generated_at": "2026-09-22T15:23:42.644278+00:00",
   "as_of": null,
   "run_id": "seed-ui-preview-not-a-forecast",
   "model_version": null,
-  "potential_range_version": "three-layer-descriptive-v1",
+  "potential_range_version": "five-step-candidate-constraint-v2",
   "universe_version": "curated-seed-20260915-v1.1",
   "taxonomy_version": "research-taxonomy-20260915-v1.1",
   "research_taxonomy": {
