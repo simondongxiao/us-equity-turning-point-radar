@@ -13,79 +13,255 @@
       "5": {
         "b2_technical": {
           "horizon": 5,
-          "train_n": 93593,
-          "calibration_n": 12450,
-          "test_n": 12531,
+          "train_n": 92895,
+          "calibration_n": 12349,
+          "test_n": 12862,
           "ambiguous_excluded": 307,
-          "brier_multiclass": 0.5922980535317456,
-          "log_loss": 0.9746672084155615,
-          "test_start": "2026-03-16",
-          "test_end": "2026-09-15"
+          "brier_multiclass": 0.5973728458944317,
+          "log_loss": 0.9814673595335777,
+          "test_start": "2026-03-04",
+          "test_end": "2026-09-04"
         },
         "b3_market_rotation": {
           "horizon": 5,
-          "train_n": 93501,
-          "calibration_n": 12450,
-          "test_n": 12531,
+          "train_n": 92803,
+          "calibration_n": 12349,
+          "test_n": 12862,
           "ambiguous_excluded": 307,
-          "brier_multiclass": 0.5925884289485155,
-          "log_loss": 0.9800822169693967,
-          "test_start": "2026-03-16",
-          "test_end": "2026-09-15"
+          "brier_multiclass": 0.5978555444896372,
+          "log_loss": 0.9822064267425442,
+          "test_start": "2026-03-04",
+          "test_end": "2026-09-04"
         }
       },
       "10": {
         "b2_technical": {
           "horizon": 10,
-          "train_n": 93081,
-          "calibration_n": 12448,
-          "test_n": 12531,
-          "ambiguous_excluded": 321,
-          "brier_multiclass": 0.5144430894782662,
-          "log_loss": 0.7843830682089701,
-          "test_start": "2026-03-09",
-          "test_end": "2026-09-08"
+          "train_n": 92486,
+          "calibration_n": 12544,
+          "test_n": 12563,
+          "ambiguous_excluded": 320,
+          "brier_multiclass": 0.517922560687798,
+          "log_loss": 0.7911397744053746,
+          "test_start": "2026-03-02",
+          "test_end": "2026-08-28"
         },
         "b3_market_rotation": {
           "horizon": 10,
-          "train_n": 92989,
-          "calibration_n": 12448,
-          "test_n": 12531,
-          "ambiguous_excluded": 321,
-          "brier_multiclass": 0.5149601007042054,
-          "log_loss": 0.7856438045710933,
-          "test_start": "2026-03-09",
-          "test_end": "2026-09-08"
+          "train_n": 92394,
+          "calibration_n": 12544,
+          "test_n": 12563,
+          "ambiguous_excluded": 320,
+          "brier_multiclass": 0.5183937573262086,
+          "log_loss": 0.7926040040060852,
+          "test_start": "2026-03-02",
+          "test_end": "2026-08-28"
         }
       },
       "21": {
         "b2_technical": {
           "horizon": 21,
-          "train_n": 91989,
-          "calibration_n": 12541,
-          "test_n": 12431,
-          "ambiguous_excluded": 320,
-          "brier_multiclass": 0.4982966638560041,
-          "log_loss": 0.713324317999401,
-          "test_start": "2026-02-23",
-          "test_end": "2026-08-21"
+          "train_n": 91389,
+          "calibration_n": 12641,
+          "test_n": 12464,
+          "ambiguous_excluded": 319,
+          "brier_multiclass": 0.4967877509472235,
+          "log_loss": 0.7113419200785734,
+          "test_start": "2026-02-13",
+          "test_end": "2026-08-13"
         },
         "b3_market_rotation": {
           "horizon": 21,
-          "train_n": 91897,
-          "calibration_n": 12541,
-          "test_n": 12431,
-          "ambiguous_excluded": 320,
-          "brier_multiclass": 0.4981020820568942,
-          "log_loss": 0.7089947437755663,
-          "test_start": "2026-02-23",
-          "test_end": "2026-08-21"
+          "train_n": 91297,
+          "calibration_n": 12641,
+          "test_n": 12464,
+          "ambiguous_excluded": 319,
+          "brier_multiclass": 0.4965165456302288,
+          "log_loss": 0.7114515856638347,
+          "test_start": "2026-02-13",
+          "test_end": "2026-08-13"
         }
       }
     },
     "storage_incremental": {
       "status": "BLOCKED",
       "reason": "taxonomy effective_from=2026-09-15 leaves no mature point-in-time storage membership window for a same-window sample-out test; challenger is shadow-only."
+    },
+    "one_year_walk_forward": {
+      "status": "observed",
+      "data_source": "Yahoo Finance chart OHLCV via yfinance; daily adjusted OHLC path",
+      "evaluation_window": "most recent 12 months of matured labels",
+      "fold_policy": "four chronological quarterly folds; train/calibration before fold with horizon-session purge",
+      "checkpoint_policy": "all matured rows for class metrics; every fifth session per symbol for price-band distance",
+      "targets": {
+        "classification_accuracy": 0.7,
+        "bottom_distance_within_3pct": 0.7,
+        "top_distance_within_3pct": 0.7
+      },
+      "horizons": {
+        "5": {
+          "status": "observed",
+          "evaluation_start": "2025-09-04",
+          "evaluation_end": "2026-09-04",
+          "matured_classification_n": 25211,
+          "unique_evaluation_dates": 253,
+          "band_checkpoint_n": 5497,
+          "classification_accuracy": 0.5185434929197572,
+          "brier_multiclass": 0.5907730621626214,
+          "log_loss": 0.9758268602150915,
+          "bottom_distance_within_3pct": 0.6076041477169365,
+          "top_distance_within_3pct": 0.5894124067673276,
+          "bottom_distance_median": 0.01692233989906415,
+          "top_distance_median": 0.022696214403670506,
+          "folds": [
+            {
+              "fold": 1,
+              "status": "observed",
+              "train_n": 92407,
+              "test_n": 6374,
+              "test_start": "2025-09-04",
+              "test_end": "2025-12-03",
+              "band_checkpoint_n": 1399
+            },
+            {
+              "fold": 2,
+              "status": "observed",
+              "train_n": 98777,
+              "test_n": 5975,
+              "test_start": "2025-12-04",
+              "test_end": "2026-03-03",
+              "band_checkpoint_n": 1300
+            },
+            {
+              "fold": 3,
+              "status": "observed",
+              "train_n": 104652,
+              "test_n": 6377,
+              "test_start": "2026-03-04",
+              "test_end": "2026-06-03",
+              "band_checkpoint_n": 1398
+            },
+            {
+              "fold": 4,
+              "status": "observed",
+              "train_n": 111030,
+              "test_n": 6485,
+              "test_start": "2026-06-04",
+              "test_end": "2026-09-04",
+              "band_checkpoint_n": 1400
+            }
+          ],
+          "note": "价格带诊断按预测类别的历史路径相对极值分位构建；到达/极值距离不是反转确认，也不是交易成功率。分类日样本存在相关性，band checkpoint按每只股票每5个交易日取样。"
+        },
+        "10": {
+          "status": "observed",
+          "evaluation_start": "2025-08-28",
+          "evaluation_end": "2026-08-28",
+          "matured_classification_n": 25107,
+          "unique_evaluation_dates": 252,
+          "band_checkpoint_n": 5476,
+          "classification_accuracy": 0.5715537499502131,
+          "brier_multiclass": 0.5135414611567574,
+          "log_loss": 0.7924508314204849,
+          "bottom_distance_within_3pct": 0.58327246165084,
+          "top_distance_within_3pct": 0.5566106647187729,
+          "bottom_distance_median": 0.016929542755817626,
+          "top_distance_median": 0.024143060846610317,
+          "folds": [
+            {
+              "fold": 1,
+              "status": "observed",
+              "train_n": 91397,
+              "test_n": 6369,
+              "test_start": "2025-08-28",
+              "test_end": "2025-11-26",
+              "band_checkpoint_n": 1398
+            },
+            {
+              "fold": 2,
+              "status": "observed",
+              "train_n": 97869,
+              "test_n": 6175,
+              "test_start": "2025-11-28",
+              "test_end": "2026-02-27",
+              "band_checkpoint_n": 1378
+            },
+            {
+              "fold": 3,
+              "status": "observed",
+              "train_n": 104038,
+              "test_n": 6078,
+              "test_start": "2026-03-02",
+              "test_end": "2026-05-27",
+              "band_checkpoint_n": 1300
+            },
+            {
+              "fold": 4,
+              "status": "observed",
+              "train_n": 110116,
+              "test_n": 6485,
+              "test_start": "2026-05-28",
+              "test_end": "2026-08-28",
+              "band_checkpoint_n": 1400
+            }
+          ],
+          "note": "价格带诊断按预测类别的历史路径相对极值分位构建；到达/极值距离不是反转确认，也不是交易成功率。分类日样本存在相关性，band checkpoint按每只股票每5个交易日取样。"
+        },
+        "21": {
+          "status": "observed",
+          "evaluation_start": "2025-08-13",
+          "evaluation_end": "2026-08-13",
+          "matured_classification_n": 25105,
+          "unique_evaluation_dates": 252,
+          "band_checkpoint_n": 5471,
+          "classification_accuracy": 0.5909978092013544,
+          "brier_multiclass": 0.4902454851319571,
+          "log_loss": 0.6954878202756124,
+          "bottom_distance_within_3pct": 0.5998903308353135,
+          "top_distance_within_3pct": 0.5231219155547432,
+          "bottom_distance_median": 0.010774260602154556,
+          "top_distance_median": 0.026803352300647572,
+          "folds": [
+            {
+              "fold": 1,
+              "status": "observed",
+              "train_n": 89221,
+              "test_n": 6472,
+              "test_start": "2025-08-13",
+              "test_end": "2025-11-12",
+              "band_checkpoint_n": 1399
+            },
+            {
+              "fold": 2,
+              "status": "observed",
+              "train_n": 95678,
+              "test_n": 6169,
+              "test_start": "2025-11-13",
+              "test_end": "2026-02-12",
+              "band_checkpoint_n": 1374
+            },
+            {
+              "fold": 3,
+              "status": "observed",
+              "train_n": 101947,
+              "test_n": 6078,
+              "test_start": "2026-02-13",
+              "test_end": "2026-05-12",
+              "band_checkpoint_n": 1300
+            },
+            {
+              "fold": 4,
+              "status": "observed",
+              "train_n": 107933,
+              "test_n": 6386,
+              "test_start": "2026-05-13",
+              "test_end": "2026-08-13",
+              "band_checkpoint_n": 1398
+            }
+          ],
+          "note": "价格带诊断按预测类别的历史路径相对极值分位构建；到达/极值距离不是反转确认，也不是交易成功率。分类日样本存在相关性，band checkpoint按每只股票每5个交易日取样。"
+        }
+      }
     }
   },
   "source": {
@@ -98,13 +274,15 @@
     "complete_session_cutoff_ny": "2026-09-21",
     "start_requested": "2021-09-22",
     "end_requested": "2026-09-23",
-    "retrieved_at": "2026-09-22T15:22:18.777184+00:00",
+    "retrieved_at": "2026-09-22T15:33:30.834789+00:00",
     "potential_ranges": {
       "status": "observed",
       "requested_symbols": 100,
-      "observed_symbols": 100,
-      "errors": {},
-      "retrieved_at": "2026-09-22T15:23:09.389602+00:00",
+      "observed_symbols": 99,
+      "errors": {
+        "AAPL": "Failed to perform, curl: (35) TLS connect error: error:00000000:invalid library (0):OPENSSL_internal:invalid library (0). See https://curl.se/libcurl/c/libcurl-errors.html first for more details."
+      },
+      "retrieved_at": "2026-09-22T15:36:02.022699+00:00",
       "note": "期权链为构建时快照；只约束Price Structure候选区间，不代表绝对顶/底；未取得的标的明确显示缺失，不用模型价带补假IV。"
     },
     "mother_pool": {

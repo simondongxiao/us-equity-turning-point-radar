@@ -502,6 +502,150 @@ def train_bundle(samples: pd.DataFrame, features: list[str], horizon: int) -> Mo
     return ModelBundle(scaler, model, calibrators, features, medians, test_metrics)
 
 
+def _plain_quantile(values: pd.Series, q: float) -> float | None:
+    x = pd.to_numeric(values, errors="coerce").dropna()
+    return float(x.quantile(q)) if len(x) else None
+
+
+def _class_path_bands(history: pd.DataFrame) -> dict[str, dict[str, Any]]:
+    """Build class-conditional relative extreme bands from matured history only."""
+    result: dict[str, dict[str, Any]] = {}
+    valid = history.dropna(subset=["adj_close", "min_price", "max_price", "label"]).copy()
+    valid = valid[(valid["adj_close"] > 0) & valid["ambiguous"].eq(False)].copy()
+    if valid.empty:
+        return result
+    valid["bottom_ratio"] = valid["min_price"] / valid["adj_close"]
+    valid["top_ratio"] = valid["max_price"] / valid["adj_close"]
+    for label in ("upfirst", "downfirst", "unhit"):
+        subset = valid[valid["label"] == label]
+        if len(subset) < 20:
+            subset = valid
+        result[label] = {
+            "bottom_ratio": [_plain_quantile(subset["bottom_ratio"], 0.25), _plain_quantile(subset["bottom_ratio"], 0.75)],
+            "top_ratio": [_plain_quantile(subset["top_ratio"], 0.25), _plain_quantile(subset["top_ratio"], 0.75)],
+            "history_n": int(len(subset)),
+        }
+    return result
+
+
+def _distance_to_band(value: float | None, band: list[float] | None) -> float | None:
+    if value is None or not isinstance(band, list) or len(band) != 2 or not all(clean_num(v) is not None for v in band):
+        return None
+    lo, hi = float(band[0]), float(band[1])
+    if lo <= value <= hi:
+        return 0.0
+    return float(min(abs(value - lo), abs(value - hi)) / max(abs(value), 1e-9))
+
+
+def one_year_walk_forward_backtest(samples: dict[int, pd.DataFrame]) -> dict[str, Any]:
+    """Evaluate the free-data B3 path model on the most recent year.
+
+    Each quarterly test fold is trained only on observations before the fold
+    after a horizon-sized purge. Price-band accuracy is a diagnostic of
+    class-conditional path bands, not a promise that a turning point will
+    reverse there. Checkpoints are sampled every fifth session per symbol to
+    avoid pretending highly correlated daily observations are independent.
+    """
+    output: dict[str, Any] = {
+        "status": "observed",
+        "data_source": "Yahoo Finance chart OHLCV via yfinance; daily adjusted OHLC path",
+        "evaluation_window": "most recent 12 months of matured labels",
+        "fold_policy": "four chronological quarterly folds; train/calibration before fold with horizon-session purge",
+        "checkpoint_policy": "all matured rows for class metrics; every fifth session per symbol for price-band distance",
+        "targets": {"classification_accuracy": 0.70, "bottom_distance_within_3pct": 0.70, "top_distance_within_3pct": 0.70},
+        "horizons": {},
+    }
+    for horizon in HORIZONS:
+        source = samples.get(horizon, pd.DataFrame()).copy()
+        if source.empty:
+            output["horizons"][str(horizon)] = {"status": "insufficient_training_data"}
+            continue
+        valid = source.dropna(subset=["date", "label", "adj_close", "min_price", "max_price"]).copy()
+        valid = valid[(valid["ambiguous"] == False) & (valid[BASE_FEATURES].notna().sum(axis=1) >= max(5, int(len(BASE_FEATURES) * 0.65)))]
+        if valid.empty:
+            output["horizons"][str(horizon)] = {"status": "insufficient_training_data"}
+            continue
+        valid["date"] = pd.to_datetime(valid["date"])
+        end_date = valid["date"].max()
+        start_date = end_date - pd.DateOffset(months=12)
+        edges = [start_date + pd.DateOffset(months=3 * i) for i in range(5)]
+        edges[-1] = end_date + pd.Timedelta(days=1)
+        all_true, all_prob, all_pred, all_dates = [], [], [], []
+        band_rows: list[dict[str, Any]] = []
+        fold_reports: list[dict[str, Any]] = []
+        for fold in range(4):
+            fold_start, fold_end = edges[fold], edges[fold + 1]
+            purge_cutoff = fold_start - pd.tseries.offsets.BDay(horizon)
+            train = valid[valid["date"] < purge_cutoff].copy()
+            test = valid[(valid["date"] >= fold_start) & (valid["date"] < fold_end)].copy()
+            bundle = train_bundle(train, BASE_FEATURES, horizon) if len(train) else None
+            if bundle is None or test.empty:
+                fold_reports.append({"fold": fold + 1, "status": "insufficient_training_data", "train_n": int(len(train)), "test_n": int(len(test))})
+                continue
+            history = valid[valid["date"] < purge_cutoff].copy()
+            class_bands = _class_path_bands(history)
+            probs, preds, truths = [], [], []
+            for _, row in test.iterrows():
+                probability = bundle.predict(row)
+                prob_map = {str(cls): float(probability[i]) for i, cls in enumerate(bundle.model.classes_)}
+                prediction = max(prob_map, key=prob_map.get)
+                probs.append([prob_map.get(cls, 0.0) for cls in ("downfirst", "unhit", "upfirst")])
+                preds.append(prediction)
+                truths.append(str(row["label"]))
+                all_dates.append(str(row["date"].date()))
+            all_prob.extend(probs)
+            all_pred.extend(preds)
+            all_true.extend(truths)
+            checkpoint = test.sort_values(["symbol", "date"]).copy()
+            checkpoint["session_rank"] = checkpoint.groupby("symbol").cumcount()
+            checkpoint = checkpoint[(checkpoint["session_rank"] % 5 == 0) | (checkpoint["session_rank"] == checkpoint.groupby("symbol")["session_rank"].transform("max"))]
+            for _, row in checkpoint.iterrows():
+                probability = bundle.predict(row)
+                classes = list(bundle.model.classes_)
+                predicted_label = str(classes[int(np.argmax(probability))])
+                bands = class_bands.get(predicted_label) or class_bands.get("unhit") or {}
+                ref = clean_num(row.get("adj_close"))
+                if not ref:
+                    continue
+                bottom_ratio, top_ratio = bands.get("bottom_ratio"), bands.get("top_ratio")
+                bottom_band = [ref * float(bottom_ratio[0]), ref * float(bottom_ratio[1])] if isinstance(bottom_ratio, list) and all(clean_num(v) is not None for v in bottom_ratio) else None
+                top_band = [ref * float(top_ratio[0]), ref * float(top_ratio[1])] if isinstance(top_ratio, list) and all(clean_num(v) is not None for v in top_ratio) else None
+                actual_bottom = clean_num(row.get("min_price"))
+                actual_top = clean_num(row.get("max_price"))
+                bottom_distance = _distance_to_band(actual_bottom, bottom_band)
+                top_distance = _distance_to_band(actual_top, top_band)
+                band_rows.append({"date": str(row["date"].date()), "symbol": row["symbol"], "bottom_distance": bottom_distance, "top_distance": top_distance, "bottom_within_3pct": bottom_distance is not None and bottom_distance <= 0.03, "top_within_3pct": top_distance is not None and top_distance <= 0.03})
+            fold_reports.append({"fold": fold + 1, "status": "observed", "train_n": int(len(train)), "test_n": int(len(test)), "test_start": str(test["date"].min().date()), "test_end": str(test["date"].max().date()), "band_checkpoint_n": int(len(checkpoint))})
+        if not all_true:
+            output["horizons"][str(horizon)] = {"status": "insufficient_training_data", "folds": fold_reports}
+            continue
+        classes = ["downfirst", "unhit", "upfirst"]
+        y_one = np.eye(3)[[classes.index(x) for x in all_true]]
+        prob_array = np.asarray(all_prob, dtype=float)
+        prob_array = prob_array / np.maximum(prob_array.sum(axis=1, keepdims=True), 1e-9)
+        band_df = pd.DataFrame(band_rows)
+        bottom_dist = pd.to_numeric(band_df.get("bottom_distance", pd.Series(dtype=float)), errors="coerce").dropna()
+        top_dist = pd.to_numeric(band_df.get("top_distance", pd.Series(dtype=float)), errors="coerce").dropna()
+        output["horizons"][str(horizon)] = {
+            "status": "observed",
+            "evaluation_start": str(start_date.date()),
+            "evaluation_end": str(end_date.date()),
+            "matured_classification_n": len(all_true),
+            "unique_evaluation_dates": len(set(all_dates)),
+            "band_checkpoint_n": int(len(band_df)),
+            "classification_accuracy": float(np.mean(np.asarray(all_pred) == np.asarray(all_true))),
+            "brier_multiclass": float(np.mean(np.sum((prob_array - y_one) ** 2, axis=1))),
+            "log_loss": float(log_loss(all_true, prob_array, labels=classes)),
+            "bottom_distance_within_3pct": float(np.mean(band_df["bottom_within_3pct"])) if len(band_df) else None,
+            "top_distance_within_3pct": float(np.mean(band_df["top_within_3pct"])) if len(band_df) else None,
+            "bottom_distance_median": float(bottom_dist.median()) if len(bottom_dist) else None,
+            "top_distance_median": float(top_dist.median()) if len(top_dist) else None,
+            "folds": fold_reports,
+            "note": "价格带诊断按预测类别的历史路径相对极值分位构建；到达/极值距离不是反转确认，也不是交易成功率。分类日样本存在相关性，band checkpoint按每只股票每5个交易日取样。",
+        }
+    return output
+
+
 def make_samples(frames: dict[str, pd.DataFrame], seeds: list[dict[str, Any]], market: pd.DataFrame, group_series: dict[str, pd.Series], storage_features: bool = False) -> tuple[dict[int, pd.DataFrame], dict[str, pd.DataFrame]]:
     all_samples = {h: [] for h in HORIZONS}
     feature_frames: dict[str, pd.DataFrame] = {}
@@ -685,11 +829,12 @@ def build(refresh: bool = False, run_id: str | None = None, extra_symbol: str | 
     # Use the intersection date already filtered to a completed New York
     # session, rather than SPY's own latest row (which may be an intraday bar).
     as_of = pd.Timestamp(source["common_latest_date"]) if source.get("common_latest_date") else max(frames["SPY"].index)
+    model_frames = {symbol: frame.loc[:as_of].copy() for symbol, frame in frames.items()}
     sec = fetch_sec_identities(seed_symbols)
     groups = {r.get("research_group", "") for r in seeds}
-    group_series = {g: build_group_series(frames, seeds, g) for g in groups}
-    market = frames["SPY"]["adj_close"]
-    samples, feature_frames = make_samples(frames, seeds, market, group_series, storage_features=False)
+    group_series = {g: build_group_series(model_frames, seeds, g) for g in groups}
+    market = model_frames["SPY"]["adj_close"]
+    samples, feature_frames = make_samples(model_frames, seeds, market, group_series, storage_features=False)
     print("[radar] point-in-time labels ready", flush=True)
     bundles: dict[int, ModelBundle | None] = {}
     backtest: dict[str, Any] = {"model_version": MODEL_VERSION, "feature_version": FEATURE_VERSION, "strategy_version": STRATEGY_VERSION, "horizons": {}, "storage_incremental": {"status": "BLOCKED", "reason": "taxonomy effective_from=2026-09-15 leaves no mature point-in-time storage membership window for a same-window sample-out test; challenger is shadow-only."}}
@@ -699,6 +844,8 @@ def build(refresh: bool = False, run_id: str | None = None, extra_symbol: str | 
         bundles[h] = bundle
         backtest["horizons"][str(h)] = {"b2_technical": b2.test_metrics if b2 else {"status": "insufficient_training_data"}, "b3_market_rotation": bundle.test_metrics if bundle else {"status": "insufficient_training_data"}}
         print(f"[radar] model {h}d ready", flush=True)
+    backtest["one_year_walk_forward"] = one_year_walk_forward_backtest(samples)
+    print("[radar] one-year walk-forward backtest ready", flush=True)
     potential_symbols = list(dict.fromkeys(seed_symbols + ([extra_symbol] if extra_symbol else [])))
     potential_ranges, potential_source = build_potential_ranges(frames, potential_symbols, as_of)
     source["potential_ranges"] = potential_source
@@ -719,11 +866,11 @@ def build(refresh: bool = False, run_id: str | None = None, extra_symbol: str | 
             latest_metrics[h][symbol] = metric_by_h[h].get("opportunity_value")
         peers = {"status": "unavailable", "self_excluded": False, "peer_symbols": [], "peer_count": 0, "effective_n": None, "weight_coverage": None, "note": "非存储股票不计算存储同行。"}
         if row.get("research_group_id") == "storage-memory":
-            loo, peer_meta = build_storage_loo_series(frames, seeds, symbol)
+            loo, peer_meta = build_storage_loo_series(model_frames, seeds, symbol)
             identity_ok = bool(sec.get(symbol, {}).get("issuer_id"))
             peers = {**peer_meta, "status": peer_meta.get("status") if identity_ok else "identity_unverified", "self_excluded": identity_ok, "issuer_id": sec.get(symbol, {}).get("issuer_id"), "subgroup_context": {}}
             for tag in ("DRAM", "NAND", "HDD"):
-                _, sm = build_storage_loo_series(frames, seeds, symbol, tag=tag)
+                _, sm = build_storage_loo_series(model_frames, seeds, symbol, tag=tag)
                 peers["subgroup_context"][tag] = sm
         records.append(enrich_record(row, frame, metric_by_h, sec.get(symbol, {}), peers, as_of, potential_ranges.get(symbol)))
         if len(records) % 10 == 0:
@@ -741,7 +888,7 @@ def build(refresh: bool = False, run_id: str | None = None, extra_symbol: str | 
     temporary: list[dict[str, Any]] = []
     if extra_symbol and extra_symbol in frames:
         extra_row = {"symbol": extra_symbol, "name_zh": "临时观察", "coverage_bucket": "临时观察", "research_group": "未归类", "research_group_id": "temporary", "legacy_research_group": "", "business_tags": [], "industry_tags": [], "taxonomy_version": TAXONOMY_VERSION, "taxonomy_effective_from": "2026-09-15", "metadata_as_of": as_of.strftime("%Y-%m-%d")}
-        raw_extra = add_features(frames[extra_symbol], market, pd.Series(dtype=float), None)
+        raw_extra = add_features(model_frames[extra_symbol], market, pd.Series(dtype=float), None)
         current_extra = raw_extra.loc[as_of] if as_of in raw_extra.index else raw_extra.iloc[-1]
         extra_metrics: dict[int, dict[str, Any]] = {}
         for h in HORIZONS:
@@ -750,7 +897,7 @@ def build(refresh: bool = False, run_id: str | None = None, extra_symbol: str | 
         extra_peers = {"status": "unavailable", "self_excluded": False, "peer_symbols": [], "peer_count": 0, "effective_n": None, "weight_coverage": None, "note": "临时股票未被强行归入存储或其他研究组；结果与常态100池分开保存。"}
         temporary.append(enrich_record(extra_row, raw_extra, extra_metrics, {"issuer_id": sec.get(extra_symbol, {}).get("issuer_id"), "source": sec.get(extra_symbol, {}).get("source", "unverified")}, extra_peers, as_of, potential_ranges.get(extra_symbol)))
     run_id = run_id or f"radar-{as_of.strftime('%Y%m%d')}-{uuid.uuid4().hex[:8]}"
-    rotation = storage_rotation(frames, seeds, as_of)
+    rotation = storage_rotation(model_frames, seeds, as_of)
     print("[radar] storage rotation ready", flush=True)
     valid = sum(1 for r in records if any(r["metrics"].get(str(h), {}).get("status") in ("calibrated", "calibrated_low_confidence") for h in HORIZONS))
     mother_file = Path(r"D:\codex\us-share-daily-market-html\outputs\us_share_technical_screener\2026-09-13\all_metrics.csv")
