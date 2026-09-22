@@ -33,6 +33,11 @@ from sklearn.metrics import log_loss
 from sklearn.preprocessing import StandardScaler
 from sklearn.isotonic import IsotonicRegression
 
+try:
+    from potential_ranges import build_potential_ranges
+except ModuleNotFoundError:
+    from scripts.potential_ranges import build_potential_ranges
+
 ROOT = Path(__file__).resolve().parents[1]
 SEED_CSV = ROOT / "assets" / "universe_seed.csv"
 TAXONOMY_JSON = ROOT / "assets" / "research_taxonomy.json"
@@ -619,7 +624,7 @@ def storage_rotation(frames: dict[str, pd.DataFrame], seeds: list[dict[str, Any]
     return {"status": "observed" if comparisons else "unavailable", "as_of": as_of.strftime("%Y-%m-%d"), "summary": summary, "comparisons": comparisons, "subgroups": subgroup, "parent_snapshot_id": "yfinance-daily-ohlcv", "taxonomy_version": TAXONOMY_VERSION, "membership_version": "seed-membership-20260915-v1.1", "feature_version": CHALLENGER_FEATURE_VERSION, "method": "derived-in-new-radar-adapter-read-only-source"}
 
 
-def enrich_record(row: dict[str, Any], frame: pd.DataFrame, metric_by_h: dict[int, dict[str, Any]], identity: dict[str, Any], peers: dict[str, Any], as_of: pd.Timestamp) -> dict[str, Any]:
+def enrich_record(row: dict[str, Any], frame: pd.DataFrame, metric_by_h: dict[int, dict[str, Any]], identity: dict[str, Any], peers: dict[str, Any], as_of: pd.Timestamp, potential_ranges: dict[str, Any] | None = None) -> dict[str, Any]:
     current = frame.iloc[-1]
     metrics = {str(h): metric_by_h.get(h, {"status": "data_error"}) for h in HORIZONS}
     stage = "整理"
@@ -633,7 +638,7 @@ def enrich_record(row: dict[str, Any], frame: pd.DataFrame, metric_by_h: dict[in
     peer_note = peers.get("note", "")
     if storage:
         peer_note = (peer_note + " " if peer_note else "") + "存储因子本轮仅影子运行；分类与轮动已接入，未把新特征套用到旧校准器。"
-    return {**row, "as_of": as_of.strftime("%Y-%m-%d"), "reference_price": clean_num(current["adj_close"]), "metrics": safe_json(metrics), "stage": stage, "issuer_id": identity.get("issuer_id"), "issuer_identity_source": identity.get("source"), "peer_context": safe_json({**peers, "note": peer_note, "issuer_id": identity.get("issuer_id"), "subgroup_context": peers.get("subgroup_context", {})}), "rotation_explanation": "真实日线数据已接入；市场、研究组与个股残差分别计算，允许不同步。" + (" 存储细分与LOO为影子候选，未进入正式校准分数。" if storage else ""), "trigger_summary": "确认：收盘越过基于当日ATR的参考区域并保持；失效：跳空、事件冲击或重新跌破结构。具体价带与路径仅在对应周期有数据时展示。", "event_summary": "本次生产构建未抓取并公开长文本事件正文；事件特征为缺失，不把标题或业务分类当作催化概率。", "risk_summary": "风险值来自共同历史路径的最差5%不利幅度均值，未假设保护价一定成交；执行成本按策略版本扣除。", "data_note": f"数据源：{SOURCE_NAME}；截止{as_of.strftime('%Y-%m-%d')}。B3已按时间切分并独立校准；存储新特征为挑战者影子状态。"}
+    return {**row, "as_of": as_of.strftime("%Y-%m-%d"), "reference_price": clean_num(current["adj_close"]), "metrics": safe_json(metrics), "stage": stage, "issuer_id": identity.get("issuer_id"), "issuer_identity_source": identity.get("source"), "peer_context": safe_json({**peers, "note": peer_note, "issuer_id": identity.get("issuer_id"), "subgroup_context": peers.get("subgroup_context", {})}), "potential_ranges": safe_json(potential_ranges or {}), "rotation_explanation": "真实日线数据已接入；市场、研究组与个股残差分别计算，允许不同步。" + (" 存储细分与LOO为影子候选，未进入正式校准分数。" if storage else ""), "trigger_summary": "确认：收盘越过基于当日ATR的参考区域并保持；失效：跳空、事件冲击或重新跌破结构。具体价带与路径仅在对应周期有数据时展示。", "event_summary": "本次生产构建未抓取并公开长文本事件正文；事件特征为缺失，不把标题或业务分类当作催化概率。", "risk_summary": "风险值来自共同历史路径的最差5%不利幅度均值，未假设保护价一定成交；执行成本按策略版本扣除。", "data_note": f"数据源：{SOURCE_NAME}；截止{as_of.strftime('%Y-%m-%d')}。B3已按时间切分并独立校准；存储新特征为挑战者影子状态。三层潜在顶底为构建时描述性显示层，未改写B3概率或排序。"}
 
 
 def ensure_ledger() -> sqlite3.Connection:
@@ -680,6 +685,10 @@ def build(refresh: bool = False, run_id: str | None = None, extra_symbol: str | 
         bundles[h] = bundle
         backtest["horizons"][str(h)] = {"b2_technical": b2.test_metrics if b2 else {"status": "insufficient_training_data"}, "b3_market_rotation": bundle.test_metrics if bundle else {"status": "insufficient_training_data"}}
         print(f"[radar] model {h}d ready", flush=True)
+    potential_symbols = list(dict.fromkeys(seed_symbols + ([extra_symbol] if extra_symbol else [])))
+    potential_ranges, potential_source = build_potential_ranges(frames, potential_symbols, as_of)
+    source["potential_ranges"] = potential_source
+    print(f"[radar] three-layer potential ranges ready: {potential_source.get('observed_symbols', 0)}/{potential_source.get('requested_symbols', 0)} option snapshots", flush=True)
     records = []
     latest_metrics = {h: {} for h in HORIZONS}
     for row in seeds:
@@ -702,7 +711,7 @@ def build(refresh: bool = False, run_id: str | None = None, extra_symbol: str | 
             for tag in ("DRAM", "NAND", "HDD"):
                 _, sm = build_storage_loo_series(frames, seeds, symbol, tag=tag)
                 peers["subgroup_context"][tag] = sm
-        records.append(enrich_record(row, frame, metric_by_h, sec.get(symbol, {}), peers, as_of))
+        records.append(enrich_record(row, frame, metric_by_h, sec.get(symbol, {}), peers, as_of, potential_ranges.get(symbol)))
         if len(records) % 10 == 0:
             print(f"[radar] records {len(records)}/100", flush=True)
     for h in HORIZONS:
@@ -725,7 +734,7 @@ def build(refresh: bool = False, run_id: str | None = None, extra_symbol: str | 
             extra_hist = samples[h].copy()
             extra_metrics[h] = build_scenario_metric(extra_symbol, current_extra, extra_hist, bundles[h], h, raw_extra)
         extra_peers = {"status": "unavailable", "self_excluded": False, "peer_symbols": [], "peer_count": 0, "effective_n": None, "weight_coverage": None, "note": "临时股票未被强行归入存储或其他研究组；结果与常态100池分开保存。"}
-        temporary.append(enrich_record(extra_row, raw_extra, extra_metrics, {"issuer_id": sec.get(extra_symbol, {}).get("issuer_id"), "source": sec.get(extra_symbol, {}).get("source", "unverified")}, extra_peers, as_of))
+        temporary.append(enrich_record(extra_row, raw_extra, extra_metrics, {"issuer_id": sec.get(extra_symbol, {}).get("issuer_id"), "source": sec.get(extra_symbol, {}).get("source", "unverified")}, extra_peers, as_of, potential_ranges.get(extra_symbol)))
     run_id = run_id or f"radar-{as_of.strftime('%Y%m%d')}-{uuid.uuid4().hex[:8]}"
     rotation = storage_rotation(frames, seeds, as_of)
     print("[radar] storage rotation ready", flush=True)
@@ -736,7 +745,7 @@ def build(refresh: bool = False, run_id: str | None = None, extra_symbol: str | 
         with mother_file.open(encoding="utf-8-sig", newline="") as fh:
             mother_count = max(0, sum(1 for _ in fh) - 1)
     source["mother_pool"] = {"source": "us-share-daily-market-html/all_metrics.csv", "available_symbols": mother_count, "qualification_verified": False, "note": "母池规模来自旧美股行情项目快照；本项目未把它改写成当前人气排名。"}
-    data = {"build_mode": "live", "status_message": "真实日线行情已接入；概率为按时间切分并独立校准的B3低可信结果。存储分类/轮动已接入，存储因子仍为影子挑战者，未宣称增益。", "generated_at": iso(utc_now()), "as_of": as_of.strftime("%Y-%m-%d"), "as_of_beijing": f"{as_of.strftime('%Y-%m-%d')} 纽约收盘数据；北京时间日期需按交易日换算", "run_id": run_id, "prediction_snapshot_id": run_id, "model_version": MODEL_VERSION, "feature_version": FEATURE_VERSION, "strategy_version": STRATEGY_VERSION, "universe_version": "curated-seed-20260915-v1.1-live-validation", "taxonomy_version": TAXONOMY_VERSION, "source_manifest": source, "records": records, "temporary": temporary, "storage_rotation": rotation, "rotation_summary": [rotation["summary"], "存储四只为同一主研究组；细分视图允许MU重叠，主表不重复计数。", "存储新因子为shadow/challenger，未套用旧校准器；不要把MU强弱写成SNDK/WDC/STX的固定结论。"], "public_config": {"api_base_url": None}, "backtest": backtest, "coverage": {"regular_pool": len(records), "valid_forecast_records": valid, "usable_price_records": sum(1 for r in records if r.get("reference_price") is not None), "data_cutoff": as_of.strftime("%Y-%m-%d"), "financial_backtest_status": "B3 time-split metrics computed; storage incremental alpha BLOCKED"}}
+    data = {"build_mode": "live", "status_message": "真实日线行情已接入；概率为按时间切分并独立校准的B3低可信结果。存储分类/轮动已接入，存储因子仍为影子挑战者，未宣称增益。三层潜在顶底为描述性显示层，期权风险中性IV不直接等于真实世界概率。", "generated_at": iso(utc_now()), "as_of": as_of.strftime("%Y-%m-%d"), "as_of_beijing": f"{as_of.strftime('%Y-%m-%d')} 纽约收盘数据；北京时间日期需按交易日换算", "run_id": run_id, "prediction_snapshot_id": run_id, "model_version": MODEL_VERSION, "feature_version": FEATURE_VERSION, "potential_range_version": "three-layer-descriptive-v1", "strategy_version": STRATEGY_VERSION, "universe_version": "curated-seed-20260915-v1.1-live-validation", "taxonomy_version": TAXONOMY_VERSION, "source_manifest": source, "records": records, "temporary": temporary, "storage_rotation": rotation, "rotation_summary": [rotation["summary"], "存储四只为同一主研究组；细分视图允许MU重叠，主表不重复计数。", "存储新因子为shadow/challenger，未套用旧校准器；不要把MU强弱写成SNDK/WDC/STX的固定结论。"], "public_config": {"api_base_url": None}, "backtest": backtest, "coverage": {"regular_pool": len(records), "valid_forecast_records": valid, "usable_price_records": sum(1 for r in records if r.get("reference_price") is not None), "data_cutoff": as_of.strftime("%Y-%m-%d"), "financial_backtest_status": "B3 time-split metrics computed; storage incremental alpha BLOCKED"}}
     write_json(OUTPUT_DIR / f"dashboard-{run_id}.json", data)
     write_json(OUTPUT_DIR / f"backtest-{run_id}.json", backtest)
     write_json(STATE_DIR / "model_card.json", {"model_version": MODEL_VERSION, "feature_version": FEATURE_VERSION, "calibration": "independent time calibration window", "status": "calibrated_low_confidence", "champion": "B3 without storage challenger", "challenger": "B3 + storage LOO/subgroup factors shadow-only", "backtest": backtest, "source": source})

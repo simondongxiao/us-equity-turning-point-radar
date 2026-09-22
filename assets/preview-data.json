@@ -1,9 +1,10 @@
 {
   "build_mode": "preview",
-  "generated_at": "2026-09-15T14:41:24.097196+00:00",
+  "generated_at": "2026-09-22T15:11:19.198090+00:00",
   "as_of": null,
   "run_id": "seed-ui-preview-not-a-forecast",
   "model_version": null,
+  "potential_range_version": "three-layer-descriptive-v1",
   "universe_version": "curated-seed-20260915-v1.1",
   "taxonomy_version": "research-taxonomy-20260915-v1.1",
   "research_taxonomy": {
@@ -128,6 +129,7 @@
       "as_of": null,
       "reference_price": null,
       "stage": "待分析",
+      "potential_ranges": {},
       "metrics": {
         "5": {
           "status": "uncalibrated",
@@ -200,6 +202,7 @@
       "as_of": null,
       "reference_price": null,
       "stage": "待分析",
+      "potential_ranges": {},
       "metrics": {
         "5": {
           "status": "uncalibrated",
@@ -272,6 +275,7 @@
       "as_of": null,
       "reference_price": null,
       "stage": "待分析",
+      "potential_ranges": {},
       "metrics": {
         "5": {
           "status": "uncalibrated",
@@ -344,6 +348,7 @@
       "as_of": null,
       "reference_price": null,
       "stage": "待分析",
+      "potential_ranges": {},
       "metrics": {
         "5": {
           "status": "uncalibrated",
@@ -416,6 +421,7 @@
       "as_of": null,
       "reference_price": null,
       "stage": "待分析",
+      "potential_ranges": {},
       "metrics": {
         "5": {
           "status": "uncalibrated",
@@ -488,6 +494,7 @@
       "as_of": null,
       "reference_price": null,
       "stage": "待分析",
+      "potential_ranges": {},
       "metrics": {
         "5": {
           "status": "uncalibrated",
@@ -560,6 +567,7 @@
       "as_of": null,
       "reference_price": null,
       "stage": "待分析",
+      "potential_ranges": {},
       "metrics": {
         "5": {
           "status": "uncalibrated",
@@ -632,6 +640,7 @@
       "as_of": null,
       "reference_price": null,
       "stage": "待分析",
+      "potential_ranges": {},
       "metrics": {
         "5": {
           "status": "uncalibrated",
@@ -704,6 +713,7 @@
       "as_of": null,
       "reference_price": null,
       "stage": "待分析",
+      "potential_ranges": {},
       "metrics": {
         "5": {
           "status": "uncalibrated",
@@ -776,6 +786,7 @@
       "as_of": null,
       "reference_price": null,
       "stage": "待分析",
+      "potential_ranges": {},
       "metrics": {
         "5": {
           "status": "uncalibrated",
@@ -848,6 +859,7 @@
       "as_of": null,
       "reference_price": null,
       "stage": "待分析",
+      "potential_ranges": {},
       "metrics": {
         "5": {
           "status": "uncalibrated",
@@ -928,6 +940,7 @@
       "as_of": null,
       "reference_price": null,
       "stage": "待分析",
+      "potential_ranges": {},
       "metrics": {
         "5": {
           "status": "uncalibrated",
@@ -1000,6 +1013,7 @@
       "as_of": null,
       "reference_price": null,
       "stage": "待分析",
+      "potential_ranges": {},
       "metrics": {
         "5": {
           "status": "uncalibrated",
@@ -1072,6 +1086,7 @@
       "as_of": null,
       "reference_price": null,
       "stage": "待分析",
+      "potential_ranges": {},
       "metrics": {
         "5": {
           "status": "uncalibrated",
@@ -1144,6 +1159,7 @@
       "as_of": null,
       "reference_price": null,
       "stage": "待分析",
+      "potential_ranges": {},
       "metrics": {
         "5": {
           "status": "uncalibrated",
@@ -1216,6 +1232,7 @@
       "as_of": null,
       "reference_price": null,
       "stage": "待分析",
+      "potential_ranges": {},
       "metrics": {
         "5": {
           "status": "uncalibrated",
@@ -1288,6 +1305,7 @@
       "as_of": null,
       "reference_price": null,
       "stage": "待分析",
+      "potential_ranges": {},
       "metrics": {
         "5": {
           "status": "uncalibrated",
@@ -1360,6 +1378,7 @@
       "as_of": null,
       "reference_price": null,
       "stage": "待分析",
+      "potential_ranges": {},
       "metrics": {
         "5": {
           "status": "uncalibrated",
@@ -1432,6 +1451,7 @@
       "as_of": null,
       "reference_price": null,
       "stage": "待分析",
+      "potential_ranges": {},
       "metrics": {
         "5": {
           "status": "uncalibrated",
@@ -1504,6 +1524,7 @@
       "as_of": null,
       "reference_price": null,
       "stage": "待分析",
+      "potential_ranges": {},
       "metrics": {
         "5": {
           "status": "uncalibrated",
@@ -1576,6 +1597,7 @@
       "as_of": null,
       "reference_price": null,
       "stage": "待分析",
+      "potential_ranges": {},
       "metrics": {
         "5": {
           "status": "uncalibrated",
@@ -1648,6 +1670,7 @@
       "as_of": null,
       "reference_price": null,
       "stage": "待分析",
+      "potential_ranges": {},
       "metrics": {
         "5": {
           "status": "uncalibrated",
@@ -1720,6 +1743,7 @@
       "as_of": null,
       "reference_price": null,
       "stage": "待分析",
+      "potential_ranges": {},
       "metrics": {
         "5": {
           "status": "uncalibrated",
@@ -1792,6 +1816,7 @@
       "as_of": null,
       "reference_price": null,
       "stage": "待分析",
+      "potential_ranges": {},
       "metrics": {
         "5": {
           "status": "uncalibrated",
@@ -1864,6 +1889,7 @@
       "as_of": null,
       "reference_price": null,
       "stage": "待分析",
+      "potential_ranges": {},
       "metrics": {
         "5": {
           "status": "uncalibrated",
@@ -1936,6 +1962,7 @@
       "as_of": null,
       "reference_price": null,
       "stage": "待分析",
+      "potential_ranges": {},
       "metrics": {
         "5": {
           "status": "uncalibrated",
@@ -2008,6 +2035,7 @@
       "as_of": null,
       "reference_price": null,
       "stage": "待分析",
+      "potential_ranges": {},
       "metrics": {
         "5": {
           "status": "uncalibrated",
@@ -2080,6 +2108,7 @@
       "as_of": null,
       "reference_price": null,
       "stage": "待分析",
+      "potential_ranges": {},
       "metrics": {
         "5": {
           "status": "uncalibrated",
@@ -2152,6 +2181,7 @@
       "as_of": null,
       "reference_price": null,
       "stage": "待分析",
+      "potential_ranges": {},
       "metrics": {
         "5": {
           "status": "uncalibrated",
@@ -2228,6 +2258,7 @@
       "as_of": null,
       "reference_price": null,
       "stage": "待分析",
+      "potential_ranges": {},
       "metrics": {
         "5": {
           "status": "uncalibrated",
@@ -2305,6 +2336,7 @@
       "as_of": null,
       "reference_price": null,
       "stage": "待分析",
+      "potential_ranges": {},
       "metrics": {
         "5": {
           "status": "uncalibrated",
@@ -2382,6 +2414,7 @@
       "as_of": null,
       "reference_price": null,
       "stage": "待分析",
+      "potential_ranges": {},
       "metrics": {
         "5": {
           "status": "uncalibrated",
@@ -2454,6 +2487,7 @@
       "as_of": null,
       "reference_price": null,
       "stage": "待分析",
+      "potential_ranges": {},
       "metrics": {
         "5": {
           "status": "uncalibrated",
@@ -2526,6 +2560,7 @@
       "as_of": null,
       "reference_price": null,
       "stage": "待分析",
+      "potential_ranges": {},
       "metrics": {
         "5": {
           "status": "uncalibrated",
@@ -2598,6 +2633,7 @@
       "as_of": null,
       "reference_price": null,
       "stage": "待分析",
+      "potential_ranges": {},
       "metrics": {
         "5": {
           "status": "uncalibrated",
@@ -2670,6 +2706,7 @@
       "as_of": null,
       "reference_price": null,
       "stage": "待分析",
+      "potential_ranges": {},
       "metrics": {
         "5": {
           "status": "uncalibrated",
@@ -2742,6 +2779,7 @@
       "as_of": null,
       "reference_price": null,
       "stage": "待分析",
+      "potential_ranges": {},
       "metrics": {
         "5": {
           "status": "uncalibrated",
@@ -2814,6 +2852,7 @@
       "as_of": null,
       "reference_price": null,
       "stage": "待分析",
+      "potential_ranges": {},
       "metrics": {
         "5": {
           "status": "uncalibrated",
@@ -2886,6 +2925,7 @@
       "as_of": null,
       "reference_price": null,
       "stage": "待分析",
+      "potential_ranges": {},
       "metrics": {
         "5": {
           "status": "uncalibrated",
@@ -2958,6 +2998,7 @@
       "as_of": null,
       "reference_price": null,
       "stage": "待分析",
+      "potential_ranges": {},
       "metrics": {
         "5": {
           "status": "uncalibrated",
@@ -3030,6 +3071,7 @@
       "as_of": null,
       "reference_price": null,
       "stage": "待分析",
+      "potential_ranges": {},
       "metrics": {
         "5": {
           "status": "uncalibrated",
@@ -3102,6 +3144,7 @@
       "as_of": null,
       "reference_price": null,
       "stage": "待分析",
+      "potential_ranges": {},
       "metrics": {
         "5": {
           "status": "uncalibrated",
@@ -3174,6 +3217,7 @@
       "as_of": null,
       "reference_price": null,
       "stage": "待分析",
+      "potential_ranges": {},
       "metrics": {
         "5": {
           "status": "uncalibrated",
@@ -3246,6 +3290,7 @@
       "as_of": null,
       "reference_price": null,
       "stage": "待分析",
+      "potential_ranges": {},
       "metrics": {
         "5": {
           "status": "uncalibrated",
@@ -3318,6 +3363,7 @@
       "as_of": null,
       "reference_price": null,
       "stage": "待分析",
+      "potential_ranges": {},
       "metrics": {
         "5": {
           "status": "uncalibrated",
@@ -3390,6 +3436,7 @@
       "as_of": null,
       "reference_price": null,
       "stage": "待分析",
+      "potential_ranges": {},
       "metrics": {
         "5": {
           "status": "uncalibrated",
@@ -3462,6 +3509,7 @@
       "as_of": null,
       "reference_price": null,
       "stage": "待分析",
+      "potential_ranges": {},
       "metrics": {
         "5": {
           "status": "uncalibrated",
@@ -3534,6 +3582,7 @@
       "as_of": null,
       "reference_price": null,
       "stage": "待分析",
+      "potential_ranges": {},
       "metrics": {
         "5": {
           "status": "uncalibrated",
@@ -3606,6 +3655,7 @@
       "as_of": null,
       "reference_price": null,
       "stage": "待分析",
+      "potential_ranges": {},
       "metrics": {
         "5": {
           "status": "uncalibrated",
@@ -3678,6 +3728,7 @@
       "as_of": null,
       "reference_price": null,
       "stage": "待分析",
+      "potential_ranges": {},
       "metrics": {
         "5": {
           "status": "uncalibrated",
@@ -3750,6 +3801,7 @@
       "as_of": null,
       "reference_price": null,
       "stage": "待分析",
+      "potential_ranges": {},
       "metrics": {
         "5": {
           "status": "uncalibrated",
@@ -3822,6 +3874,7 @@
       "as_of": null,
       "reference_price": null,
       "stage": "待分析",
+      "potential_ranges": {},
       "metrics": {
         "5": {
           "status": "uncalibrated",
@@ -3894,6 +3947,7 @@
       "as_of": null,
       "reference_price": null,
       "stage": "待分析",
+      "potential_ranges": {},
       "metrics": {
         "5": {
           "status": "uncalibrated",
@@ -3966,6 +4020,7 @@
       "as_of": null,
       "reference_price": null,
       "stage": "待分析",
+      "potential_ranges": {},
       "metrics": {
         "5": {
           "status": "uncalibrated",
@@ -4038,6 +4093,7 @@
       "as_of": null,
       "reference_price": null,
       "stage": "待分析",
+      "potential_ranges": {},
       "metrics": {
         "5": {
           "status": "uncalibrated",
@@ -4110,6 +4166,7 @@
       "as_of": null,
       "reference_price": null,
       "stage": "待分析",
+      "potential_ranges": {},
       "metrics": {
         "5": {
           "status": "uncalibrated",
@@ -4182,6 +4239,7 @@
       "as_of": null,
       "reference_price": null,
       "stage": "待分析",
+      "potential_ranges": {},
       "metrics": {
         "5": {
           "status": "uncalibrated",
@@ -4254,6 +4312,7 @@
       "as_of": null,
       "reference_price": null,
       "stage": "待分析",
+      "potential_ranges": {},
       "metrics": {
         "5": {
           "status": "uncalibrated",
@@ -4326,6 +4385,7 @@
       "as_of": null,
       "reference_price": null,
       "stage": "待分析",
+      "potential_ranges": {},
       "metrics": {
         "5": {
           "status": "uncalibrated",
@@ -4398,6 +4458,7 @@
       "as_of": null,
       "reference_price": null,
       "stage": "待分析",
+      "potential_ranges": {},
       "metrics": {
         "5": {
           "status": "uncalibrated",
@@ -4470,6 +4531,7 @@
       "as_of": null,
       "reference_price": null,
       "stage": "待分析",
+      "potential_ranges": {},
       "metrics": {
         "5": {
           "status": "uncalibrated",
@@ -4542,6 +4604,7 @@
       "as_of": null,
       "reference_price": null,
       "stage": "待分析",
+      "potential_ranges": {},
       "metrics": {
         "5": {
           "status": "uncalibrated",
@@ -4614,6 +4677,7 @@
       "as_of": null,
       "reference_price": null,
       "stage": "待分析",
+      "potential_ranges": {},
       "metrics": {
         "5": {
           "status": "uncalibrated",
@@ -4686,6 +4750,7 @@
       "as_of": null,
       "reference_price": null,
       "stage": "待分析",
+      "potential_ranges": {},
       "metrics": {
         "5": {
           "status": "uncalibrated",
@@ -4758,6 +4823,7 @@
       "as_of": null,
       "reference_price": null,
       "stage": "待分析",
+      "potential_ranges": {},
       "metrics": {
         "5": {
           "status": "uncalibrated",
@@ -4830,6 +4896,7 @@
       "as_of": null,
       "reference_price": null,
       "stage": "待分析",
+      "potential_ranges": {},
       "metrics": {
         "5": {
           "status": "uncalibrated",
@@ -4902,6 +4969,7 @@
       "as_of": null,
       "reference_price": null,
       "stage": "待分析",
+      "potential_ranges": {},
       "metrics": {
         "5": {
           "status": "uncalibrated",
@@ -4974,6 +5042,7 @@
       "as_of": null,
       "reference_price": null,
       "stage": "待分析",
+      "potential_ranges": {},
       "metrics": {
         "5": {
           "status": "uncalibrated",
@@ -5046,6 +5115,7 @@
       "as_of": null,
       "reference_price": null,
       "stage": "待分析",
+      "potential_ranges": {},
       "metrics": {
         "5": {
           "status": "uncalibrated",
@@ -5118,6 +5188,7 @@
       "as_of": null,
       "reference_price": null,
       "stage": "待分析",
+      "potential_ranges": {},
       "metrics": {
         "5": {
           "status": "uncalibrated",
@@ -5190,6 +5261,7 @@
       "as_of": null,
       "reference_price": null,
       "stage": "待分析",
+      "potential_ranges": {},
       "metrics": {
         "5": {
           "status": "uncalibrated",
@@ -5262,6 +5334,7 @@
       "as_of": null,
       "reference_price": null,
       "stage": "待分析",
+      "potential_ranges": {},
       "metrics": {
         "5": {
           "status": "uncalibrated",
@@ -5334,6 +5407,7 @@
       "as_of": null,
       "reference_price": null,
       "stage": "待分析",
+      "potential_ranges": {},
       "metrics": {
         "5": {
           "status": "uncalibrated",
@@ -5406,6 +5480,7 @@
       "as_of": null,
       "reference_price": null,
       "stage": "待分析",
+      "potential_ranges": {},
       "metrics": {
         "5": {
           "status": "uncalibrated",
@@ -5478,6 +5553,7 @@
       "as_of": null,
       "reference_price": null,
       "stage": "待分析",
+      "potential_ranges": {},
       "metrics": {
         "5": {
           "status": "uncalibrated",
@@ -5550,6 +5626,7 @@
       "as_of": null,
       "reference_price": null,
       "stage": "待分析",
+      "potential_ranges": {},
       "metrics": {
         "5": {
           "status": "uncalibrated",
@@ -5622,6 +5699,7 @@
       "as_of": null,
       "reference_price": null,
       "stage": "待分析",
+      "potential_ranges": {},
       "metrics": {
         "5": {
           "status": "uncalibrated",
@@ -5694,6 +5772,7 @@
       "as_of": null,
       "reference_price": null,
       "stage": "待分析",
+      "potential_ranges": {},
       "metrics": {
         "5": {
           "status": "uncalibrated",
@@ -5766,6 +5845,7 @@
       "as_of": null,
       "reference_price": null,
       "stage": "待分析",
+      "potential_ranges": {},
       "metrics": {
         "5": {
           "status": "uncalibrated",
@@ -5838,6 +5918,7 @@
       "as_of": null,
       "reference_price": null,
       "stage": "待分析",
+      "potential_ranges": {},
       "metrics": {
         "5": {
           "status": "uncalibrated",
@@ -5910,6 +5991,7 @@
       "as_of": null,
       "reference_price": null,
       "stage": "待分析",
+      "potential_ranges": {},
       "metrics": {
         "5": {
           "status": "uncalibrated",
@@ -5982,6 +6064,7 @@
       "as_of": null,
       "reference_price": null,
       "stage": "待分析",
+      "potential_ranges": {},
       "metrics": {
         "5": {
           "status": "uncalibrated",
@@ -6054,6 +6137,7 @@
       "as_of": null,
       "reference_price": null,
       "stage": "待分析",
+      "potential_ranges": {},
       "metrics": {
         "5": {
           "status": "uncalibrated",
@@ -6126,6 +6210,7 @@
       "as_of": null,
       "reference_price": null,
       "stage": "待分析",
+      "potential_ranges": {},
       "metrics": {
         "5": {
           "status": "uncalibrated",
@@ -6198,6 +6283,7 @@
       "as_of": null,
       "reference_price": null,
       "stage": "待分析",
+      "potential_ranges": {},
       "metrics": {
         "5": {
           "status": "uncalibrated",
@@ -6270,6 +6356,7 @@
       "as_of": null,
       "reference_price": null,
       "stage": "待分析",
+      "potential_ranges": {},
       "metrics": {
         "5": {
           "status": "uncalibrated",
@@ -6342,6 +6429,7 @@
       "as_of": null,
       "reference_price": null,
       "stage": "待分析",
+      "potential_ranges": {},
       "metrics": {
         "5": {
           "status": "uncalibrated",
@@ -6414,6 +6502,7 @@
       "as_of": null,
       "reference_price": null,
       "stage": "待分析",
+      "potential_ranges": {},
       "metrics": {
         "5": {
           "status": "uncalibrated",
@@ -6486,6 +6575,7 @@
       "as_of": null,
       "reference_price": null,
       "stage": "待分析",
+      "potential_ranges": {},
       "metrics": {
         "5": {
           "status": "uncalibrated",
@@ -6558,6 +6648,7 @@
       "as_of": null,
       "reference_price": null,
       "stage": "待分析",
+      "potential_ranges": {},
       "metrics": {
         "5": {
           "status": "uncalibrated",
@@ -6630,6 +6721,7 @@
       "as_of": null,
       "reference_price": null,
       "stage": "待分析",
+      "potential_ranges": {},
       "metrics": {
         "5": {
           "status": "uncalibrated",
@@ -6702,6 +6794,7 @@
       "as_of": null,
       "reference_price": null,
       "stage": "待分析",
+      "potential_ranges": {},
       "metrics": {
         "5": {
           "status": "uncalibrated",
@@ -6774,6 +6867,7 @@
       "as_of": null,
       "reference_price": null,
       "stage": "待分析",
+      "potential_ranges": {},
       "metrics": {
         "5": {
           "status": "uncalibrated",
@@ -6846,6 +6940,7 @@
       "as_of": null,
       "reference_price": null,
       "stage": "待分析",
+      "potential_ranges": {},
       "metrics": {
         "5": {
           "status": "uncalibrated",
@@ -6918,6 +7013,7 @@
       "as_of": null,
       "reference_price": null,
       "stage": "待分析",
+      "potential_ranges": {},
       "metrics": {
         "5": {
           "status": "uncalibrated",
@@ -6990,6 +7086,7 @@
       "as_of": null,
       "reference_price": null,
       "stage": "待分析",
+      "potential_ranges": {},
       "metrics": {
         "5": {
           "status": "uncalibrated",
@@ -7062,6 +7159,7 @@
       "as_of": null,
       "reference_price": null,
       "stage": "待分析",
+      "potential_ranges": {},
       "metrics": {
         "5": {
           "status": "uncalibrated",
@@ -7134,6 +7232,7 @@
       "as_of": null,
       "reference_price": null,
       "stage": "待分析",
+      "potential_ranges": {},
       "metrics": {
         "5": {
           "status": "uncalibrated",
@@ -7206,6 +7305,7 @@
       "as_of": null,
       "reference_price": null,
       "stage": "待分析",
+      "potential_ranges": {},
       "metrics": {
         "5": {
           "status": "uncalibrated",
@@ -7278,6 +7378,7 @@
       "as_of": null,
       "reference_price": null,
       "stage": "待分析",
+      "potential_ranges": {},
       "metrics": {
         "5": {
           "status": "uncalibrated",

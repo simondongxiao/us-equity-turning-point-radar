@@ -13,73 +13,73 @@
       "5": {
         "b2_technical": {
           "horizon": 5,
-          "train_n": 93255,
-          "calibration_n": 12348,
-          "test_n": 12861,
-          "ambiguous_excluded": 310,
-          "brier_multiclass": 0.598194306744934,
-          "log_loss": 0.982600489705868,
-          "test_start": "2026-03-04",
-          "test_end": "2026-09-04"
+          "train_n": 93593,
+          "calibration_n": 12450,
+          "test_n": 12531,
+          "ambiguous_excluded": 307,
+          "brier_multiclass": 0.5922980535317456,
+          "log_loss": 0.9746672084155615,
+          "test_start": "2026-03-16",
+          "test_end": "2026-09-15"
         },
         "b3_market_rotation": {
           "horizon": 5,
-          "train_n": 93163,
-          "calibration_n": 12348,
-          "test_n": 12861,
-          "ambiguous_excluded": 310,
-          "brier_multiclass": 0.5986379950488505,
-          "log_loss": 0.9832056722207063,
-          "test_start": "2026-03-04",
-          "test_end": "2026-09-04"
+          "train_n": 93501,
+          "calibration_n": 12450,
+          "test_n": 12531,
+          "ambiguous_excluded": 307,
+          "brier_multiclass": 0.5925884289485155,
+          "log_loss": 0.9800822169693967,
+          "test_start": "2026-03-16",
+          "test_end": "2026-09-15"
         }
       },
       "10": {
         "b2_technical": {
           "horizon": 10,
-          "train_n": 92845,
-          "calibration_n": 12543,
-          "test_n": 12562,
-          "ambiguous_excluded": 324,
-          "brier_multiclass": 0.5184102251313453,
-          "log_loss": 0.7918143555381068,
-          "test_start": "2026-03-02",
-          "test_end": "2026-08-28"
+          "train_n": 93081,
+          "calibration_n": 12448,
+          "test_n": 12531,
+          "ambiguous_excluded": 321,
+          "brier_multiclass": 0.5144430894782662,
+          "log_loss": 0.7843830682089701,
+          "test_start": "2026-03-09",
+          "test_end": "2026-09-08"
         },
         "b3_market_rotation": {
           "horizon": 10,
-          "train_n": 92753,
-          "calibration_n": 12543,
-          "test_n": 12562,
-          "ambiguous_excluded": 324,
-          "brier_multiclass": 0.5189544061281887,
-          "log_loss": 0.7934732578963025,
-          "test_start": "2026-03-02",
-          "test_end": "2026-08-28"
+          "train_n": 92989,
+          "calibration_n": 12448,
+          "test_n": 12531,
+          "ambiguous_excluded": 321,
+          "brier_multiclass": 0.5149601007042054,
+          "log_loss": 0.7856438045710933,
+          "test_start": "2026-03-09",
+          "test_end": "2026-09-08"
         }
       },
       "21": {
         "b2_technical": {
           "horizon": 21,
-          "train_n": 91748,
-          "calibration_n": 12640,
-          "test_n": 12463,
-          "ambiguous_excluded": 323,
-          "brier_multiclass": 0.49736838402641925,
-          "log_loss": 0.7119553145093585,
-          "test_start": "2026-02-13",
-          "test_end": "2026-08-13"
+          "train_n": 91989,
+          "calibration_n": 12541,
+          "test_n": 12431,
+          "ambiguous_excluded": 320,
+          "brier_multiclass": 0.4982966638560041,
+          "log_loss": 0.713324317999401,
+          "test_start": "2026-02-23",
+          "test_end": "2026-08-21"
         },
         "b3_market_rotation": {
           "horizon": 21,
-          "train_n": 91656,
-          "calibration_n": 12640,
-          "test_n": 12463,
-          "ambiguous_excluded": 323,
-          "brier_multiclass": 0.49707323229276107,
-          "log_loss": 0.7120069943487077,
-          "test_start": "2026-02-13",
-          "test_end": "2026-08-13"
+          "train_n": 91897,
+          "calibration_n": 12541,
+          "test_n": 12431,
+          "ambiguous_excluded": 320,
+          "brier_multiclass": 0.4981020820568942,
+          "log_loss": 0.7089947437755663,
+          "test_start": "2026-02-23",
+          "test_end": "2026-08-21"
         }
       }
     },
@@ -93,13 +93,20 @@
     "requested_symbols": 102,
     "usable_symbols": 102,
     "missing_symbols": [],
-    "errors": {
-      "AAPL": "refresh returned no rows; using previously cached verified history"
-    },
+    "errors": {},
     "common_latest_date": "2026-09-14",
-    "start_requested": "2021-09-15",
-    "end_requested": "2026-09-16",
-    "retrieved_at": "2026-09-15T12:48:08.953729+00:00",
+    "complete_session_cutoff_ny": "2026-09-21",
+    "start_requested": "2021-09-22",
+    "end_requested": "2026-09-23",
+    "retrieved_at": "2026-09-22T15:09:12.874107+00:00",
+    "potential_ranges": {
+      "status": "observed",
+      "requested_symbols": 100,
+      "observed_symbols": 100,
+      "errors": {},
+      "retrieved_at": "2026-09-22T15:10:21.721184+00:00",
+      "note": "期权链为构建时快照；未取得的标的明确显示缺失，不用模型价带补假IV。"
+    },
     "mother_pool": {
       "source": "us-share-daily-market-html/all_metrics.csv",
       "available_symbols": 5509,
