@@ -2,10 +2,11 @@
   "test_type": "synthetic_ui_only",
   "checks": [
     "100 unchanged seeds and explicit 0 valid forecasts",
-    "single-button direction toggle for opportunity, stage probability and risk",
+    "single-button direction toggle for reference price, opportunity/risk scores and independent bottom/top probabilities",
     "60 tech / 40 non-tech theme filters",
     "storage shortcut shows the four original names, no invented rotation",
     "DRAM/HBM, NAND/SSD, HDD filters; overlapping MU not duplicated",
+    "research-group, business-tag and stage dropdowns filter without changing scores",
     "incompatible theme changes clear storage subfilter",
     "clear filter preserves sort and horizon",
     "SNDK detail retains all original research sections plus taxonomy and LOO",
@@ -15,7 +16,7 @@
     "temporary storage member dynamically filterable without changing 100-stock pool",
     "mobile storage/subgroup controls, no whole-page horizontal overflow, no JS errors"
   ],
-  "check_groups": 13,
+  "check_groups": 14,
   "result": "PASS",
   "financial_backtest": false,
   "github_live_test": false,

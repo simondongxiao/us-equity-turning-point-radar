@@ -16,13 +16,13 @@ with sync_playwright() as p:
     assert page.locator('#coverage').inner_text()=='100 / 0'
     checks.append('100 unchanged seeds and explicit 0 valid forecasts')
     page.screenshot(path=str(ROOT/'tests/preview-desktop.png'),full_page=False)
-    for field,label in [('risk_value','风险'),('stage_probability','阶段顶底概率'),('opportunity_value','机会')]:
+    for field,label in [('reference_price','参考价'),('risk_value','风险分'),('bottom_probability','阶段底概率'),('top_probability','阶段顶概率'),('opportunity_value','机会分')]:
         button=page.locator(f"[data-field='{field}']")
         button.click()
         assert f'{label}：从大到小' in page.locator('#sortLabel').inner_text()
         button.click()
         assert f'{label}：从小到大' in page.locator('#sortLabel').inner_text()
-    checks.append('single-button direction toggle for opportunity, stage probability and risk')
+    checks.append('single-button direction toggle for reference price, opportunity/risk scores and independent bottom/top probabilities')
     page.locator('[data-horizon="5"]').click()
     assert '5个交易日' in page.locator('#horizonLabel').inner_text()
     page.select_option('#bucketFilter','科技与成长主题');assert page.locator('#stockRows tr').count()==60
@@ -39,13 +39,22 @@ with sync_playwright() as p:
         page.select_option('#storageSubFilter',value)
         assert set(page.locator('#stockRows .symbol-button').all_text_contents())==expected
     checks.append('DRAM/HBM, NAND/SSD, HDD filters; overlapping MU not duplicated')
+    page.select_option('#storageSubFilter','')
+    page.select_option('#businessTagFilter','NAND')
+    assert set(page.locator('#stockRows .symbol-button').all_text_contents())=={'MU','SNDK'}
+    page.select_option('#businessTagFilter','')
+    stage=page.locator('#stageFilter option').nth(1).get_attribute('value')
+    assert stage
+    page.select_option('#stageFilter',stage)
+    assert page.locator('#stockRows tr').count() > 0
+    checks.append('research-group, business-tag and stage dropdowns filter without changing scores')
     page.select_option('#bucketFilter','非科技主题')
     assert page.locator('#stockRows tr').count()==40
     assert page.locator('#storageSubFilter').is_disabled()
     assert page.locator('#storageSubFilter').input_value()==''
     checks.append('incompatible theme changes clear storage subfilter')
     page.locator('#clearFilters').click();assert page.locator('#stockRows tr').count()==100
-    assert '机会：从小到大' in page.locator('#sortLabel').inner_text()
+    assert '机会分：从小到大' in page.locator('#sortLabel').inner_text()
     assert '5个交易日' in page.locator('#horizonLabel').inner_text()
     checks.append('clear filter preserves sort and horizon')
     page.locator('#storageQuick').click();page.locator('[data-horizon="10"]').click()
@@ -71,10 +80,10 @@ with sync_playwright() as p:
     # Ephemeral synthetic data: discarded before preview screenshots and never written to JSON.
     page.evaluate("""() => {
       const fixture={MU:[.1,.3,21,.2,.4],SNDK:[.3,.1,87,.7,.1],WDC:[-.1,.2,4,.3,.5],STX:[null,null,null,null,null]};
-      for(const r of regular){if(fixture[r.symbol]){const [o,k,score,bottom,top]=fixture[r.symbol];r.metrics['10']={status:o===null?'uncalibrated':'calibrated',opportunity_value:o,risk_value:k,p_bottom:bottom,p_top:top,opportunity_score:score,risk_score:score,expected_return:o,es95:k,positive_edge:o>0};}}
+      for(const r of regular){if(fixture[r.symbol]){const [o,k,score,bottom,top]=fixture[r.symbol];r.metrics['10']={status:o===null?'uncalibrated':'calibrated',opportunity_value:o,risk_value:k,p_bottom:bottom,p_top:top,opportunity_score:score,risk_score:k,expected_return:o,es95:k,positive_edge:o>0};}}
       render();
     }""")
-    for field,expected in [('opportunity_value',['WDC','MU','SNDK','STX']),('opportunity_value',['SNDK','MU','WDC','STX']),('risk_value',['MU','WDC','SNDK','STX']),('risk_value',['SNDK','WDC','MU','STX']),('stage_probability',['SNDK','WDC','MU','STX']),('stage_probability',['MU','WDC','SNDK','STX'])]:
+    for field,expected in [('opportunity_value',['WDC','MU','SNDK','STX']),('opportunity_value',['SNDK','MU','WDC','STX']),('risk_value',['MU','WDC','SNDK','STX']),('risk_value',['SNDK','WDC','MU','STX']),('bottom_probability',['SNDK','WDC','MU','STX']),('bottom_probability',['MU','WDC','SNDK','STX']),('top_probability',['WDC','MU','SNDK','STX']),('top_probability',['SNDK','MU','WDC','STX'])]:
         page.locator(f"[data-field='{field}']").click()
         assert page.locator('#stockRows .symbol-button').all_text_contents()==expected
     page.select_option('#storageSubFilter','nand-ssd')
