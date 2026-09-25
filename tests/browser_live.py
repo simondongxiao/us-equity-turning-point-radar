@@ -17,12 +17,21 @@ def run() -> None:
             page.goto(TARGET, wait_until="load")
             assert page.locator("#stockRows tr").count() == 100
             assert page.locator('#indexRows tr').count() == 9
+            assert page.locator('#indexForecastRows tr').count() == 9
             assert 'SOX' in page.locator('#indexSummary').inner_text()
             first = page.locator('#indexSummary').inner_text()
             page.locator('[data-horizon="5"]').click()
             assert page.locator('#indexSummary').inner_text().startswith('5交易日')
             page.locator('[data-horizon="10"]').click()
             assert page.locator('#indexSummary').inner_text() == first
+            page.locator('#indexTopSort').click()
+            assert page.locator('#indexTopSort').get_attribute('aria-pressed') == 'true'
+            page.locator('#indexTopSort').click()
+            assert '↑' in page.locator('#indexTopSort').inner_text()
+            page.locator('#indexForecastRows button', has_text='SOX').click()
+            assert '独立时间检验' in page.locator('#detailBody').inner_text()
+            assert '阶段底' in page.locator('#detailBody').inner_text()
+            page.locator('#closeDetail').click()
             assert page.locator("#storageQuick").inner_text().startswith("存储与内存 · 4")
             assert page.locator("[aria-label='机会分排序：从大到小']").get_attribute("aria-pressed") == "true"
             page.locator("[aria-label='机会分排序：从大到小']").click()

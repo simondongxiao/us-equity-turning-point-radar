@@ -463,10 +463,10 @@ class ModelBundle:
         return calibrated / total if total > 0 else raw / raw.sum()
 
 
-def train_bundle(samples: pd.DataFrame, features: list[str], horizon: int) -> ModelBundle | None:
+def train_bundle(samples: pd.DataFrame, features: list[str], horizon: int, strict_time: bool = False) -> ModelBundle | None:
     valid = samples.dropna(subset=["label"]).copy()
     valid = valid[valid[features].notna().sum(axis=1) >= max(5, int(len(features) * 0.65))]
-    if valid.empty or valid["label"].nunique() < 3:
+    if valid.empty or valid["label"].nunique() < (2 if strict_time else 3):
         return None
     dates = pd.to_datetime(valid["date"])
     max_date = dates.max()
@@ -475,11 +475,20 @@ def train_bundle(samples: pd.DataFrame, features: list[str], horizon: int) -> Mo
     train = valid[dates < cal_start]
     cal = valid[(dates >= cal_start) & (dates < test_start)]
     test = valid[dates >= test_start]
-    if len(train) < 300 or len(cal) < 100 or len(test) < 100:
+    if strict_time:
+        if "label_end" not in valid:
+            raise ValueError("Strict time calibration requires actual label maturity dates")
+        train = train[pd.to_datetime(train["label_end"]) < cal_start]
+        cal = cal[pd.to_datetime(cal["label_end"]) < test_start]
+        if len(train) < 300 or len(cal) < 60 or len(test) < 60 or train['label'].nunique() < 2:
+            return None
+        if not set(valid['label']).issubset(set(train['label'])):
+            return None
+    if not strict_time and (len(train) < 300 or len(cal) < 100 or len(test) < 100):
         # Keep the time order but mark the eventual output low confidence.
         cut = int(len(valid) * 0.7); cal_cut = int(len(valid) * 0.85)
         train, cal, test = valid.iloc[:cut], valid.iloc[cut:cal_cut], valid.iloc[cal_cut:]
-    if train["label"].nunique() < 3 or len(cal) < 20:
+    if train["label"].nunique() < (2 if strict_time else 3) or len(cal) < 20:
         return None
     medians = train[features].median(numeric_only=True).replace([np.inf, -np.inf], np.nan).fillna(0.0)
     scaler = StandardScaler().fit(train[features].fillna(medians))
@@ -494,9 +503,17 @@ def train_bundle(samples: pd.DataFrame, features: list[str], horizon: int) -> Mo
         ir.fit(cal_raw[:, i], (cal["label"].to_numpy() == cls).astype(float))
         calibrators[str(cls)] = ir
     test_metrics: dict[str, Any] = {"horizon": horizon, "train_n": len(train), "calibration_n": len(cal), "test_n": len(test), "ambiguous_excluded": int(samples["ambiguous"].sum())}
+    if strict_time:
+        test_metrics.update({"purged": True, "train_label_end": str(pd.to_datetime(train['label_end']).max().date()),
+            "calibration_start": str(pd.to_datetime(cal['date']).min().date()),
+            "calibration_label_end": str(pd.to_datetime(cal['label_end']).max().date()),
+            "test_start": str(pd.to_datetime(test['date']).min().date()), "classes": list(model.classes_)})
     if len(test):
         test_raw = model.predict_proba(scaler.transform(test[features].fillna(medians)))
         test_cal = np.column_stack([calibrators[str(cls)].predict(test_raw[:, i]) for i, cls in enumerate(model.classes_)])
+        if strict_time:
+            empty_mass = test_cal.sum(axis=1) <= 0
+            test_cal[empty_mass] = test_raw[empty_mass]
         test_cal = test_cal / np.maximum(test_cal.sum(axis=1, keepdims=True), 1e-9)
         y = pd.Categorical(test["label"], categories=model.classes_).codes
         one_hot = np.eye(len(model.classes_))[y]
@@ -506,6 +523,13 @@ def train_bundle(samples: pd.DataFrame, features: list[str], horizon: int) -> Mo
             "test_start": str(pd.to_datetime(test["date"]).min().date()),
             "test_end": str(pd.to_datetime(test["date"]).max().date()),
         })
+        if strict_time and set(model.classes_).issubset({'00','01','10','11'}):
+            for side, index in [('bottom', 0), ('top', 1)]:
+                probability = test_cal[:, [str(c)[index] == '1' for c in model.classes_]].sum(axis=1)
+                actual = np.array([str(c)[index] == '1' for c in test['label']], dtype=float)
+                test_metrics[f'{side}_brier'] = float(np.mean((probability-actual)**2))
+                test_metrics[f'{side}_observed_rate'] = float(actual.mean())
+                test_metrics[f'{side}_predicted_mean'] = float(probability.mean())
     return ModelBundle(scaler, model, calibrators, features, medians, test_metrics)
 
 
@@ -685,7 +709,7 @@ def make_samples(frames: dict[str, pd.DataFrame], seeds: list[dict[str, Any]], m
     return {h: pd.concat(v, ignore_index=True) if v else pd.DataFrame() for h, v in all_samples.items()}, feature_frames
 
 
-def build_scenario_metric(symbol: str, current: pd.Series, historical: pd.DataFrame, bundle: ModelBundle | None, horizon: int, current_frame: pd.DataFrame) -> dict[str, Any]:
+def build_scenario_metric(symbol: str, current: pd.Series, historical: pd.DataFrame, bundle: ModelBundle | None, horizon: int, current_frame: pd.DataFrame, event_bundle: ModelBundle | None = None, relative_atr: bool = False) -> dict[str, Any]:
     ref, atr = clean_num(current.get("adj_close")), clean_num(current.get("atr"))
     if not ref or not atr or atr <= 0:
         return {"status": "data_error"}
@@ -723,11 +747,34 @@ def build_scenario_metric(symbol: str, current: pd.Series, historical: pd.DataFr
         terminal = ref * (1 + float(row["terminal_return"]) * min(2.0, max(0.5, scale_ratio)))
         min_price = ref - (ref - float(row["min_price"])) * min(2.0, max(0.5, scale_ratio))
         max_price = ref + (float(row["max_price"]) - float(row["adj_close"])) * min(2.0, max(0.5, scale_ratio))
+        if relative_atr:
+            origin = float(row['adj_close'])
+            terminal = ref + origin * float(row['terminal_return']) * scale_ratio
+            min_price = ref + (float(row['min_price']) - origin) * scale_ratio
+            max_price = ref + (float(row['max_price']) - origin) * scale_ratio
+            if min_price <= 0 or not min_price <= terminal <= max_price:
+                continue
         dd = max(0.0, 1 - min_price / ref)
         records.append({"label": cls, "weight": weight, "terminal": terminal, "min_price": min_price, "max_price": max_price, "drawdown": dd, "bottom": bool(row["bottom_event"]), "top": bool(row["top_event"])})
     if not records:
         return {"status": "structural_only"}
     weights = np.array([r["weight"] for r in records], dtype=float); weights /= weights.sum()
+    if event_bundle is not None:
+        # A calibrated four-state joint event distribution preserves independent
+        # bottom/top marginals while keeping all public outputs on one path set.
+        states = np.array([f"{int(r['bottom'])}{int(r['top'])}" for r in records])
+        target = dict(zip(event_bundle.model.classes_, event_bundle.predict(current)))
+        for state, probability in target.items():
+            if probability > 1e-8 and not np.any(states == state):
+                return {"status":"uncalibrated", "reason":"calibrated joint event has no supporting historical paths"}
+        for state in np.unique(states):
+            mask = states == state
+            weights[mask] *= float(target.get(state, 0.0)) / weights[mask].sum()
+        if weights.sum() <= 0:
+            return {"status":"uncalibrated", "reason":"no calibrated path mass"}
+        weights /= weights.sum()
+        if 1 / np.sum(weights ** 2) < 20:
+            return {"status":"uncalibrated", "reason":"effective scenario support below 20"}
     terminal = np.array([r["terminal"] for r in records]); mins = np.array([r["min_price"] for r in records]); maxs = np.array([r["max_price"] for r in records]); dds = np.array([r["drawdown"] for r in records])
     net = terminal / ref - 1 - 0.0015
     expected = float(np.sum(weights * net)); sd = float(np.sqrt(np.sum(weights * (net - expected) ** 2)))
@@ -920,13 +967,19 @@ def build(refresh: bool = False, run_id: str | None = None, extra_symbol: str | 
     index_frames, index_source = download_prices([s for s in INDEX_SPECS if s not in frames], refresh=refresh)
     context_frames = {**frames, **index_frames}
     data["index_context"] = build_index_context(context_frames, records + temporary, as_of)
+    try:
+        from index_forecasts import build_index_forecasts
+    except ModuleNotFoundError:
+        from scripts.index_forecasts import build_index_forecasts
+    data['index_forecasts'] = build_index_forecasts(sys.modules[__name__], context_frames, data['index_context'], as_of)
+    backtest['index_targets'] = {r['symbol']:r['validation'] for r in data['index_forecasts']['records']}
     source["index_context"] = index_source
     write_json(OUTPUT_DIR / f"dashboard-{run_id}.json", data)
     write_json(OUTPUT_DIR / f"backtest-{run_id}.json", backtest)
     write_json(STATE_DIR / "model_card.json", {"model_version": MODEL_VERSION, "feature_version": FEATURE_VERSION, "calibration": "independent time calibration window", "status": "calibrated_low_confidence", "champion": "B3 without storage challenger", "challenger": "B3 + storage LOO/subgroup factors shadow-only", "backtest": backtest, "source": source})
     db = ensure_ledger()
     db.execute("INSERT INTO runs VALUES (?,?,?,?,?,?,?)", (run_id, iso(utc_now()), data["as_of"], MODEL_VERSION, FEATURE_VERSION, "succeeded", str(OUTPUT_DIR / f"dashboard-{run_id}.json")))
-    for rec in records:
+    for rec in records + data['index_forecasts']['records']:
         for h in HORIZONS:
             db.execute("INSERT INTO predictions VALUES (?,?,?,?,?,?)", (f"{run_id}:{rec['symbol']}:{h}", run_id, rec["symbol"], h, rec["as_of"], json.dumps(rec["metrics"][str(h)], ensure_ascii=False),))
     db.commit(); db.close()
