@@ -1,0 +1,30 @@
+{
+  "as_of": "2026-09-25",
+  "pool_action": "retain_seed_until_live_popularity_source_is_available",
+  "regular_pool_count": 100,
+  "tech_growth_count": 60,
+  "nontech_count": 40,
+  "mother_pool_observed_count": 5347,
+  "mother_pool_source": "D:\\codex\\us-share-daily-market-html\\outputs\\us_share_technical_screener\\2026-09-25\\all_metrics.csv",
+  "mother_pool_data_dates": [
+    "2026-09-24"
+  ],
+  "storage_candidates_observed": [
+    "MU",
+    "NTAP",
+    "SNDK",
+    "STX",
+    "WDC"
+  ],
+  "weekly_reselection_status": "BLOCKED",
+  "weekly_reselection_reason": "Snapshot is available but point-in-time 60-day dollar-volume medians and daily active-rank persistence are not yet validated. Audit only; no automatic selection claim.",
+  "mother_pool_qualification": "not_verified_by_radar; source snapshot is read-only",
+  "storage_members": [
+    "MU",
+    "WDC",
+    "SNDK",
+    "STX"
+  ],
+  "storage_candidate_gap": "No independent current popularity history was available in the new radar adapter; no stock was forced into the pool.",
+  "historical_pool_preserved": true
+}

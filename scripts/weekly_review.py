@@ -15,11 +15,19 @@ def main() -> None:
     parser.add_argument("--as-of", default=datetime.now(timezone.utc).strftime("%Y-%m-%d"))
     args = parser.parse_args()
     seed = list(csv.DictReader((ROOT / "assets" / "universe_seed.csv").open(encoding="utf-8-sig", newline="")))
-    all_metrics = Path(r"D:\codex\us-share-daily-market-html\outputs\us_share_technical_screener\2026-09-13\all_metrics.csv")
+    source_root = Path(r"D:\codex\us-share-daily-market-html\outputs\us_share_technical_screener")
+    candidates = sorted(p for p in source_root.glob("*/all_metrics.csv") if p.parent.name <= args.as_of)
+    all_metrics = candidates[-1] if candidates else None
     mother_count = 0
-    if all_metrics.exists():
+    source_dates = []
+    storage_candidates = []
+    if all_metrics and all_metrics.exists():
         with all_metrics.open(encoding="utf-8-sig", newline="") as fh:
-            mother_count = sum(1 for _ in csv.DictReader(fh))
+            rows = list(csv.DictReader(fh))
+        rows = [row for row in rows if row.get("base_date") and row["base_date"] <= args.as_of]
+        mother_count = len(rows)
+        source_dates = sorted({row["base_date"] for row in rows})
+        storage_candidates = [row.get("symbol") for row in rows if row.get("symbol") in {"MU", "SNDK", "WDC", "STX", "PSTG", "NTAP"}]
     storage = [r["symbol"] for r in seed if r.get("research_group_id") == "storage-memory"]
     report = {
         "as_of": args.as_of,
@@ -28,12 +36,18 @@ def main() -> None:
         "tech_growth_count": sum(r.get("coverage_bucket") == "科技与成长主题" for r in seed),
         "nontech_count": sum(r.get("coverage_bucket") == "非科技主题" for r in seed),
         "mother_pool_observed_count": mother_count,
+        "mother_pool_source": str(all_metrics) if all_metrics else None,
+        "mother_pool_data_dates": source_dates,
+        "storage_candidates_observed": storage_candidates,
+        "weekly_reselection_status": "BLOCKED",
+        "weekly_reselection_reason": "Snapshot is available but point-in-time 60-day dollar-volume medians and daily active-rank persistence are not yet validated. Audit only; no automatic selection claim.",
         "mother_pool_qualification": "not_verified_by_radar; source snapshot is read-only",
         "storage_members": storage,
         "storage_candidate_gap": "No independent current popularity history was available in the new radar adapter; no stock was forced into the pool.",
         "historical_pool_preserved": True,
     }
-    out = ROOT / "state" / f"weekly-review-{args.as_of}.json"
+    stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%fZ")
+    out = ROOT / "state" / f"weekly-review-{args.as_of}-{stamp}.json"
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
     print(json.dumps(report, ensure_ascii=False))

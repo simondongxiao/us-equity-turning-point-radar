@@ -259,6 +259,11 @@ def download_prices(symbols: list[str], refresh: bool = False) -> tuple[dict[str
         "missing_symbols": missing,
         "errors": source_errors,
         "common_latest_date": latest,
+        "latest_complete_date_by_symbol": {
+            symbol: max(d for d in frame.index if d.date() <= cutoff_date).strftime("%Y-%m-%d")
+            for symbol, frame in frames.items()
+            if any(d.date() <= cutoff_date for d in frame.index)
+        },
         "complete_session_cutoff_ny": cutoff_date.isoformat(),
         "start_requested": start,
         "end_requested": end,
@@ -817,6 +822,8 @@ def write_json(path: Path, value: Any) -> None:
 
 
 def build(refresh: bool = False, run_id: str | None = None, extra_symbol: str | None = None) -> dict[str, Any]:
+    if run_id and (OUTPUT_DIR / f"dashboard-{run_id}.json").exists():
+        raise ValueError("run_id already frozen; use a new run_id for a revision")
     print("[radar] loading seed and price snapshot", flush=True)
     seeds = read_seed()
     seed_symbols = [r["symbol"] for r in seeds]
@@ -911,10 +918,10 @@ def build(refresh: bool = False, run_id: str | None = None, extra_symbol: str | 
     write_json(OUTPUT_DIR / f"backtest-{run_id}.json", backtest)
     write_json(STATE_DIR / "model_card.json", {"model_version": MODEL_VERSION, "feature_version": FEATURE_VERSION, "calibration": "independent time calibration window", "status": "calibrated_low_confidence", "champion": "B3 without storage challenger", "challenger": "B3 + storage LOO/subgroup factors shadow-only", "backtest": backtest, "source": source})
     db = ensure_ledger()
-    db.execute("INSERT OR REPLACE INTO runs VALUES (?,?,?,?,?,?,?)", (run_id, iso(utc_now()), data["as_of"], MODEL_VERSION, FEATURE_VERSION, "succeeded", str(OUTPUT_DIR / f"dashboard-{run_id}.json")))
+    db.execute("INSERT INTO runs VALUES (?,?,?,?,?,?,?)", (run_id, iso(utc_now()), data["as_of"], MODEL_VERSION, FEATURE_VERSION, "succeeded", str(OUTPUT_DIR / f"dashboard-{run_id}.json")))
     for rec in records:
         for h in HORIZONS:
-            db.execute("INSERT OR REPLACE INTO predictions VALUES (?,?,?,?,?,?)", (f"{run_id}:{rec['symbol']}:{h}", run_id, rec["symbol"], h, rec["as_of"], json.dumps(rec["metrics"][str(h)], ensure_ascii=False),))
+            db.execute("INSERT INTO predictions VALUES (?,?,?,?,?,?)", (f"{run_id}:{rec['symbol']}:{h}", run_id, rec["symbol"], h, rec["as_of"], json.dumps(rec["metrics"][str(h)], ensure_ascii=False),))
     db.commit(); db.close()
     return data
 

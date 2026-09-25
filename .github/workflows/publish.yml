@@ -10,6 +10,10 @@ permissions:
   pages: write
   id-token: write
 
+concurrency:
+  group: radar-pages-batch
+  cancel-in-progress: false
+
 jobs:
   build-pages:
     runs-on: ubuntu-latest
@@ -19,9 +23,20 @@ jobs:
         with:
           python-version: "3.12"
       - run: python -m pip install -r requirements.txt
+      - run: python -m unittest discover -s tests -p 'test*.py'
+      - run: node tests/sort.test.cjs
       - run: python scripts/radar_engine.py --output site/data.json
       - run: python scripts/render_preview.py --input site/data.json --output site/index.html
       - run: python scripts/validate_delivery.py --dashboard site/data.json --production
+      - name: Retain frozen derived forecasts and evaluation
+        uses: actions/upload-artifact@v4
+        with:
+          name: radar-derived-${{ github.run_id }}
+          path: |
+            outputs/dashboard-*.json
+            outputs/backtest-*.json
+          retention-days: 90
+          if-no-files-found: error
       - name: Publish Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
