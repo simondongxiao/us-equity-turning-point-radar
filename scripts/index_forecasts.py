@@ -46,6 +46,9 @@ def build_index_forecasts(engine, frames, context, as_of):
                 metric = engine.build_scenario_metric(symbol, features.loc[as_of], samples, bundle, horizon, features,
                                                        event_bundle=event_bundle, relative_atr=True)
                 metric['model_version'] = VERSION
+                for side in ('bottom', 'top'):
+                    if metric.get('p_'+side, 0) <= 1e-8:
+                        metric[side+'_band'] = None
                 # Indices and VIX spot are not directly executable instruments.
                 for field in ('opportunity_value','expected_return','mu_lcb','cost_assumption'):
                     metric.pop(field, None)
