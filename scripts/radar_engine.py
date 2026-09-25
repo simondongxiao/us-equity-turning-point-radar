@@ -35,8 +35,10 @@ from sklearn.isotonic import IsotonicRegression
 
 try:
     from potential_ranges import build_potential_ranges
+    from index_context import INDEX_SPECS, build_index_context
 except ModuleNotFoundError:
     from scripts.potential_ranges import build_potential_ranges
+    from scripts.index_context import INDEX_SPECS, build_index_context
 
 ROOT = Path(__file__).resolve().parents[1]
 SEED_CSV = ROOT / "assets" / "universe_seed.csv"
@@ -914,6 +916,11 @@ def build(refresh: bool = False, run_id: str | None = None, extra_symbol: str | 
             mother_count = max(0, sum(1 for _ in fh) - 1)
     source["mother_pool"] = {"source": "us-share-daily-market-html/all_metrics.csv", "available_symbols": mother_count, "qualification_verified": False, "note": "母池规模来自旧美股行情项目快照；本项目未把它改写成当前人气排名。"}
     data = {"build_mode": "live", "status_message": "真实日线行情已接入；概率为按时间切分并独立校准的B3低可信结果。Price Structure先生成候选支撑/阻力，期权分布只约束合理波动区间，偏斜与事件用于描述尾部风险；期权不代表绝对顶底。存储分类/轮动已接入，存储因子仍为影子挑战者，未宣称增益。", "generated_at": iso(utc_now()), "as_of": as_of.strftime("%Y-%m-%d"), "as_of_beijing": f"{as_of.strftime('%Y-%m-%d')} 纽约收盘数据；北京时间日期需按交易日换算", "run_id": run_id, "prediction_snapshot_id": run_id, "model_version": MODEL_VERSION, "feature_version": FEATURE_VERSION, "potential_range_version": "five-step-candidate-constraint-v2", "strategy_version": STRATEGY_VERSION, "universe_version": "curated-seed-20260915-v1.1-live-validation", "taxonomy_version": TAXONOMY_VERSION, "source_manifest": source, "records": records, "temporary": temporary, "storage_rotation": rotation, "rotation_summary": [rotation["summary"], "存储四只为同一主研究组；细分视图允许MU重叠，主表不重复计数。", "存储新因子为shadow/challenger，未套用旧校准器；不要把MU强弱写成SNDK/WDC/STX的固定结论。"], "public_config": {"api_base_url": None}, "backtest": backtest, "coverage": {"regular_pool": len(records), "valid_forecast_records": valid, "usable_price_records": sum(1 for r in records if r.get("reference_price") is not None), "data_cutoff": as_of.strftime("%Y-%m-%d"), "financial_backtest_status": "B3 time-split metrics computed; storage incremental alpha BLOCKED"}}
+    # Context benchmarks cannot move the champion's stock/market cutoff date.
+    index_frames, index_source = download_prices([s for s in INDEX_SPECS if s not in frames], refresh=refresh)
+    context_frames = {**frames, **index_frames}
+    data["index_context"] = build_index_context(context_frames, records + temporary, as_of)
+    source["index_context"] = index_source
     write_json(OUTPUT_DIR / f"dashboard-{run_id}.json", data)
     write_json(OUTPUT_DIR / f"backtest-{run_id}.json", backtest)
     write_json(STATE_DIR / "model_card.json", {"model_version": MODEL_VERSION, "feature_version": FEATURE_VERSION, "calibration": "independent time calibration window", "status": "calibrated_low_confidence", "champion": "B3 without storage challenger", "challenger": "B3 + storage LOO/subgroup factors shadow-only", "backtest": backtest, "source": source})
