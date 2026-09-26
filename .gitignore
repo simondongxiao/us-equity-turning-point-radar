@@ -8,3 +8,7 @@ outputs/published-runs/
 !outputs/README.md
 site/data.json
 local_gateway.log
+state/audit/
+state/frozen/
+outputs/upgrade-baseline/
+outputs/restore-prior/

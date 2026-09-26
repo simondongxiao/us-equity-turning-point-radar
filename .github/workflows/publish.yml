@@ -6,6 +6,7 @@ on:
     - cron: "30 22 * * 1-5"
 
 permissions:
+  actions: read
   contents: write
   pages: write
   id-token: write
@@ -25,16 +26,24 @@ jobs:
       - run: python -m pip install -r requirements.txt
       - run: python -m unittest discover -s tests -p 'test*.py'
       - run: node tests/sort.test.cjs
+      - run: python scripts/restore_frozen.py
+        env:
+          GH_TOKEN: ${{ github.token }}
       - run: python scripts/radar_engine.py --output site/data.json
+      - run: python scripts/audit_upgrade.py --input site/data.json --output site/data.json
+      - run: python scripts/render_audit.py
       - run: python scripts/render_preview.py --input site/data.json --output site/index.html
       - run: python scripts/validate_delivery.py --dashboard site/data.json --production
       - name: Retain frozen derived forecasts and evaluation
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: radar-derived-${{ github.run_id }}
           path: |
             outputs/dashboard-*.json
             outputs/backtest-*.json
+            state/audit/**
+            state/frozen/**
           retention-days: 90
           if-no-files-found: error
       - name: Publish Pages artifact
