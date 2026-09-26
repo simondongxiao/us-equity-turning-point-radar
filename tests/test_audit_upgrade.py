@@ -5,9 +5,13 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 from scripts.audit_upgrade import freeze, split_at_origin, features, labels, metrics, conditional_bands
+from scripts.check_publish_time import check
 
 
 class AuditTests(unittest.TestCase):
+    def test_old_build_cannot_replace_new_website(self):
+        with self.assertRaises(ValueError):check({'as_of':'2026-09-14'},{'as_of':'2026-09-24'})
+        check({'as_of':'2026-09-25'},{'as_of':'2026-09-24'})
     def test_frozen_conflict(self):
         with tempfile.TemporaryDirectory(dir=Path(__file__).resolve().parents[1]/'outputs') as tmp:
             p=Path(tmp)/'forecast.json'

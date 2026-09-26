@@ -35,6 +35,7 @@ jobs:
       - run: python scripts/render_audit.py
       - run: python scripts/render_preview.py --input site/data.json --output site/index.html
       - run: python scripts/validate_delivery.py --dashboard site/data.json --production
+      - run: python scripts/check_publish_time.py
       - run: python scripts/secure_state.py save
         env:
           GH_TOKEN: ${{ github.token }}
