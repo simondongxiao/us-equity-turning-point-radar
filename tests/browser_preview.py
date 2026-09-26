@@ -80,7 +80,7 @@ with sync_playwright() as p:
     # Ephemeral synthetic data: discarded before preview screenshots and never written to JSON.
     page.evaluate("""() => {
       const fixture={MU:[.1,.3,21,.2,.4],SNDK:[.3,.1,87,.7,.1],WDC:[-.1,.2,4,.3,.5],STX:[null,null,null,null,null]};
-      for(const r of regular){if(fixture[r.symbol]){const [o,k,score,bottom,top]=fixture[r.symbol];r.metrics['10']={status:o===null?'uncalibrated':'calibrated',opportunity_value:o,risk_value:k,p_bottom:bottom,p_top:top,opportunity_score:score,risk_score:k,expected_return:o,es95:k,positive_edge:o>0};}}
+      for(const r of regular){if(fixture[r.symbol]){const [o,k,score,bottom,top]=fixture[r.symbol];r.metrics['10']={status:o===null?'uncalibrated':'calibrated',opportunity_value:o,risk_value:k,p_bottom:bottom,p_top:top,p_upfirst:.65,p_downfirst:.25,p_unhit:.10,opportunity_score:score,risk_score:k,expected_return:o,es95:k,positive_edge:o>0};}}
       DATA.audit_upgrade={latest:{'10':[{symbol:'SNDK',reference:100,p_bottom:.6,p_top:.7,bottom_band_ratio:[.88,.91,.94],top_band_ratio:[1.06,1.09,1.12],fan:{sessions:[0,1,2],p25:[1,.98,.96],p50:[1,1.01,1.03],p75:[1,1.04,1.08]},attribution:[{group:'市场/指数',bottom_delta:.03,top_delta:-.02}],stress:[{market_shock:-.015,p_bottom:.65,p_top:.63},{market_shock:0,p_bottom:.6,p_top:.7}]}]}};
       render();
     }""")
@@ -89,10 +89,12 @@ with sync_playwright() as p:
         assert page.locator('#stockRows .symbol-button').all_text_contents()==expected
     page.select_option('#storageSubFilter','nand-ssd')
     assert page.locator('#stockRows tr').count()==2
+    assert '上 65.0%' in page.locator('#stockRows tr',has=page.locator('button',has_text='SNDK')).inner_text()
     assert page.evaluate("regular.find(r=>r.symbol==='SNDK').metrics['10'].opportunity_score")==87
     page.locator('#stockRows .symbol-button',has_text='SNDK').click()
     assert page.locator('#detailBody .fan-chart').count()==1
     assert '不是下一交易日涨跌预测' in page.locator('#detailBody').inner_text()
+    assert '65.0% / 25.0% / 10.0%' in page.locator('#detailBody').inner_text()
     page.locator('#detailBody select').select_option('-0.015')
     assert '65.0%' in page.locator('#detailBody').inner_text()
     page.locator('#closeDetail').click()

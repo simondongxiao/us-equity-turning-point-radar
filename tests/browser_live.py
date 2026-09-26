@@ -60,9 +60,12 @@ def run() -> None:
             page.locator("#clearFilters").click()
             assert page.locator("#storageQuick").get_attribute("aria-pressed") == "false"
             assert page.locator("#stockRows tr").count() == 100
+            qcom_row = page.locator("#stockRows tr", has=page.locator("button.symbol-button", has_text="QCOM"))
+            assert "上 70.4%" in qcom_row.inner_text()
             page.locator("#stockRows button.symbol-button", has_text="QCOM").click()
             qcom_text = page.locator("#detailBody").inner_text()
             assert "B3多周期潜在价带与场景占比" in qcom_text
+            assert "70.4% / 27.6% / 2.0%" in qcom_text
             assert "高顶部占比可以与短期上涨同时出现" in qcom_text
             assert page.locator("#detailBody .fan-chart").count() == 1
             page.locator("#closeDetail").click()
