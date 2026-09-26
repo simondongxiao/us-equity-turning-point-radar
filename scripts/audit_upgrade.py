@@ -12,7 +12,7 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.isotonic import IsotonicRegression
 
 ROOT = Path(__file__).resolve().parents[1]
-VERSION = "shadow-purged-joint-v2.2"
+VERSION = "shadow-purged-joint-v2.3"
 TECH = ["ret5", "ret20", "ma20", "ma50", "atr_pct", "rv20"]
 CONTEXT = ["market5", "market20", "qqq5", "sox5", "vix", "beta", "residual5"]
 CLASSES = ["00", "01", "10", "11"]
@@ -99,6 +99,7 @@ def labels(frame, x, horizon):
         touch = "unhit" if min(u,d)==horizon else ("ambiguous" if u==d else ("upfirst" if u<d else "downfirst"))
         result.append({**row, "date": frame.index[i], "label_end": frame.index[i+horizon], "joint": f"{int(bottom)}{int(top)}", "first_touch": touch,
                        "low_ratio": lo/ref, "high_ratio": hi/ref,
+                       "path_ratios": (close/ref).tolist(),
                        "net_hold": float(close[-1]/opens[i+1]-1-.0015)})
     return pd.DataFrame(result)
 
@@ -159,6 +160,55 @@ def conditional_bands(history, probabilities, atr_pct):
         bands[(mass<=1e-10)|(bands[:,0]<=0)]=np.nan
         result[side]=bands
     return result
+
+
+def path_fan(history, probabilities, atr_pct, horizon):
+    """Four-state calibrated close-path fan using matured calibration paths."""
+    state_steps=[]
+    for state in CLASSES:
+        subset=history[history.joint==state]
+        paths=[]
+        for row in subset[['path_ratios','atr_pct']].itertuples(index=False):
+            if isinstance(row.path_ratios,list) and len(row.path_ratios)==horizon and row.atr_pct>0:
+                paths.append((np.asarray(row.path_ratios)-1)/row.atr_pct)
+        if len(paths)<20:return [None]*len(probabilities)
+        state_steps.append(np.asarray(paths))
+    curves=[[1.0,1.0,1.0] for _ in range(len(probabilities))]
+    output=[{'sessions':[0],'p25':[1.0],'p50':[1.0],'p75':[1.0]} for _ in range(len(probabilities))]
+    for step in range(horizon):
+        values=[np.sort(paths[:,step]) for paths in state_steps]
+        grid=np.unique(np.quantile(np.concatenate(values),np.linspace(0,1,257)))
+        cdfs=np.array([np.searchsorted(v,grid,side='right')/len(v) for v in values])
+        mixtures=probabilities@cdfs
+        qs=np.column_stack([grid[np.argmax(mixtures>=q,axis=1)] for q in (.25,.5,.75)])
+        ratios=1+qs*np.asarray(atr_pct)[:,None]
+        for i,row in enumerate(ratios):
+            output[i]['sessions'].append(step+1)
+            for key,value in zip(('p25','p50','p75'),row):output[i][key].append(float(value))
+    return output
+
+
+def explain_and_stress(bundle, current):
+    """Leave-group-to-median sensitivity and fixed-other-feature market shocks."""
+    base=predict(bundle,current)
+    groups={'价量结构':TECH,'市场/指数':['market5','market20','qqq5','sox5','vix'],'个股Beta/残差':['beta','residual5']}
+    attribution=[[] for _ in range(len(current))]
+    med=bundle[1]
+    for name,cols in groups.items():
+        perturbed=current.copy()
+        for col in cols:perturbed[col]=med[col]
+        p=predict(bundle,perturbed)
+        for i in range(len(current)):
+            attribution[i].append({'group':name,'bottom_delta':float((base[i,2]+base[i,3])-(p[i,2]+p[i,3])),
+                                   'top_delta':float((base[i,1]+base[i,3])-(p[i,1]+p[i,3]))})
+    stress=[[] for _ in range(len(current))]
+    for shock in (-.03,-.015,0,.015,.03):
+        changed=current.copy()
+        for col in ('market5','market20','qqq5','sox5'):changed[col]=changed[col]+shock
+        p=predict(bundle,changed)
+        for i in range(len(current)):
+            stress[i].append({'market_shock':shock,'p_bottom':float(p[i,2]+p[i,3]),'p_top':float(p[i,1]+p[i,3])})
+    return attribution,stress
 
 
 def metrics(rows):
@@ -248,16 +298,23 @@ def run_shadow(data, frames, folder):
         if bundle:
             current=pd.DataFrame([feature_map[s].iloc[-1] for s in symbols])
             probs=predict(bundle,current)
+            bands=conditional_bands(cal,probs,current.atr_pct)
+            fans=path_fan(cal,probs,current.atr_pct,h)
+            attribution,stress=explain_and_stress(bundle,current)
             latest[str(h)]=[{'symbol':s,'p_bottom':float(p[2]+p[3]),'p_top':float(p[1]+p[3]),'status':'shadow_only',
                             'as_of':str(feature_map[s].index[-1].date()),'reference':float(feature_map[s].iloc[-1].ref),
-                            'atr_pct':float(feature_map[s].iloc[-1].atr_pct),'bull':bool(feature_map[s].iloc[-1].market20>0)} for s,p in zip(symbols,probs)]
+                            'atr_pct':float(feature_map[s].iloc[-1].atr_pct),'bull':bool(feature_map[s].iloc[-1].market20>0),
+                            'bottom_band_ratio':bands['bottom'][i].tolist() if np.isfinite(bands['bottom'][i]).all() else None,
+                            'top_band_ratio':bands['top'][i].tolist() if np.isfinite(bands['top'][i]).all() else None,
+                            'fan':fans[i],'attribution':attribution[i],'stress':stress[i],
+                            'interpretation':'H内上冲/下探后反转事件；不是下一交易日涨跌预测。'} for i,(s,p) in enumerate(zip(symbols,probs))]
         all_audits.extend(folds)
         print(f'[audit] {h}d frozen replay completed',flush=True)
     return {'version':VERSION,'status':'shadow_only','horizons':reports,'latest':latest,
             'index_coverage':{s:s in frames for s in ('SPY','QQQ','^SOX','^VIX')},
             'universe_status':'current_pool_conditional_selection_bias',
             'label':'asymmetric-excursion-v2: bull bottom 0.8 ATR rebound, top 1.5 ATR reversal; otherwise 1 ATR; excursion 0.75 ATR',
-            'limitations':['Historical replay created now; not past live forecasts.','Current pool selection bias; no invented historical membership.','Market/residual conditional model; sector PIT layer BLOCKED pending historical membership.','No options features or promotion; first-touch production engine retained.','Labels differ from B3; compare technical versus context using same v2 labels only.']}
+            'limitations':['Historical replay created now; not past live forecasts.','Current pool selection bias; no invented historical membership.','Market/residual conditional model; sector PIT layer BLOCKED pending historical membership.','No options features or promotion; first-touch production engine retained.','Fan chart uses matured calibration close paths; attribution is leave-group sensitivity, not additive SHAP.','Stress holds price, volatility and residual features fixed while shifting market/index returns.','Labels differ from B3; compare technical versus context using same v2 labels only.']}
 
 
 def run(input_path):

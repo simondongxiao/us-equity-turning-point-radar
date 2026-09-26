@@ -62,7 +62,7 @@ with sync_playwright() as p:
     page.screenshot(path=str(ROOT/'tests/preview-storage-desktop.png'),full_page=False)
     page.locator('#stockRows .symbol-button').filter(has_text='SNDK').click()
     detail=page.locator('#detailBody').inner_text()
-    for title in ['研究分组与业务标签','NAND / SSD','剔除自身后的同行','多周期潜在价带与概率','候选顶底五步体系','第一步·Price Structure','第二步·Options Distribution','第三步·候选位是否处于合理概率区间','第四步·Options Skew / Put-Call','第五步·Event / Catalyst','最终候选底部区域','最终候选顶部区域','市场与板块是否同步','确认与失效条件','基本面与事件证据','尾部风险与执行','首次触达路径','数据与模型']:assert title in detail,title
+    for title in ['研究分组与业务标签','NAND / SSD','剔除自身后的同行','B3多周期潜在价带与场景占比','候选顶底五步体系','第一步·Price Structure','第二步·Options Distribution','第三步·候选位是否处于合理概率区间','第四步·Options Skew / Put-Call','第五步·Event / Catalyst','最终候选底部区域','最终候选顶部区域','市场与板块是否同步','确认与失效条件','基本面与事件证据','尾部风险与执行','首次触达路径','数据与模型']:assert title in detail,title
     page.screenshot(path=str(ROOT/'tests/preview-sndk-detail.png'),full_page=False)
     page.locator('#closeDetail').click()
     checks.append('SNDK detail retains all original research sections plus taxonomy and LOO')
@@ -81,6 +81,7 @@ with sync_playwright() as p:
     page.evaluate("""() => {
       const fixture={MU:[.1,.3,21,.2,.4],SNDK:[.3,.1,87,.7,.1],WDC:[-.1,.2,4,.3,.5],STX:[null,null,null,null,null]};
       for(const r of regular){if(fixture[r.symbol]){const [o,k,score,bottom,top]=fixture[r.symbol];r.metrics['10']={status:o===null?'uncalibrated':'calibrated',opportunity_value:o,risk_value:k,p_bottom:bottom,p_top:top,opportunity_score:score,risk_score:k,expected_return:o,es95:k,positive_edge:o>0};}}
+      DATA.audit_upgrade={latest:{'10':[{symbol:'SNDK',reference:100,p_bottom:.6,p_top:.7,bottom_band_ratio:[.88,.91,.94],top_band_ratio:[1.06,1.09,1.12],fan:{sessions:[0,1,2],p25:[1,.98,.96],p50:[1,1.01,1.03],p75:[1,1.04,1.08]},attribution:[{group:'市场/指数',bottom_delta:.03,top_delta:-.02}],stress:[{market_shock:-.015,p_bottom:.65,p_top:.63},{market_shock:0,p_bottom:.6,p_top:.7}]}]}};
       render();
     }""")
     for field,expected in [('opportunity_value',['WDC','MU','SNDK','STX']),('opportunity_value',['SNDK','MU','WDC','STX']),('risk_value',['MU','WDC','SNDK','STX']),('risk_value',['SNDK','WDC','MU','STX']),('bottom_probability',['SNDK','WDC','MU','STX']),('bottom_probability',['MU','WDC','SNDK','STX']),('top_probability',['WDC','MU','SNDK','STX']),('top_probability',['SNDK','MU','WDC','STX'])]:
@@ -89,6 +90,12 @@ with sync_playwright() as p:
     page.select_option('#storageSubFilter','nand-ssd')
     assert page.locator('#stockRows tr').count()==2
     assert page.evaluate("regular.find(r=>r.symbol==='SNDK').metrics['10'].opportunity_score")==87
+    page.locator('#stockRows .symbol-button',has_text='SNDK').click()
+    assert page.locator('#detailBody .fan-chart').count()==1
+    assert '不是下一交易日涨跌预测' in page.locator('#detailBody').inner_text()
+    page.locator('#detailBody select').select_option('-0.015')
+    assert '65.0%' in page.locator('#detailBody').inner_text()
+    page.locator('#closeDetail').click()
     checks.append('numeric four-direction sorting in storage, null always last, scores unchanged by filter')
     # A synthetic new temporary member only, no backend or authorization claim.
     page.evaluate("""() => {temporary.push({symbol:'TEST-STORAGE',name_zh:'合成测试',coverage_bucket:'科技与成长主题',research_group:'存储与内存',research_group_id:'storage-memory',business_tags:['NAND','SSD'],metrics:{}});state.view='temporary';render();}""")

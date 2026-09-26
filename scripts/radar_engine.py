@@ -790,6 +790,8 @@ def build_scenario_metric(symbol: str, current: pd.Series, historical: pd.DataFr
         "p_downfirst": float(np.sum(weights * np.array([r["label"] == "downfirst" for r in records]))),
         "p_unhit": float(np.sum(weights * np.array([r["label"] == "unhit" for r in records]))),
         "p_bottom": event_prob(bottom_mask), "p_top": event_prob(top_mask),
+        "stage_probability_status": "scenario_marginal_not_independently_calibrated",
+        "stage_probability_definition": "share of reweighted common historical paths containing the stage event inside the horizon; not a next-session direction forecast",
         "bottom_band": quantile_band(mins[bottom_mask], weights[bottom_mask]) if bottom_mask.any() else quantile_band(mins, weights),
         "top_band": quantile_band(maxs[top_mask], weights[top_mask]) if top_mask.any() else quantile_band(maxs, weights),
         "terminal_band": quantile_band(terminal, weights),
@@ -845,12 +847,12 @@ def enrich_record(row: dict[str, Any], frame: pd.DataFrame, metric_by_h: dict[in
         if isinstance(bottom, dict):
             bottom["arrival_probability"] = clean_num(metric.get("p_downfirst"))
             bottom["stage_turn_probability"] = clean_num(metric.get("p_bottom"))
-            bottom["probability_note"] = "到达概率取原B3共同路径的先触及下边界概率；不是该区域反转概率。阶段底概率另列，不能混同。"
+            bottom["probability_note"] = "到达概率取原B3共同路径的先触及下边界概率；不是该区域反转概率。阶段底为共同路径场景占比，尚未独立校准，不能混同。"
         if isinstance(top, dict):
             top["arrival_probability"] = clean_num(metric.get("p_upfirst"))
             top["stage_turn_probability"] = clean_num(metric.get("p_top"))
-            top["probability_note"] = "到达概率取原B3共同路径的先触及上边界概率；不是该区域反转概率。阶段顶概率另列，不能混同。"
-    return {**row, "as_of": as_of.strftime("%Y-%m-%d"), "reference_price": clean_num(current["adj_close"]), "metrics": safe_json(metrics), "stage": stage, "issuer_id": identity.get("issuer_id"), "issuer_identity_source": identity.get("source"), "peer_context": safe_json({**peers, "note": peer_note, "issuer_id": identity.get("issuer_id"), "subgroup_context": peers.get("subgroup_context", {})}), "potential_ranges": safe_json(potential_payload), "rotation_explanation": "真实日线数据已接入；市场、研究组与个股残差分别计算，允许不同步。" + (" 存储细分与LOO为影子候选，未进入正式校准分数。" if storage else ""), "trigger_summary": "确认：先由Price Structure形成候选位；只有收盘行为满足详情中的反转确认条件才标记结构确认。失效：跳空、事件冲击或重新跌破结构。到达概率、阶段顶底概率和交易成功不可混同。", "event_summary": "本次生产构建未抓取并公开长文本财报、产品发布或宏观事件正文；事件特征为缺失，不把标题或业务分类当作催化概率。", "risk_summary": "风险值来自共同历史路径的最差5%不利幅度均值，未假设保护价一定成交；执行成本按策略版本扣除。", "data_note": f"数据源：{SOURCE_NAME}；截止{as_of.strftime('%Y-%m-%d')}。B3已按时间切分并独立校准；存储新特征为挑战者影子状态。Price Structure先行，期权仅约束顶底候选范围；三层显示层未改写B3概率或排序。"}
+            top["probability_note"] = "到达概率取原B3共同路径的先触及上边界概率；不是该区域反转概率。阶段顶为共同路径场景占比，尚未独立校准，不能混同。"
+    return {**row, "as_of": as_of.strftime("%Y-%m-%d"), "reference_price": clean_num(current["adj_close"]), "metrics": safe_json(metrics), "stage": stage, "issuer_id": identity.get("issuer_id"), "issuer_identity_source": identity.get("source"), "peer_context": safe_json({**peers, "note": peer_note, "issuer_id": identity.get("issuer_id"), "subgroup_context": peers.get("subgroup_context", {})}), "potential_ranges": safe_json(potential_payload), "rotation_explanation": "真实日线数据已接入；市场、研究组与个股残差分别计算，允许不同步。" + (" 存储细分与LOO为影子候选，未进入正式校准分数。" if storage else ""), "trigger_summary": "确认：先由Price Structure形成候选位；只有收盘行为满足详情中的反转确认条件才标记结构确认。失效：跳空、事件冲击或重新跌破结构。到达概率、阶段顶底场景占比和交易成功不可混同。", "event_summary": "本次生产构建未抓取并公开长文本财报、产品发布或宏观事件正文；事件特征为缺失，不把标题或业务分类当作催化概率。", "risk_summary": "风险值来自共同历史路径的最差5%不利幅度均值，未假设保护价一定成交；执行成本按策略版本扣除。", "data_note": f"数据源：{SOURCE_NAME}；截止{as_of.strftime('%Y-%m-%d')}。B3先触达分类按时间切分并独立校准；B3阶段顶/底是共同路径场景占比，尚未分别校准。存储新特征为挑战者影子状态。Price Structure先行，期权仅约束顶底候选范围；三层显示层未改写B3概率或排序。"}
 
 
 def ensure_ledger() -> sqlite3.Connection:
@@ -962,7 +964,7 @@ def build(refresh: bool = False, run_id: str | None = None, extra_symbol: str | 
         with mother_file.open(encoding="utf-8-sig", newline="") as fh:
             mother_count = max(0, sum(1 for _ in fh) - 1)
     source["mother_pool"] = {"source": "us-share-daily-market-html/all_metrics.csv", "available_symbols": mother_count, "qualification_verified": False, "note": "母池规模来自旧美股行情项目快照；本项目未把它改写成当前人气排名。"}
-    data = {"build_mode": "live", "status_message": "真实日线行情已接入；概率为按时间切分并独立校准的B3低可信结果。Price Structure先生成候选支撑/阻力，期权分布只约束合理波动区间，偏斜与事件用于描述尾部风险；期权不代表绝对顶底。存储分类/轮动已接入，存储因子仍为影子挑战者，未宣称增益。", "generated_at": iso(utc_now()), "as_of": as_of.strftime("%Y-%m-%d"), "as_of_beijing": f"{as_of.strftime('%Y-%m-%d')} 纽约收盘数据；北京时间日期需按交易日换算", "run_id": run_id, "prediction_snapshot_id": run_id, "model_version": MODEL_VERSION, "feature_version": FEATURE_VERSION, "potential_range_version": "five-step-candidate-constraint-v2", "strategy_version": STRATEGY_VERSION, "universe_version": "curated-seed-20260915-v1.1-live-validation", "taxonomy_version": TAXONOMY_VERSION, "source_manifest": source, "records": records, "temporary": temporary, "storage_rotation": rotation, "rotation_summary": [rotation["summary"], "存储四只为同一主研究组；细分视图允许MU重叠，主表不重复计数。", "存储新因子为shadow/challenger，未套用旧校准器；不要把MU强弱写成SNDK/WDC/STX的固定结论。"], "public_config": {"api_base_url": None}, "backtest": backtest, "coverage": {"regular_pool": len(records), "valid_forecast_records": valid, "usable_price_records": sum(1 for r in records if r.get("reference_price") is not None), "data_cutoff": as_of.strftime("%Y-%m-%d"), "financial_backtest_status": "B3 time-split metrics computed; storage incremental alpha BLOCKED"}}
+    data = {"build_mode": "live", "status_message": "真实日线行情已接入；B3首次触达分类按时间切分并独立校准，阶段顶/底数字为共同路径场景占比，尚未分别校准且不是下一交易日涨跌预测。Price Structure先生成候选支撑/阻力，期权分布只约束合理波动区间，偏斜与事件用于描述尾部风险；期权不代表绝对顶底。存储分类/轮动已接入，存储因子仍为影子挑战者，未宣称增益。", "generated_at": iso(utc_now()), "as_of": as_of.strftime("%Y-%m-%d"), "as_of_beijing": f"{as_of.strftime('%Y-%m-%d')} 纽约收盘数据；北京时间日期需按交易日换算", "run_id": run_id, "prediction_snapshot_id": run_id, "model_version": MODEL_VERSION, "feature_version": FEATURE_VERSION, "potential_range_version": "five-step-candidate-constraint-v2", "strategy_version": STRATEGY_VERSION, "universe_version": "curated-seed-20260915-v1.1-live-validation", "taxonomy_version": TAXONOMY_VERSION, "source_manifest": source, "records": records, "temporary": temporary, "storage_rotation": rotation, "rotation_summary": [rotation["summary"], "存储四只为同一主研究组；细分视图允许MU重叠，主表不重复计数。", "存储新因子为shadow/challenger，未套用旧校准器；不要把MU强弱写成SNDK/WDC/STX的固定结论。"], "public_config": {"api_base_url": None}, "backtest": backtest, "coverage": {"regular_pool": len(records), "valid_forecast_records": valid, "usable_price_records": sum(1 for r in records if r.get("reference_price") is not None), "data_cutoff": as_of.strftime("%Y-%m-%d"), "financial_backtest_status": "B3 first-touch time-split metrics computed; B3 stage-event marginals not independently calibrated; storage incremental alpha BLOCKED"}}
     # Context benchmarks cannot move the champion's stock/market cutoff date.
     index_frames, index_source = download_prices([s for s in INDEX_SPECS if s not in frames], refresh=refresh)
     context_frames = {**frames, **index_frames}
@@ -976,7 +978,7 @@ def build(refresh: bool = False, run_id: str | None = None, extra_symbol: str | 
     source["index_context"] = index_source
     write_json(OUTPUT_DIR / f"dashboard-{run_id}.json", data)
     write_json(OUTPUT_DIR / f"backtest-{run_id}.json", backtest)
-    write_json(STATE_DIR / "model_card.json", {"model_version": MODEL_VERSION, "feature_version": FEATURE_VERSION, "calibration": "independent time calibration window", "status": "calibrated_low_confidence", "champion": "B3 without storage challenger", "challenger": "B3 + storage LOO/subgroup factors shadow-only", "backtest": backtest, "source": source})
+    write_json(STATE_DIR / "model_card.json", {"model_version": MODEL_VERSION, "feature_version": FEATURE_VERSION, "calibration": "first-touch classes: independent time calibration window; stage-event marginals: scenario share, not independently calibrated", "status": "calibrated_low_confidence", "champion": "B3 without storage challenger", "challenger": "B3 + storage LOO/subgroup factors shadow-only", "backtest": backtest, "source": source})
     db = ensure_ledger()
     db.execute("INSERT INTO runs VALUES (?,?,?,?,?,?,?)", (run_id, iso(utc_now()), data["as_of"], MODEL_VERSION, FEATURE_VERSION, "succeeded", str(OUTPUT_DIR / f"dashboard-{run_id}.json")))
     for rec in records + data['index_forecasts']['records']:

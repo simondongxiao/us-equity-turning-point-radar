@@ -4,7 +4,7 @@ import unittest
 from pathlib import Path
 import numpy as np
 import pandas as pd
-from scripts.audit_upgrade import freeze, split_at_origin, features, labels, metrics, conditional_bands
+from scripts.audit_upgrade import freeze, split_at_origin, features, labels, metrics, conditional_bands, path_fan, explain_and_stress, fit, predict
 from scripts.check_publish_time import check
 
 
@@ -49,6 +49,21 @@ class AuditTests(unittest.TestCase):
         self.assertTrue(np.isnan(bands['bottom'][0]).all())
         np.testing.assert_allclose(bands['bottom'][1],[.90,.90,.90])
         np.testing.assert_allclose(bands['top'][1],[1.12,1.12,1.12])
+
+    def test_fan_attribution_and_stress_are_separate(self):
+        rows=[]
+        for i,state in enumerate(('00','01','10','11')*100):
+            row={c:float((i%17)/17) for c in ['ret5','ret20','ma20','ma50','atr_pct','rv20','market5','market20','qqq5','sox5','vix','beta','residual5']}
+            row.update({'joint':state,'path_ratios':[1.0,1.01],'atr_pct':.02})
+            rows.append(row)
+        history=pd.DataFrame(rows);bundle=fit(history.iloc[:300],history.iloc[300:],['ret5','ret20','ma20','ma50','atr_pct','rv20','market5','market20','qqq5','sox5','vix','beta','residual5'])
+        current=history.iloc[:1]
+        probabilities=predict(bundle,current)
+        fan=path_fan(history,probabilities,current.atr_pct,2)[0]
+        attribution,stress=explain_and_stress(bundle,current)
+        self.assertEqual(fan['sessions'],[0,1,2])
+        self.assertEqual({x['group'] for x in attribution[0]},{'价量结构','市场/指数','个股Beta/残差'})
+        self.assertEqual([x['market_shock'] for x in stress[0]],[-.03,-.015,0,.015,.03])
 
 
 if __name__=='__main__': unittest.main()

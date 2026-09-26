@@ -6,7 +6,7 @@ ROOT=Path(__file__).resolve().parents[1]
 def main():
     p=argparse.ArgumentParser();p.add_argument('--output',type=Path,default=ROOT/'outputs/upgrade-acceptance.md');args=p.parse_args()
     lines=['# 本轮增量验收','',
-           'PASS仅表示本轮已验证的具体范围；BLOCKED不代表既有能力已删除。B3保留，新增v2.2仅影子比较。','']
+           'PASS仅表示本轮已验证的具体范围；BLOCKED不代表既有能力已删除。B3保留，新增v2.3仅影子比较。','']
     for line in (ROOT/'references/acceptance.md').read_text(encoding='utf-8').splitlines():
         if line.startswith('## '):lines.extend([line,''])
         if not line.startswith('- '):continue
@@ -15,6 +15,8 @@ def main():
             status='PASS';reason='仅修改本雷达，Git保留原实现；种子100只与60/40结构测试通过。证券身份部分仍以原验证记录为准。'
         if any(s in line for s in ('机会↓','数值排序','过滤不重算','分类筛选/全部恢复','存储快捷入口','详情同时保留','手机可操作')):
             status='PASS';reason='现有桌面/手机浏览器回归和15项排序断言通过；新增验证页12组合通过。'
+        if '个股有多周期价带' in line:
+            status='PASS';reason='详情保留B3多周期价带、五步候选体系、确认/失效、事件与尾部风险，并新增独立影子扇形图、敏感度和压力测试。'
         if 'VIX/IV/OI/Gamma缺失' in line:
             status='PASS';reason='公开缺失与shadow状态，期权未进入新概率拟合。'
         if any(s in line for s in ('动态池历史和幸存者偏差','旧预测不可变','挑战者晋级/回滚规则','runner临时磁盘之外')):
@@ -33,8 +35,12 @@ def main():
     lines.extend(['','## 六项升级状态','',
                   '- PASS（工程）预测先冻结、结算另存；训练/校准实际成熟日隔离；加密归档恢复。',
                   '- PASS（已运行）近一年4段影子比较、独立顶底校准、条件价带误差与宽度、次日开盘净持有收益。',
+                  '- PARTIAL 指数→个股残差已进入影子Challenger；发行人级板块层因缺点时历史成员仍BLOCKED。',
+                  '- PARTIAL 非对称四态顶底与B3首次触达并存；完整离散竞争hazard及OHLC同bar顺序仍BLOCKED。',
+                  '- BLOCKED 历史期权链、Skew、GEX和Options Flow不足；只从真实抓取时点向前归档，不补造。',
+                  '- PASS（影子解释层）成熟校准路径扇形图、分组敏感度、固定其他特征的指数冲击压力测试与冻结台账已接入网页；不作为B3晋级证明。',
                   '- FAIL（晋级）尚未证明持续优于技术基准，不能宣称70%胜率或误差稳定≤3%。',
-                  '- BLOCKED 历史动态股票池及完整发行人级行业层；历史期权链/GEX；完整共同路径验证后的扇形图、归因与压力概率。'])
+                  '- BLOCKED 历史动态股票池、完整发行人级行业层、期权B4与正式任务网关。'])
     args.output.parent.mkdir(parents=True,exist_ok=True);args.output.write_text('\n'.join(lines)+'\n',encoding='utf-8')
     print(args.output)
 

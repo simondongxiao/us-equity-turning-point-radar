@@ -5,7 +5,7 @@ description: 构建、运行并发布美股阶段顶底概率雷达。以每周�
 
 # 美股阶段顶底概率雷达
 
-版本：`1.1.0-storage`。本次为原包增量升级；不得删减原有研究、回测、网页或安全功能。
+版本：`1.1.1-storage-audit`。本次为原包增量升级；不得删减原有研究、回测、网页或安全功能。
 
 ## 交付契约
 最终日常入口是GitHub Pages上的中文HTML，不是Markdown研究报告、Excel或只有数据的JSON。HTML必须有动态100股表、机会/风险四向箭头排序、周期切换、个股详情、临时个股输入及真实任务状态。研究逻辑不能因做页面而被删减。
@@ -15,6 +15,7 @@ description: 构建、运行并发布美股阶段顶底概率雷达。以每周�
 已知旧行情仓库名`us-share-technical-screener`，现有Skill可能名为`us-share-daily-market-html`，复盘Skill可能名为`us-market-daily-recap`。这些只是只读发现目标，必须检查本地实际内容，不能假装已经检查。不覆盖旧仓库、不重写旧首页、不把新规则写回旧Skill。新网站默认独立仓库`us-equity-turning-point-radar`。GitHub账号提示为`simondongxiao`，发布前以本地`gh auth status`与实际远端核验为准；不匹配时停止发布而非切换身份。
 
 ## 先读哪些文件
+本机当前完整规范源位于`D:\codex\us-equity-turning-point-radar`；安装在`D:\codex\skills`中的Skill以该项目内同名文件和`references`为执行依据。
 首次构建、模型更改和验收：完整读取`references/model-spec.md`、`references/universe-policy.md`、`references/frontend-and-runtime.md`、`references/backtest-and-iteration.md`、`references/acceptance.md`、`references/storage-memory.md`、`references/migration-v1.1.md`。
 普通更新：读取项目配置、当前生产模型卡、最近成功run manifest、只读轮动接口，再按需加载上述参考，不重复从头构建项目。
 股票池初始种子见`assets/universe_seed.csv`，恰好100只。它是人工选定的首版观察种子，不是已跑完当前人气统计的排名；正式上线首跑必须验证证券身份、流动性与持续人气。
@@ -50,6 +51,11 @@ description: 构建、运行并发布美股阶段顶底概率雷达。以每周�
 - 不用未校准0—100评分冒充百分比；不以放宽预测区间或减少交易次数冒充模型进步。
 - 不把底部区域、阶段底部确认、短期反弹和买入时机混为一谈。
 - 不承诺每天更准确、不强制所有股票给出可交易信号。
+
+## 生产与挑战者口径
+现行B3生产层的`p_upfirst / p_downfirst / p_unhit`是互斥首次触达分类；`p_top / p_bottom`来自同一组重加权历史路径中是否包含阶段事件的边际场景占比。后两者不是下一交易日涨跌预测，也不能在未经独立校准前称为“阶段顶/底胜率”。页面、数据契约和解释必须保留`scenario_marginal_not_independently_calibrated`状态。
+
+影子层按非对称四态事件单独校准，顶与底可以同窗发生。它可展示条件极值带、成熟校准路径扇形图、留组回中位数敏感度和固定其他特征的指数冲击压力测试；必须标明当前100股选择偏差、非SHAP及非明日预测。影子层只有按预登记同目标回测通过后才能晋级，不能覆盖B3或改写旧预测。
 
 ## 页面与研究保留
 首页只有短的市场/轮动摘要和主要表格；完整矩阵、误差归因和迭代日志放后台或折叠区。个股详情必须保留多周期价带、结构与条件路径、基本面/事件原文证据、与市场/板块不同步的原因、失效条件及尾部风险；不能简化成只有几个分数的空壳。
