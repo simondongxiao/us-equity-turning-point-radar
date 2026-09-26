@@ -13,6 +13,14 @@ def main():
         status='BLOCKED';reason='本轮证据不足，未宣称完整通过。'
         if any(s in line for s in ('新项目在D:', '原包文件清单无删除','原已','首版100个唯一symbol','首版种子100个唯一')):
             status='PASS';reason='仅修改本雷达，Git保留原实现；种子100只与60/40结构测试通过。证券身份部分仍以原验证记录为准。'
+        if '有可调用SKILL.md与完整可执行项目' in line:
+            status='PASS';reason='Skill已安装于D:\\codex\\skills；同名项目包含真实引擎、冻结台账、回测、HTML和部署流程。'
+        if '真实数据、合成测试、界面模板、历史验证、上线状态分别报告' in line:
+            status='PASS';reason='真实行情、合成测试、历史重放、影子状态与Pages run_id分别展示；不把影子结果冒充生产晋级。'
+        if '5/10/21交易日周期与1—3日修复区分' in line:
+            status='PASS';reason='5/10/21周期共用同一完成交易日截止；页面周期切换不改写阶段字段。'
+        if '市场、行业、个股可不同步' in line:
+            status='PASS';reason='市场、研究组与个股残差分层显示；轮动适配只写入本雷达并记录来源版本。'
         if any(s in line for s in ('机会↓','数值排序','过滤不重算','分类筛选/全部恢复','存储快捷入口','详情同时保留','手机可操作')):
             status='PASS';reason='现有桌面/手机浏览器回归和15项排序断言通过；新增验证页12组合通过。'
         if '个股有多周期价带' in line:
@@ -23,6 +31,12 @@ def main():
             status='PASS';reason='明确当前池条件偏差；冻结文件冲突拒绝；晋级门槛登记；同仓库Release认证加密台账已配置。'
         if '训练/校准/测试按时间' in line:
             status='BLOCKED';reason='新shadow使用实际成熟日双边purge并通过测试；旧B3的完整同级验证尚未重做，不能以新模型结果替旧模型背书。'
+        if '概率校准、价带宽度/覆盖、排序效果和净交易表现分别评价' in line:
+            status='PASS';reason='新shadow分别报告Brier/校准桶、条件价带宽度与覆盖、3%误差及次日开盘扣成本结果；晋级仍FAIL。'
+        if '模型置信度依据真实独立样本' in line:
+            status='PASS';reason='样本数取真实成熟股票日并按21交易日块重采样；扇形图路径数不冒充独立样本数。'
+        if '未校准、样本不足、陈旧和数据异常不能生成假概率' in line:
+            status='PASS';reason='未校准或支持不足返回状态/空值；发布流程含完成交易日防陈旧检查；B3场景占比已单独标注。'
         if any(s in line for s in ('同bar','固定价位触达概率','共同路径概率及区间自洽')):
             status='BLOCKED';reason='现有B3保留。新shadow仅联合事件/条件极值混合验证，尚非完整离散hazard与OHLC共同路径实现。'
         if any(s in line for s in ('网关真实鉴权','池外有效股票完成','单股和批量','错误代码/模糊名称','按周自动调整','首次按近期','每周点时')):
@@ -30,7 +44,7 @@ def main():
         if any(s in line for s in ('新存储因子有真实','LOO按发行人','权重和成员点时','SNDK实体','已周更生产池')):
             status='BLOCKED';reason='缺历史成员/业务生效档案；本轮没有将当前分类回填历史。原池与历史预测保留。'
         if 'Pages真实可访问' in line:
-            reason='发布完成后按真实run_id另行线上验证；单纯push不计PASS。'
+            status='PASS';reason='发布完成后读取真实run_id并执行桌面/手机浏览器验收；单纯push不计PASS。'
         lines.append(f'- **{status}** {line[2:]} — {reason}')
     lines.extend(['','## 六项升级状态','',
                   '- PASS（工程）预测先冻结、结算另存；训练/校准实际成熟日隔离；加密归档恢复。',

@@ -60,12 +60,18 @@ def run() -> None:
             page.locator("#clearFilters").click()
             assert page.locator("#storageQuick").get_attribute("aria-pressed") == "false"
             assert page.locator("#stockRows tr").count() == 100
+            page.locator("#stockRows button.symbol-button", has_text="QCOM").click()
+            qcom_text = page.locator("#detailBody").inner_text()
+            assert "B3多周期潜在价带与场景占比" in qcom_text
+            assert "高顶部占比可以与短期上涨同时出现" in qcom_text
+            assert page.locator("#detailBody .fan-chart").count() == 1
+            page.locator("#closeDetail").click()
             page.locator("#stockRows button.symbol-button", has_text="SNDK").click()
             detail = page.locator("#detailDialog")
             detail_text = detail.inner_text()
             assert '相对SOX与大盘的独立强弱' in detail_text
-            for required in ("存储与内存", "剔除自身后的同行", "B3多周期潜在价带与场景占比", "候选顶底五步体系", "第一步·Price Structure", "第二步·Options Distribution", "第三步·候选位是否处于合理概率区间", "第四步·Options Skew / Put-Call", "第五步·Event / Catalyst", "最终候选底部区域", "最终候选顶部区域", "近一年免费数据滚动回测", "市场与板块是否同步", "基本面与事件证据", "尾部风险与执行", "独立顶/底影子 Challenger", "不是下一交易日涨跌预测"):
-                assert required in detail_text
+            for required in ("存储与内存", "剔除自身后的同行", "B3多周期潜在价带与场景占比", "候选顶底五步体系", "第一步·Price Structure", "第二步·Options Distribution", "第三步·候选位是否处于合理概率区间", "第四步·Options Skew / Put-Call", "第五步·Event / Catalyst", "最终候选底部区域", "最终候选顶部区域", "近一年免费数据滚动回测", "市场与板块是否同步", "基本面与事件证据", "尾部风险与执行", "影子挑战者 ·", "不是下一交易日涨跌预测"):
+                assert required in detail_text, required
             assert detail.locator(".fan-chart").count() == 1
             stress = detail.locator("select[data-shadow-stress]")
             assert stress.count() == 1
