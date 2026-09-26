@@ -4,7 +4,7 @@ import unittest
 from pathlib import Path
 import numpy as np
 import pandas as pd
-from scripts.audit_upgrade import freeze, split_at_origin, features, labels, metrics
+from scripts.audit_upgrade import freeze, split_at_origin, features, labels, metrics, conditional_bands
 
 
 class AuditTests(unittest.TestCase):
@@ -38,6 +38,13 @@ class AuditTests(unittest.TestCase):
         m=metrics(rows)
         self.assertEqual(m['bottom']['high_precision'],1)
         self.assertEqual(m['top']['high_precision'],1)
+
+    def test_bands_follow_event_mass_and_scale(self):
+        history=pd.DataFrame([{'joint':c,'atr_pct':.02,'low_ratio':.95,'high_ratio':1.06} for c in ('00','01','10','11') for _ in range(25)])
+        bands=conditional_bands(history,np.array([[1,0,0,0],[0,0,0,1]]),np.array([.02,.04]))
+        self.assertTrue(np.isnan(bands['bottom'][0]).all())
+        np.testing.assert_allclose(bands['bottom'][1],[.90,.90,.90])
+        np.testing.assert_allclose(bands['top'][1],[1.12,1.12,1.12])
 
 
 if __name__=='__main__': unittest.main()

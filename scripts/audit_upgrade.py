@@ -12,7 +12,7 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.isotonic import IsotonicRegression
 
 ROOT = Path(__file__).resolve().parents[1]
-VERSION = "shadow-purged-joint-v2.1"
+VERSION = "shadow-purged-joint-v2.2"
 TECH = ["ret5", "ret20", "ma20", "ma50", "atr_pct", "rv20"]
 CONTEXT = ["market5", "market20", "qqq5", "sox5", "vix", "beta", "residual5"]
 CLASSES = ["00", "01", "10", "11"]
@@ -134,6 +134,33 @@ def split_at_origin(samples, origin):
     return train, cal
 
 
+def conditional_bands(history, probabilities, atr_pct):
+    """Common four-state mixture; conditional extreme quantiles, no future test prices.
+
+    Empirical state distributions use only matured calibration history. A fixed
+    257-knot CDF approximation is recorded; this is not a technical target fit.
+    """
+    result={}
+    for side,index,field in [('bottom',0,'low_ratio'),('top',1,'high_ratio')]:
+        states=[j for j,c in enumerate(CLASSES) if c[index]=='1']
+        values=[]
+        for j in states:
+            subset=history[history.joint==CLASSES[j]]
+            v=((subset[field]-1)/subset.atr_pct).replace([np.inf,-np.inf],np.nan).dropna().to_numpy()
+            values.append(np.sort(v))
+        if any(len(v)<20 for v in values):
+            result[side]=np.full((len(probabilities),3),np.nan);continue
+        grid=np.unique(np.quantile(np.concatenate(values),np.linspace(0,1,257)))
+        cdfs=np.array([np.searchsorted(v,grid,side='right')/len(v) for v in values])
+        weights=probabilities[:,states];mass=weights.sum(axis=1)
+        mix=(weights/np.maximum(mass[:,None],1e-12))@cdfs
+        qs=np.column_stack([grid[np.argmax(mix>=q,axis=1)] for q in (.25,.5,.75)])
+        bands=1+qs*np.asarray(atr_pct)[:,None]
+        bands[(mass<=1e-10)|(bands[:,0]<=0)]=np.nan
+        result[side]=bands
+    return result
+
+
 def metrics(rows):
     output = {"n":len(rows), "dates":len({r['date'] for r in rows})}
     for side in ("bottom", "top"):
@@ -144,6 +171,20 @@ def metrics(rows):
             bins.append({"low":lo,"high":min(hi,1),"n":int(mask.sum()),"predicted":float(p[mask].mean()) if mask.any() else None,"observed":float(y[mask].mean()) if mask.any() else None})
         high = p>=.75
         output[side] = {"brier":float(np.mean((p-y)**2)), "base_rate":float(y.mean()), "high_signal_n":int(high.sum()), "high_precision":float(y[high].mean()) if high.any() else None,"coverage":float(high.mean()),"calibration":bins}
+        if side+'_band' in rows[0]:
+            errors=[];centers=[];widths=[];covered=[]
+            for r in rows:
+                b=r[side+'_band'];actual=r['actual_'+side]
+                if b is None or not r[side]:continue
+                lo,mid,hi=b
+                errors.append(max(lo-actual,actual-hi,0)/actual)
+                centers.append(abs(mid-actual)/actual)
+                widths.append(hi-lo)
+                covered.append(lo<=actual<=hi)
+            output[side]['conditional_band']={'n':len(errors),'band_distance_le_3pct':float(np.mean(np.array(errors)<=.03)) if errors else None,
+                'median_error_le_3pct':float(np.mean(np.array(centers)<=.03)) if centers else None,
+                'coverage':float(np.mean(covered)) if covered else None,'mean_width_relative_reference':float(np.mean(widths)) if widths else None,
+                'method':'conditional event; 25/50/75% common-state empirical extreme distribution; width and median error prevent wide-band gaming'}
         if side=='bottom' and 'net_hold' in rows[0]:
             net=np.array([r['net_hold'] for r in rows])
             output['high_bottom_next_open_hold']={'n':int(high.sum()),'mean_net_return':float(net[high].mean()) if high.any() else None,
@@ -179,6 +220,7 @@ def run_shadow(data, frames, folder):
                 if bundle is None:
                     audit['status']='BLOCKED'; continue
                 probabilities=predict(bundle,test[cols])
+                bands=conditional_bands(cal,probabilities,test.atr_pct)
                 _,med,scale,model,calibrators=bundle
                 model_state={'features':cols,'medians':med.to_dict(),'scale_mean':scale.mean_.tolist(),'scale_std':scale.scale_.tolist(),
                              'classes':model.classes_.tolist(),'coef':model.coef_.tolist(),'intercept':model.intercept_.tolist(),
@@ -186,11 +228,16 @@ def run_shadow(data, frames, folder):
                 audit[name+'_model_sha256']=freeze(folder/f'h{h}-fold{k+1}-{name}-model.json',model_state)
                 # Prediction file has no future outcomes. Persist BEFORE reading truth.
                 frozen=[{'date':str(r.date.date()),'symbol':r.symbol,'horizon':h,'p_bottom':float(p[2]+p[3]),'p_top':float(p[1]+p[3])} for r,p in zip(test[['date','symbol']].itertuples(),probabilities)]
+                for i,pred in enumerate(frozen):
+                    for side in ('bottom','top'):
+                        b=bands[side][i]
+                        pred[side+'_band']=b.tolist() if np.isfinite(b).all() else None
                 sha=freeze(folder/f'h{h}-fold{k+1}-{name}-predictions.json',{'version':VERSION,'origin':audit['origin'],'rows':frozen})
                 audit[name+'_prediction_sha256']=sha
                 scored=[]
-                for pred,truth in zip(frozen,test[['joint','label_end','net_hold']].itertuples()):
-                    scored.append({**pred,'bottom':int(truth.joint[0]),'top':int(truth.joint[1]),'label_end':str(truth.label_end.date()),'net_hold':float(truth.net_hold)})
+                for pred,truth in zip(frozen,test[['joint','label_end','net_hold','low_ratio','high_ratio']].itertuples()):
+                    scored.append({**pred,'bottom':int(truth.joint[0]),'top':int(truth.joint[1]),'label_end':str(truth.label_end.date()),'net_hold':float(truth.net_hold),
+                                   'actual_bottom':float(truth.low_ratio),'actual_top':float(truth.high_ratio)})
                 freeze(folder/f'h{h}-fold{k+1}-{name}-settlement.json',{'prediction_sha256':sha,'rows':scored})
                 results[name].extend(scored)
             folds.append(audit)
