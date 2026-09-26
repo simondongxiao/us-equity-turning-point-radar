@@ -13,3 +13,5 @@ state/frozen/
 outputs/upgrade-baseline/
 outputs/restore-prior/
 outputs/*preview.html
+state/*.key
+outputs/*.fernet

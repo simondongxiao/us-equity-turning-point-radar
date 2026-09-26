@@ -5,3 +5,4 @@ yfinance>=0.2.50
 requests>=2.31
 jsonschema>=4.20
 playwright>=1.45
+cryptography>=46.0

@@ -86,6 +86,6 @@ def archive(data, frames):
                 settled+=1
         summaries.append({'run_id':frozen['run_id'],'as_of':frozen['as_of'],'archived_at':receipt['archived_at'],'kind':receipt['kind'],
                           'sha256':receipt['snapshot_sha256'],'settled':settled,'pending':pending,'unavailable':unavailable})
-    return {'runs':summaries,'shadow_settled':shadow_settled,'storage':'local append-only snapshots; cloud durable store not configured',
+    return {'runs':summaries,'shadow_settled':shadow_settled,'storage':'local append-only snapshots; authenticated encrypted release archive, restored before each cloud build',
             'integrity':'SHA256 receipts detect revisions; not a trusted timestamp or WORM guarantee',
             'event_settlement':'legacy runs cannot reconstruct frozen ATR/label; no event win-rate claim'}
