@@ -6,7 +6,7 @@ import subprocess
 def git(*args):return subprocess.check_output(['git',*args]).decode().strip()
 def api(repo,path,payload=None):
     command=['gh','api',f'repos/{repo}/{path}']
-    if payload is not None:command+=['--method','POST','--input','-']
+    if payload is not None:command+=['--method','PATCH' if path.startswith('git/refs/') else 'POST','--input','-']
     return json.loads(subprocess.check_output(command,input=json.dumps(payload).encode() if payload is not None else None))
 
 def main():
