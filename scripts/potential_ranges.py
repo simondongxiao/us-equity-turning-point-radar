@@ -225,10 +225,16 @@ def _technical_layer(frame: pd.DataFrame, as_of: pd.Timestamp, horizon: int) -> 
     trend = "上行结构" if sma20 is not None and sma50 is not None and sma20 >= sma50 and close.iloc[-1] >= sma20 else "下行/修复结构" if sma20 is not None and sma50 is not None and sma20 < sma50 else "趋势数据不足"
     support_band = [max(0.0, min(support_values) - atr * 0.12), max(support_values) + atr * 0.12]
     resistance_band = [max(0.0, min(resistance_values) - atr * 0.12), max(resistance_values) + atr * 0.12]
+    volatility_scale = math.sqrt(max(horizon, 1) / 5.0)
+    volatility_support_band = [max(0.01, spot - 1.25 * atr * volatility_scale), max(0.01, spot - 0.75 * atr * volatility_scale)]
+    volatility_resistance_band = [spot + 0.75 * atr * volatility_scale, spot + 1.25 * atr * volatility_scale]
     return {
         "status": "observed",
         "support_band": support_band,
         "resistance_band": resistance_band,
+        "volatility_support_band": volatility_support_band,
+        "volatility_resistance_band": volatility_resistance_band,
+        "volatility_band_method": "ATR14 x sqrt(horizon/5), inner 0.75 ATR and outer 1.25 ATR; fallback display, not structural confirmation",
         "support_levels": [{"label": label, "price": value} for label, value in support],
         "resistance_levels": [{"label": label, "price": value} for label, value in resistance],
         "front_swing_low": _num(swing_lows[-1][1]) if swing_lows else None,
@@ -250,12 +256,16 @@ def _constrain_candidate(structure: dict[str, Any], option: dict[str, Any], side
     key = "support_band" if side == "bottom" else "resistance_band"
     technical_band = structure.get(key)
     option_band = [option.get("option_lower_bound"), option.get("option_upper_bound")] if option.get("status") == "observed" else None
-    if not (isinstance(technical_band, list) and len(technical_band) == 2 and isinstance(option_band, list) and all(_finite(v) for v in technical_band + option_band)):
-        return {"status": "unavailable", "band": None, "note": "结构候选或期权分布缺失，未形成约束后的候选区域。"}
+    if not (isinstance(technical_band, list) and len(technical_band) == 2 and all(_finite(v) for v in technical_band)):
+        return {"status": "unavailable", "band": None, "source": None, "note": "价格结构数据缺失，不能制造候选区域；前端仅可显示明确标注的ATR波动率回退带。"}
+    if not (isinstance(option_band, list) and all(_finite(v) for v in option_band)):
+        return {"status": "structure_only", "band": technical_band, "source": "price_structure",
+            "technical_band": technical_band, "option_band": None, "in_option_range": None,
+            "note": "期权分布缺失；保留结构价带并单独显示ATR波动率回退带，不把结构带伪装成期权约束结果。"}
     lo, hi = max(technical_band[0], option_band[0]), min(technical_band[1], option_band[1])
     if lo <= hi:
-        return {"status": "converged", "band": [lo, hi], "technical_band": technical_band, "option_band": option_band, "in_option_range": True, "note": "技术候选与期权允许波动区间有重叠；期权只作约束，不代表绝对顶底。"}
-    return {"status": "outside_option_range", "band": None, "technical_band": technical_band, "option_band": option_band, "in_option_range": False, "note": "技术候选未落入当前期权允许波动区间；不强行拼接为候选顶/底。"}
+        return {"status": "converged", "band": [lo, hi], "source": "structure_constrained_by_options", "technical_band": technical_band, "option_band": option_band, "in_option_range": True, "note": "技术候选与期权允许波动区间有重叠；期权只作约束，不代表绝对顶底。"}
+    return {"status": "outside_option_range", "band": None, "source": "price_structure_outside_option_range", "technical_band": technical_band, "option_band": option_band, "in_option_range": False, "note": "技术候选未落入当前期权允许波动区间；结构价带和ATR波动率带仍分别显示，不强行拼接。"}
 
 
 def build_potential_ranges(frames: dict[str, pd.DataFrame], symbols: list[str], as_of: pd.Timestamp) -> tuple[dict[str, dict[str, Any]], dict[str, Any]]:
@@ -278,6 +288,8 @@ def build_potential_ranges(frames: dict[str, pd.DataFrame], symbols: list[str], 
             option = (option_snapshot.get("horizons") or {}).get(horizon, {"status": "unavailable", "reason": option_snapshot.get("reason", "期权层缺失")})
             technical = _technical_layer(frame, as_of, horizon) if frame is not None else {"status": "unavailable", "reason": "没有价格记录。"}
             layer3 = {k: option.get(k) for k in ("rv20", "atm_iv", "rv_minus_iv", "put_call_skew", "term_structure_vs_1w", "event_note") if k in option}
+            layer3["gamma_flip"] = {"status": "unavailable", "value": None, "note": "免费当日期权链不提供可审计的历史dealer GEX/Gamma Flip；不编造。"}
+            layer3["probability_model_role"] = "display_constraint_only_until_point_in_time_history_gate_passes"
             layer3["event_catalyst"] = {"status": "unavailable", "items": [], "note": "本次构建未抓取可审计的财报、产品发布或宏观事件正文；不把缺失当作中性，也不制造事件概率。"}
             bottom_candidate = _constrain_candidate(technical, option, "bottom")
             top_candidate = _constrain_candidate(technical, option, "top")

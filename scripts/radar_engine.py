@@ -51,6 +51,7 @@ TAXONOMY_VERSION = "research-taxonomy-20260915-v1.1"
 FEATURE_VERSION = "b3-point-in-time-v1"
 CHALLENGER_FEATURE_VERSION = "storage-shadow-loo-v1"
 MODEL_VERSION = "champion-b3-calibrated-low-confidence-v1"
+DIRECTIONAL_MODEL_VERSION = "challenger-exclusive-directional-turn-v1"
 STRATEGY_VERSION = "next-open-atr-1x-cost-15bp-v1"
 SOURCE_NAME = "Yahoo Finance chart OHLCV via yfinance; SEC company_tickers.json for issuer identity"
 HORIZONS = (5, 10, 21)
@@ -446,6 +447,25 @@ def path_summary_frame(frame: pd.DataFrame, horizon: int) -> pd.DataFrame:
     return pd.DataFrame(out, index=frame.index)
 
 
+def add_directional_turn_label(samples: pd.DataFrame) -> pd.DataFrame:
+    """Add a mutually exclusive first-passage plus reversal target.
+
+    A bottom/top turn is counted only when that side's 1 ATR boundary is the
+    first boundary reached and the corresponding 0.75 ATR excursion followed
+    by a 1 ATR close reversal is observed inside the same future window.
+    Everything else with a mature, unambiguous first-touch label is the
+    no-directional-turn class. This deliberately does not force independent
+    bottom and top event marginals to sum to one.
+    """
+    out = samples.copy()
+    mature = out["label"].notna() & out["ambiguous"].eq(False)
+    out["turn_label"] = None
+    out.loc[mature, "turn_label"] = "no_directional_turn"
+    out.loc[mature & out["label"].eq("downfirst") & out["bottom_event"].eq(True), "turn_label"] = "bottom_rebound_first"
+    out.loc[mature & out["label"].eq("upfirst") & out["top_event"].eq(True), "turn_label"] = "top_reversal_first"
+    return out
+
+
 @dataclass
 class ModelBundle:
     scaler: StandardScaler
@@ -463,10 +483,13 @@ class ModelBundle:
         return calibrated / total if total > 0 else raw / raw.sum()
 
 
-def train_bundle(samples: pd.DataFrame, features: list[str], horizon: int, strict_time: bool = False) -> ModelBundle | None:
-    valid = samples.dropna(subset=["label"]).copy()
+def train_bundle(samples: pd.DataFrame, features: list[str], horizon: int, strict_time: bool = False,
+                 target_col: str = "label") -> ModelBundle | None:
+    if target_col not in samples:
+        return None
+    valid = samples.dropna(subset=[target_col]).copy()
     valid = valid[valid[features].notna().sum(axis=1) >= max(5, int(len(features) * 0.65))]
-    if valid.empty or valid["label"].nunique() < (2 if strict_time else 3):
+    if valid.empty or valid[target_col].nunique() < (2 if strict_time else 3):
         return None
     dates = pd.to_datetime(valid["date"])
     max_date = dates.max()
@@ -480,29 +503,30 @@ def train_bundle(samples: pd.DataFrame, features: list[str], horizon: int, stric
             raise ValueError("Strict time calibration requires actual label maturity dates")
         train = train[pd.to_datetime(train["label_end"]) < cal_start]
         cal = cal[pd.to_datetime(cal["label_end"]) < test_start]
-        if len(train) < 300 or len(cal) < 60 or len(test) < 60 or train['label'].nunique() < 2:
+        if len(train) < 300 or len(cal) < 60 or len(test) < 60 or train[target_col].nunique() < 2:
             return None
-        if not set(valid['label']).issubset(set(train['label'])):
+        if not set(valid[target_col]).issubset(set(train[target_col])):
             return None
     if not strict_time and (len(train) < 300 or len(cal) < 100 or len(test) < 100):
         # Keep the time order but mark the eventual output low confidence.
         cut = int(len(valid) * 0.7); cal_cut = int(len(valid) * 0.85)
         train, cal, test = valid.iloc[:cut], valid.iloc[cut:cal_cut], valid.iloc[cal_cut:]
-    if train["label"].nunique() < (2 if strict_time else 3) or len(cal) < 20:
+    if train[target_col].nunique() < (2 if strict_time else 3) or len(cal) < 20:
         return None
     medians = train[features].median(numeric_only=True).replace([np.inf, -np.inf], np.nan).fillna(0.0)
     scaler = StandardScaler().fit(train[features].fillna(medians))
     # Current scikit-learn defaults to multinomial behaviour for lbfgs on the
     # multiclass case; avoid the removed multi_class keyword for newer builds.
     model = LogisticRegression(max_iter=700, solver="lbfgs", class_weight="balanced", random_state=7)
-    model.fit(scaler.transform(train[features].fillna(medians)), train["label"])
+    model.fit(scaler.transform(train[features].fillna(medians)), train[target_col])
     cal_raw = model.predict_proba(scaler.transform(cal[features].fillna(medians)))
     calibrators = {}
     for i, cls in enumerate(model.classes_):
         ir = IsotonicRegression(out_of_bounds="clip")
-        ir.fit(cal_raw[:, i], (cal["label"].to_numpy() == cls).astype(float))
+        ir.fit(cal_raw[:, i], (cal[target_col].to_numpy() == cls).astype(float))
         calibrators[str(cls)] = ir
-    test_metrics: dict[str, Any] = {"horizon": horizon, "train_n": len(train), "calibration_n": len(cal), "test_n": len(test), "ambiguous_excluded": int(samples["ambiguous"].sum())}
+    test_metrics: dict[str, Any] = {"horizon": horizon, "target": target_col, "classes": [str(c) for c in model.classes_],
+        "train_n": len(train), "calibration_n": len(cal), "test_n": len(test), "ambiguous_excluded": int(samples["ambiguous"].sum())}
     if strict_time:
         test_metrics.update({"purged": True, "train_label_end": str(pd.to_datetime(train['label_end']).max().date()),
             "calibration_start": str(pd.to_datetime(cal['date']).min().date()),
@@ -515,18 +539,20 @@ def train_bundle(samples: pd.DataFrame, features: list[str], horizon: int, stric
             empty_mass = test_cal.sum(axis=1) <= 0
             test_cal[empty_mass] = test_raw[empty_mass]
         test_cal = test_cal / np.maximum(test_cal.sum(axis=1, keepdims=True), 1e-9)
-        y = pd.Categorical(test["label"], categories=model.classes_).codes
+        y = pd.Categorical(test[target_col], categories=model.classes_).codes
         one_hot = np.eye(len(model.classes_))[y]
+        predicted = model.classes_[np.argmax(test_cal, axis=1)]
         test_metrics.update({
             "brier_multiclass": float(np.mean(np.sum((test_cal - one_hot) ** 2, axis=1))),
-            "log_loss": float(log_loss(test["label"], test_cal, labels=list(model.classes_))),
+            "log_loss": float(log_loss(test[target_col], test_cal, labels=list(model.classes_))),
+            "classification_accuracy": float(np.mean(predicted == test[target_col].to_numpy())),
             "test_start": str(pd.to_datetime(test["date"]).min().date()),
             "test_end": str(pd.to_datetime(test["date"]).max().date()),
         })
         if strict_time and set(model.classes_).issubset({'00','01','10','11'}):
             for side, index in [('bottom', 0), ('top', 1)]:
                 probability = test_cal[:, [str(c)[index] == '1' for c in model.classes_]].sum(axis=1)
-                actual = np.array([str(c)[index] == '1' for c in test['label']], dtype=float)
+                actual = np.array([str(c)[index] == '1' for c in test[target_col]], dtype=float)
                 test_metrics[f'{side}_brier'] = float(np.mean((probability-actual)**2))
                 test_metrics[f'{side}_observed_rate'] = float(actual.mean())
                 test_metrics[f'{side}_predicted_mean'] = float(probability.mean())
@@ -677,6 +703,73 @@ def one_year_walk_forward_backtest(samples: dict[int, pd.DataFrame]) -> dict[str
     return output
 
 
+def one_year_directional_turn_backtest(samples: dict[int, pd.DataFrame]) -> dict[str, Any]:
+    """Walk-forward validation for the exclusive directional-turn challenger."""
+    classes = ["bottom_rebound_first", "no_directional_turn", "top_reversal_first"]
+    output: dict[str, Any] = {
+        "status": "observed",
+        "model_version": DIRECTIONAL_MODEL_VERSION,
+        "target": "first 1-ATR boundary plus same-window reversal confirmation",
+        "classes": classes,
+        "sum_rule": "mutually exclusive probabilities sum to 1",
+        "evaluation_window": "most recent 12 months of matured labels",
+        "fold_policy": "four chronological quarterly folds; horizon-session purge before every test fold",
+        "horizons": {},
+    }
+    for horizon in HORIZONS:
+        source = samples.get(horizon, pd.DataFrame()).copy()
+        if source.empty or "turn_label" not in source:
+            output["horizons"][str(horizon)] = {"status": "insufficient_training_data"}
+            continue
+        valid = source.dropna(subset=["date", "turn_label"]).copy()
+        valid = valid[(valid["ambiguous"] == False) & (valid[BASE_FEATURES].notna().sum(axis=1) >= max(5, int(len(BASE_FEATURES) * 0.65)))]
+        valid["date"] = pd.to_datetime(valid["date"])
+        if valid.empty:
+            output["horizons"][str(horizon)] = {"status": "insufficient_training_data"}
+            continue
+        end_date = valid["date"].max()
+        start_date = end_date - pd.DateOffset(months=12)
+        edges = [start_date + pd.DateOffset(months=3 * i) for i in range(5)]
+        edges[-1] = end_date + pd.Timedelta(days=1)
+        truths: list[str] = []
+        probabilities: list[list[float]] = []
+        folds: list[dict[str, Any]] = []
+        for fold in range(4):
+            fold_start, fold_end = edges[fold], edges[fold + 1]
+            purge_cutoff = fold_start - pd.tseries.offsets.BDay(horizon)
+            train = valid[valid["date"] < purge_cutoff].copy()
+            test = valid[(valid["date"] >= fold_start) & (valid["date"] < fold_end)].copy()
+            bundle = train_bundle(train, BASE_FEATURES, horizon, target_col="turn_label") if len(train) else None
+            if bundle is None or test.empty:
+                folds.append({"fold": fold + 1, "status": "insufficient_training_data", "train_n": int(len(train)), "test_n": int(len(test))})
+                continue
+            for _, row in test.iterrows():
+                predicted = bundle.predict(row)
+                mapped = dict(zip((str(c) for c in bundle.model.classes_), predicted))
+                probabilities.append([float(mapped.get(cls, 0.0)) for cls in classes])
+                truths.append(str(row["turn_label"]))
+            folds.append({"fold": fold + 1, "status": "observed", "train_n": int(len(train)), "test_n": int(len(test)),
+                "test_start": str(test["date"].min().date()), "test_end": str(test["date"].max().date())})
+        if not truths:
+            output["horizons"][str(horizon)] = {"status": "insufficient_training_data", "folds": folds}
+            continue
+        probability_array = np.asarray(probabilities, dtype=float)
+        probability_array /= np.maximum(probability_array.sum(axis=1, keepdims=True), 1e-9)
+        actual = np.eye(len(classes))[[classes.index(value) for value in truths]]
+        predicted = np.asarray(classes)[np.argmax(probability_array, axis=1)]
+        output["horizons"][str(horizon)] = {
+            "status": "observed",
+            "matured_classification_n": len(truths),
+            "classification_accuracy": float(np.mean(predicted == np.asarray(truths))),
+            "brier_multiclass": float(np.mean(np.sum((probability_array - actual) ** 2, axis=1))),
+            "log_loss": float(log_loss(truths, probability_array, labels=classes)),
+            "observed_class_rates": {cls: float(np.mean(np.asarray(truths) == cls)) for cls in classes},
+            "folds": folds,
+            "limitations": "overlapping daily outcomes are correlated; no 70% claim; direction classes do not replace B3 opportunity/risk",
+        }
+    return output
+
+
 def make_samples(frames: dict[str, pd.DataFrame], seeds: list[dict[str, Any]], market: pd.DataFrame, group_series: dict[str, pd.Series], storage_features: bool = False) -> tuple[dict[int, pd.DataFrame], dict[str, pd.DataFrame]]:
     all_samples = {h: [] for h in HORIZONS}
     feature_frames: dict[str, pd.DataFrame] = {}
@@ -702,14 +795,17 @@ def make_samples(frames: dict[str, pd.DataFrame], seeds: list[dict[str, Any]], m
         for h in HORIZONS:
             labeled = label_paths(f, h)
             labeled = labeled.join(path_summary_frame(f, h))
+            labeled = add_directional_turn_label(labeled)
             labeled["symbol"], labeled["date"] = symbol, labeled.index
-            sample_columns = list(dict.fromkeys(BASE_FEATURES + ["adj_close", "atr", "label", "ambiguous", "symbol", "date", "terminal_return", "min_drawdown", "min_price", "max_price", "bottom_event", "top_event"]))
+            sample_columns = list(dict.fromkeys(BASE_FEATURES + ["adj_close", "atr", "label", "turn_label", "ambiguous", "symbol", "date", "terminal_return", "min_drawdown", "min_price", "max_price", "bottom_event", "top_event"]))
             all_samples[h].append(labeled[sample_columns].copy())
         feature_frames[symbol] = f
     return {h: pd.concat(v, ignore_index=True) if v else pd.DataFrame() for h, v in all_samples.items()}, feature_frames
 
 
-def build_scenario_metric(symbol: str, current: pd.Series, historical: pd.DataFrame, bundle: ModelBundle | None, horizon: int, current_frame: pd.DataFrame, event_bundle: ModelBundle | None = None, relative_atr: bool = False) -> dict[str, Any]:
+def build_scenario_metric(symbol: str, current: pd.Series, historical: pd.DataFrame, bundle: ModelBundle | None, horizon: int,
+                          current_frame: pd.DataFrame, event_bundle: ModelBundle | None = None, relative_atr: bool = False,
+                          directional_bundle: ModelBundle | None = None) -> dict[str, Any]:
     ref, atr = clean_num(current.get("adj_close")), clean_num(current.get("atr"))
     if not ref or not atr or atr <= 0:
         return {"status": "data_error"}
@@ -783,6 +879,21 @@ def build_scenario_metric(symbol: str, current: pd.Series, historical: pd.DataFr
     opportunity = mu_lcb / max(risk, 0.02)
     bottom_mask = np.array([r["bottom"] for r in records], dtype=bool); top_mask = np.array([r["top"] for r in records], dtype=bool)
     def event_prob(mask: np.ndarray) -> float: return float(np.sum(weights[mask])) if mask.any() else 0.0
+    directional = {"p_bottom_rebound_first": None, "p_top_reversal_first": None, "p_no_directional_turn": None,
+        "directional_turn_status": "uncalibrated"}
+    if directional_bundle is not None:
+        predicted = directional_bundle.predict(current)
+        mapped = {str(cls): float(predicted[i]) for i, cls in enumerate(directional_bundle.model.classes_)}
+        triple = np.array([mapped.get("bottom_rebound_first", 0.0), mapped.get("top_reversal_first", 0.0), mapped.get("no_directional_turn", 0.0)], dtype=float)
+        if np.isfinite(triple).all() and triple.sum() > 0:
+            triple /= triple.sum()
+            directional = {"p_bottom_rebound_first": float(triple[0]), "p_top_reversal_first": float(triple[1]),
+                "p_no_directional_turn": float(triple[2]), "directional_turn_status": "calibrated_low_confidence"}
+    two_way_mask = bottom_mask & top_mask
+    two_way_share = event_prob(two_way_mask)
+    volatility_scale = math.sqrt(max(horizon, 1) / 5.0)
+    volatility_bottom_band = [max(0.01, ref - 1.25 * atr * volatility_scale), max(0.01, ref - 0.75 * atr * volatility_scale)]
+    volatility_top_band = [ref + 0.75 * atr * volatility_scale, ref + 1.25 * atr * volatility_scale]
     return {
         "status": "calibrated_low_confidence", "opportunity_value": clean_num(opportunity), "risk_value": risk,
         "expected_return": expected, "es95": risk, "mu_lcb": mu_lcb, "effective_scenario_n": eff_n,
@@ -792,8 +903,18 @@ def build_scenario_metric(symbol: str, current: pd.Series, historical: pd.DataFr
         "p_bottom": event_prob(bottom_mask), "p_top": event_prob(top_mask),
         "stage_probability_status": "scenario_marginal_not_independently_calibrated",
         "stage_probability_definition": "share of reweighted common historical paths containing the stage event inside the horizon; not a next-session direction forecast",
+        **directional,
+        "directional_turn_model_version": DIRECTIONAL_MODEL_VERSION,
+        "directional_turn_definition": "mutually exclusive first 1-ATR boundary followed by same-window reversal confirmation, versus no confirmed directional turn",
+        "p_two_way_wash": two_way_share,
+        "two_way_wash_flag": "high" if two_way_share >= 0.40 else "normal",
+        "two_way_wash_status": "scenario_diagnostic_not_direction_probability",
+        "two_way_wash_threshold": 0.40,
         "bottom_band": quantile_band(mins[bottom_mask], weights[bottom_mask]) if bottom_mask.any() else quantile_band(mins, weights),
         "top_band": quantile_band(maxs[top_mask], weights[top_mask]) if top_mask.any() else quantile_band(maxs, weights),
+        "volatility_bottom_band": volatility_bottom_band,
+        "volatility_top_band": volatility_top_band,
+        "volatility_band_method": "ATR14 x sqrt(horizon/5), inner 0.75 ATR and outer 1.25 ATR; display fallback only",
         "terminal_band": quantile_band(terminal, weights),
         "terminal_p10": weighted_quantile(terminal, weights, 0.1), "terminal_p50": weighted_quantile(terminal, weights, 0.5), "terminal_p90": weighted_quantile(terminal, weights, 0.9),
         "scenario_set": "nearest-point-in-time-history-with-model-class-reweighting",
@@ -824,6 +945,63 @@ def storage_rotation(frames: dict[str, pd.DataFrame], seeds: list[dict[str, Any]
     return {"status": "observed" if comparisons else "unavailable", "as_of": as_of.strftime("%Y-%m-%d"), "summary": summary, "comparisons": comparisons, "subgroups": subgroup, "parent_snapshot_id": "yfinance-daily-ohlcv", "taxonomy_version": TAXONOMY_VERSION, "membership_version": "seed-membership-20260915-v1.1", "feature_version": CHALLENGER_FEATURE_VERSION, "method": "derived-in-new-radar-adapter-read-only-source"}
 
 
+def options_model_gate(current_ranges: dict[str, dict[str, Any]], as_of: pd.Timestamp) -> dict[str, Any]:
+    """Audit point-in-time option history before any option feature can fit probabilities."""
+    required = ("atm_iv", "rv_minus_iv", "put_call_skew", "term_structure_vs_1w")
+    dates: set[str] = set()
+    feature_seen = {name: 0 for name in required}
+    observed_rows = 0
+
+    def inspect(records: list[dict[str, Any]]) -> None:
+        nonlocal observed_rows
+        for record in records:
+            snapshot = record.get("snapshot") or record.get("potential_ranges") or {}
+            for payload in (snapshot.get("horizons") or {}).values():
+                option = payload.get("layer2_options_distribution") or {}
+                layer3 = payload.get("layer3_skew_event") or {}
+                if option.get("status") != "observed":
+                    continue
+                date = payload.get("as_of")
+                if date:
+                    dates.add(str(date))
+                observed_rows += 1
+                merged = {**option, **layer3}
+                for name in required:
+                    if clean_num(merged.get(name)) is not None:
+                        feature_seen[name] += 1
+
+    frozen_files = sorted((STATE_DIR / "frozen" / "options").glob("*.json"))
+    for path in frozen_files:
+        try:
+            payload = json.loads(path.read_text(encoding="utf-8"))
+            inspect(payload.get("records") or [])
+        except (OSError, ValueError, TypeError):
+            continue
+    inspect([{"snapshot": value} for value in current_ranges.values()])
+    dates.add(as_of.strftime("%Y-%m-%d"))
+    coverage = {name: (feature_seen[name] / observed_rows if observed_rows else 0.0) for name in required}
+    minimum_sessions = 252
+    eligible = len(dates) >= minimum_sessions and all(value >= 0.80 for value in coverage.values())
+    missing = [name for name, value in coverage.items() if value < 0.80]
+    reason = ("连续点时期权样本与字段覆盖达到预注册门槛；仍需独立回测批准。" if eligible else
+        f"仅有{len(dates)}个唯一点时期权交易日，要求至少{minimum_sessions}日；字段覆盖不足：{', '.join(missing) if missing else '无'}。")
+    return {
+        "status": "READY_FOR_BACKTEST" if eligible else "BLOCKED",
+        "training_eligible": eligible,
+        "candidate_model": "GBDT challenger with chronological train/calibration/test split",
+        "required_features": list(required),
+        "optional_unavailable_features": ["gamma_flip", "dealer_gex", "options_flow"],
+        "unique_point_in_time_sessions": len(dates),
+        "minimum_sessions": minimum_sessions,
+        "observed_option_rows": observed_rows,
+        "feature_coverage": coverage,
+        "current_integration": "not_in_champion_or_directional_probability_model",
+        "collection": "append-only encrypted option snapshots",
+        "reason": reason,
+        "note": "当前快照继续用于价带约束和尾部描述；未用今日截面回填历史，也未套用旧校准器。",
+    }
+
+
 def enrich_record(row: dict[str, Any], frame: pd.DataFrame, metric_by_h: dict[int, dict[str, Any]], identity: dict[str, Any], peers: dict[str, Any], as_of: pd.Timestamp, potential_ranges: dict[str, Any] | None = None) -> dict[str, Any]:
     current = frame.iloc[-1]
     metrics = {str(h): metric_by_h.get(h, {"status": "data_error"}) for h in HORIZONS}
@@ -844,15 +1022,22 @@ def enrich_record(row: dict[str, Any], frame: pd.DataFrame, metric_by_h: dict[in
         metric = metric_by_h.get(h, {})
         bottom = horizon_payload.get("candidate_bottom")
         top = horizon_payload.get("candidate_top")
+        structure = horizon_payload.get("layer1_price_structure") or {}
         if isinstance(bottom, dict):
             bottom["arrival_probability"] = clean_num(metric.get("p_downfirst"))
-            bottom["stage_turn_probability"] = clean_num(metric.get("p_bottom"))
-            bottom["probability_note"] = "到达概率取原B3共同路径的先触及下边界概率；不是该区域反转概率。阶段底为共同路径场景占比，尚未独立校准，不能混同。"
+            bottom["directional_turn_probability"] = clean_num(metric.get("p_bottom_rebound_first"))
+            bottom["scenario_event_share"] = clean_num(metric.get("p_bottom"))
+            bottom["structural_band"] = structure.get("support_band")
+            bottom["volatility_band"] = metric.get("volatility_bottom_band")
+            bottom["probability_note"] = "方向性阶段底要求先触及下边界并在同窗完成反弹确认；与阶段顶、无有效拐点互斥。原共同路径底部事件占比仅作双向波动诊断。"
         if isinstance(top, dict):
             top["arrival_probability"] = clean_num(metric.get("p_upfirst"))
-            top["stage_turn_probability"] = clean_num(metric.get("p_top"))
-            top["probability_note"] = "到达概率取原B3共同路径的先触及上边界概率；不是该区域反转概率。阶段顶为共同路径场景占比，尚未独立校准，不能混同。"
-    return {**row, "as_of": as_of.strftime("%Y-%m-%d"), "reference_price": clean_num(current["adj_close"]), "metrics": safe_json(metrics), "stage": stage, "issuer_id": identity.get("issuer_id"), "issuer_identity_source": identity.get("source"), "peer_context": safe_json({**peers, "note": peer_note, "issuer_id": identity.get("issuer_id"), "subgroup_context": peers.get("subgroup_context", {})}), "potential_ranges": safe_json(potential_payload), "rotation_explanation": "真实日线数据已接入；市场、研究组与个股残差分别计算，允许不同步。" + (" 存储细分与LOO为影子候选，未进入正式校准分数。" if storage else ""), "trigger_summary": "确认：先由Price Structure形成候选位；只有收盘行为满足详情中的反转确认条件才标记结构确认。失效：跳空、事件冲击或重新跌破结构。到达概率、阶段顶底场景占比和交易成功不可混同。", "event_summary": "本次生产构建未抓取并公开长文本财报、产品发布或宏观事件正文；事件特征为缺失，不把标题或业务分类当作催化概率。", "risk_summary": "风险值来自共同历史路径的最差5%不利幅度均值，未假设保护价一定成交；执行成本按策略版本扣除。", "data_note": f"数据源：{SOURCE_NAME}；截止{as_of.strftime('%Y-%m-%d')}。B3先触达分类按时间切分并独立校准；B3阶段顶/底是共同路径场景占比，尚未分别校准。存储新特征为挑战者影子状态。Price Structure先行，期权仅约束顶底候选范围；三层显示层未改写B3概率或排序。"}
+            top["directional_turn_probability"] = clean_num(metric.get("p_top_reversal_first"))
+            top["scenario_event_share"] = clean_num(metric.get("p_top"))
+            top["structural_band"] = structure.get("resistance_band")
+            top["volatility_band"] = metric.get("volatility_top_band")
+            top["probability_note"] = "方向性阶段顶要求先触及上边界并在同窗完成回落确认；与阶段底、无有效拐点互斥。原共同路径顶部事件占比仅作双向波动诊断。"
+    return {**row, "as_of": as_of.strftime("%Y-%m-%d"), "reference_price": clean_num(current["adj_close"]), "metrics": safe_json(metrics), "stage": stage, "issuer_id": identity.get("issuer_id"), "issuer_identity_source": identity.get("source"), "peer_context": safe_json({**peers, "note": peer_note, "issuer_id": identity.get("issuer_id"), "subgroup_context": peers.get("subgroup_context", {})}), "potential_ranges": safe_json(potential_payload), "rotation_explanation": "真实日线数据已接入；市场、研究组与个股残差分别计算，允许不同步。" + (" 存储细分与LOO为影子候选，未进入正式校准分数。" if storage else ""), "trigger_summary": "确认：先由Price Structure形成候选位；只有先触边界且同窗满足反转条件才计入互斥方向性阶段顶/底。失效：跳空、事件冲击或重新突破结构。到达概率、方向性拐点、双向洗盘诊断和交易成功不可混同。", "event_summary": "本次生产构建未抓取并公开长文本财报、产品发布或宏观事件正文；事件特征为缺失，不把标题或业务分类当作催化概率。", "risk_summary": "风险值来自共同历史路径的最差5%不利幅度均值，未假设保护价一定成交；执行成本按策略版本扣除。", "data_note": f"数据源：{SOURCE_NAME}；截止{as_of.strftime('%Y-%m-%d')}。B3机会/风险与首次触达保持原口径；方向性阶段底、阶段顶、无有效拐点由独立时间校准的三分类挑战者生成并严格归一。重叠顶底事件仅作双向洗盘诊断。结构价带与ATR波动率回退带分开显示。期权历史不足，尚未进入概率模型。"}
 
 
 def ensure_ledger() -> sqlite3.Connection:
@@ -895,18 +1080,26 @@ def build(refresh: bool = False, run_id: str | None = None, extra_symbol: str | 
     samples, feature_frames = make_samples(model_frames, seeds, market, group_series, storage_features=False)
     print("[radar] point-in-time labels ready", flush=True)
     bundles: dict[int, ModelBundle | None] = {}
+    directional_bundles: dict[int, ModelBundle | None] = {}
     backtest: dict[str, Any] = {"model_version": MODEL_VERSION, "feature_version": FEATURE_VERSION, "strategy_version": STRATEGY_VERSION, "horizons": {}, "storage_incremental": {"status": "BLOCKED", "reason": "taxonomy effective_from=2026-09-15 leaves no mature point-in-time storage membership window for a same-window sample-out test; challenger is shadow-only."}}
     for h in HORIZONS:
         b2 = train_bundle(samples[h], TECHNICAL_FEATURES, h)
         bundle = train_bundle(samples[h], BASE_FEATURES, h)
+        directional_bundle = train_bundle(samples[h], BASE_FEATURES, h, target_col="turn_label")
         bundles[h] = bundle
-        backtest["horizons"][str(h)] = {"b2_technical": b2.test_metrics if b2 else {"status": "insufficient_training_data"}, "b3_market_rotation": bundle.test_metrics if bundle else {"status": "insufficient_training_data"}}
+        directional_bundles[h] = directional_bundle
+        backtest["horizons"][str(h)] = {"b2_technical": b2.test_metrics if b2 else {"status": "insufficient_training_data"},
+            "b3_market_rotation": bundle.test_metrics if bundle else {"status": "insufficient_training_data"},
+            "directional_turn_exclusive": directional_bundle.test_metrics if directional_bundle else {"status": "insufficient_training_data"}}
         print(f"[radar] model {h}d ready", flush=True)
     backtest["one_year_walk_forward"] = one_year_walk_forward_backtest(samples)
+    backtest["one_year_directional_turn"] = one_year_directional_turn_backtest(samples)
     print("[radar] one-year walk-forward backtest ready", flush=True)
     potential_symbols = list(dict.fromkeys(seed_symbols + ([extra_symbol] if extra_symbol else [])))
     potential_ranges, potential_source = build_potential_ranges(frames, potential_symbols, as_of)
     source["potential_ranges"] = potential_source
+    option_gate = options_model_gate(potential_ranges, as_of)
+    backtest["options_b4"] = option_gate
     print(f"[radar] three-layer potential ranges ready: {potential_source.get('observed_symbols', 0)}/{potential_source.get('requested_symbols', 0)} option snapshots", flush=True)
     records = []
     latest_metrics = {h: {} for h in HORIZONS}
@@ -920,7 +1113,8 @@ def build(refresh: bool = False, run_id: str | None = None, extra_symbol: str | 
         metric_by_h = {}
         for h in HORIZONS:
             hist = samples[h][samples[h]["symbol"] == symbol].copy()
-            metric_by_h[h] = build_scenario_metric(symbol, current, hist, bundles[h], h, frame)
+            metric_by_h[h] = build_scenario_metric(symbol, current, hist, bundles[h], h, frame,
+                directional_bundle=directional_bundles[h])
             latest_metrics[h][symbol] = metric_by_h[h].get("opportunity_value")
         peers = {"status": "unavailable", "self_excluded": False, "peer_symbols": [], "peer_count": 0, "effective_n": None, "weight_coverage": None, "note": "非存储股票不计算存储同行。"}
         if row.get("research_group_id") == "storage-memory":
@@ -951,7 +1145,8 @@ def build(refresh: bool = False, run_id: str | None = None, extra_symbol: str | 
         extra_metrics: dict[int, dict[str, Any]] = {}
         for h in HORIZONS:
             extra_hist = samples[h].copy()
-            extra_metrics[h] = build_scenario_metric(extra_symbol, current_extra, extra_hist, bundles[h], h, raw_extra)
+            extra_metrics[h] = build_scenario_metric(extra_symbol, current_extra, extra_hist, bundles[h], h, raw_extra,
+                directional_bundle=directional_bundles[h])
         extra_peers = {"status": "unavailable", "self_excluded": False, "peer_symbols": [], "peer_count": 0, "effective_n": None, "weight_coverage": None, "note": "临时股票未被强行归入存储或其他研究组；结果与常态100池分开保存。"}
         temporary.append(enrich_record(extra_row, raw_extra, extra_metrics, {"issuer_id": sec.get(extra_symbol, {}).get("issuer_id"), "source": sec.get(extra_symbol, {}).get("source", "unverified")}, extra_peers, as_of, potential_ranges.get(extra_symbol)))
     run_id = run_id or f"radar-{as_of.strftime('%Y%m%d')}-{uuid.uuid4().hex[:8]}"
@@ -964,7 +1159,7 @@ def build(refresh: bool = False, run_id: str | None = None, extra_symbol: str | 
         with mother_file.open(encoding="utf-8-sig", newline="") as fh:
             mother_count = max(0, sum(1 for _ in fh) - 1)
     source["mother_pool"] = {"source": "us-share-daily-market-html/all_metrics.csv", "available_symbols": mother_count, "qualification_verified": False, "note": "母池规模来自旧美股行情项目快照；本项目未把它改写成当前人气排名。"}
-    data = {"build_mode": "live", "status_message": "真实日线行情已接入；B3首次触达分类按时间切分并独立校准，阶段顶/底数字为共同路径场景占比，尚未分别校准且不是下一交易日涨跌预测。Price Structure先生成候选支撑/阻力，期权分布只约束合理波动区间，偏斜与事件用于描述尾部风险；期权不代表绝对顶底。存储分类/轮动已接入，存储因子仍为影子挑战者，未宣称增益。", "generated_at": iso(utc_now()), "as_of": as_of.strftime("%Y-%m-%d"), "as_of_beijing": f"{as_of.strftime('%Y-%m-%d')} 纽约收盘数据；北京时间日期需按交易日换算", "run_id": run_id, "prediction_snapshot_id": run_id, "model_version": MODEL_VERSION, "feature_version": FEATURE_VERSION, "potential_range_version": "five-step-candidate-constraint-v2", "strategy_version": STRATEGY_VERSION, "universe_version": "curated-seed-20260915-v1.1-live-validation", "taxonomy_version": TAXONOMY_VERSION, "source_manifest": source, "records": records, "temporary": temporary, "storage_rotation": rotation, "rotation_summary": [rotation["summary"], "存储四只为同一主研究组；细分视图允许MU重叠，主表不重复计数。", "存储新因子为shadow/challenger，未套用旧校准器；不要把MU强弱写成SNDK/WDC/STX的固定结论。"], "public_config": {"api_base_url": None}, "backtest": backtest, "coverage": {"regular_pool": len(records), "valid_forecast_records": valid, "usable_price_records": sum(1 for r in records if r.get("reference_price") is not None), "data_cutoff": as_of.strftime("%Y-%m-%d"), "financial_backtest_status": "B3 first-touch time-split metrics computed; B3 stage-event marginals not independently calibrated; storage incremental alpha BLOCKED"}}
+    data = {"build_mode": "live", "status_message": "真实日线行情已接入。机会/风险仍由原B3共同路径生成；新增方向性阶段底、阶段顶与无有效拐点为互斥且独立校准的低可信挑战者，三项严格合计100%。原可重叠顶底场景只保留为双向洗盘诊断。结构价带与ATR波动率价带分层显示；期权快照只约束范围，历史不足时不进入概率模型。", "generated_at": iso(utc_now()), "as_of": as_of.strftime("%Y-%m-%d"), "as_of_beijing": f"{as_of.strftime('%Y-%m-%d')} 纽约收盘数据；北京时间日期需按交易日换算", "run_id": run_id, "prediction_snapshot_id": run_id, "model_version": MODEL_VERSION, "directional_model_version": DIRECTIONAL_MODEL_VERSION, "feature_version": FEATURE_VERSION, "potential_range_version": "structure-volatility-option-layered-v3", "strategy_version": STRATEGY_VERSION, "universe_version": "curated-seed-20260915-v1.1-live-validation", "taxonomy_version": TAXONOMY_VERSION, "source_manifest": source, "records": records, "temporary": temporary, "storage_rotation": rotation, "options_model_gate": option_gate, "rotation_summary": [rotation["summary"], "存储四只为同一主研究组；细分视图允许MU重叠，主表不重复计数。", "存储新因子为shadow/challenger，未套用旧校准器；不要把MU强弱写成SNDK/WDC/STX的固定结论。"], "public_config": {"api_base_url": None}, "backtest": backtest, "coverage": {"regular_pool": len(records), "valid_forecast_records": valid, "usable_price_records": sum(1 for r in records if r.get("reference_price") is not None), "data_cutoff": as_of.strftime("%Y-%m-%d"), "financial_backtest_status": "B3 first-touch and exclusive directional-turn time-split metrics computed; options B4 and storage incremental alpha remain gated"}}
     # Context benchmarks cannot move the champion's stock/market cutoff date.
     index_frames, index_source = download_prices([s for s in INDEX_SPECS if s not in frames], refresh=refresh)
     context_frames = {**frames, **index_frames}
@@ -978,7 +1173,7 @@ def build(refresh: bool = False, run_id: str | None = None, extra_symbol: str | 
     source["index_context"] = index_source
     write_json(OUTPUT_DIR / f"dashboard-{run_id}.json", data)
     write_json(OUTPUT_DIR / f"backtest-{run_id}.json", backtest)
-    write_json(STATE_DIR / "model_card.json", {"model_version": MODEL_VERSION, "feature_version": FEATURE_VERSION, "calibration": "first-touch classes: independent time calibration window; stage-event marginals: scenario share, not independently calibrated", "status": "calibrated_low_confidence", "champion": "B3 without storage challenger", "challenger": "B3 + storage LOO/subgroup factors shadow-only", "backtest": backtest, "source": source})
+    write_json(STATE_DIR / "model_card.json", {"model_version": MODEL_VERSION, "directional_model_version": DIRECTIONAL_MODEL_VERSION, "feature_version": FEATURE_VERSION, "calibration": "first-touch classes and exclusive directional-turn classes use independent chronological calibration; overlapping stage-event marginals are diagnostic scenario shares only", "status": "calibrated_low_confidence", "champion": "B3 opportunity/risk without storage or option challenger", "challenger": "exclusive directional turn displayed low-confidence; storage LOO/subgroup and options B4 remain gated", "backtest": backtest, "source": source})
     db = ensure_ledger()
     db.execute("INSERT INTO runs VALUES (?,?,?,?,?,?,?)", (run_id, iso(utc_now()), data["as_of"], MODEL_VERSION, FEATURE_VERSION, "succeeded", str(OUTPUT_DIR / f"dashboard-{run_id}.json")))
     for rec in records + data['index_forecasts']['records']:

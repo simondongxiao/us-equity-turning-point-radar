@@ -16,13 +16,13 @@ with sync_playwright() as p:
     assert page.locator('#coverage').inner_text()=='100 / 0'
     checks.append('100 unchanged seeds and explicit 0 valid forecasts')
     page.screenshot(path=str(ROOT/'tests/preview-desktop.png'),full_page=False)
-    for field,label in [('reference_price','参考价'),('risk_value','风险分'),('bottom_probability','阶段底概率'),('top_probability','阶段顶概率'),('opportunity_value','机会分')]:
+    for field,label in [('reference_price','参考价'),('risk_value','风险分'),('bottom_probability','方向性阶段底'),('top_probability','方向性阶段顶'),('opportunity_value','机会分')]:
         button=page.locator(f"[data-field='{field}']")
         button.click()
         assert f'{label}：从大到小' in page.locator('#sortLabel').inner_text()
         button.click()
         assert f'{label}：从小到大' in page.locator('#sortLabel').inner_text()
-    checks.append('single-button direction toggle for reference price, opportunity/risk scores and independent bottom/top probabilities')
+    checks.append('single-button direction toggle for reference price, opportunity/risk scores and exclusive directional bottom/top probabilities')
     page.locator('[data-horizon="5"]').click()
     assert '5个交易日' in page.locator('#horizonLabel').inner_text()
     page.select_option('#bucketFilter','科技与成长主题');assert page.locator('#stockRows tr').count()==60
@@ -62,7 +62,7 @@ with sync_playwright() as p:
     page.screenshot(path=str(ROOT/'tests/preview-storage-desktop.png'),full_page=False)
     page.locator('#stockRows .symbol-button').filter(has_text='SNDK').click()
     detail=page.locator('#detailBody').inner_text()
-    for title in ['研究分组与业务标签','NAND / SSD','剔除自身后的同行','B3多周期潜在价带与场景占比','候选顶底五步体系','第一步·Price Structure','第二步·Options Distribution','第三步·候选位是否处于合理概率区间','第四步·Options Skew / Put-Call','第五步·Event / Catalyst','最终候选底部区域','最终候选顶部区域','市场与板块是否同步','确认与失效条件','基本面与事件证据','尾部风险与执行','首次触达路径','数据与模型']:assert title in detail,title
+    for title in ['研究分组与业务标签','NAND / SSD','剔除自身后的同行','多周期互斥方向拐点','候选顶底五步体系','第一步·Price Structure','第二步·Options Distribution','第三步·合理区间核对','第四步·Options Skew / Put-Call','第五步·Event / Catalyst','候选底部','候选顶部','市场与板块是否同步','确认与失效条件','基本面与事件证据','尾部风险与执行','首次触达路径','数据与模型']:assert title in detail,title
     page.screenshot(path=str(ROOT/'tests/preview-sndk-detail.png'),full_page=False)
     page.locator('#closeDetail').click()
     checks.append('SNDK detail retains all original research sections plus taxonomy and LOO')
@@ -80,7 +80,7 @@ with sync_playwright() as p:
     # Ephemeral synthetic data: discarded before preview screenshots and never written to JSON.
     page.evaluate("""() => {
       const fixture={MU:[.1,.3,21,.2,.4],SNDK:[.3,.1,87,.7,.1],WDC:[-.1,.2,4,.3,.5],STX:[null,null,null,null,null]};
-      for(const r of regular){if(fixture[r.symbol]){const [o,k,score,bottom,top]=fixture[r.symbol];r.metrics['10']={status:o===null?'uncalibrated':'calibrated',opportunity_value:o,risk_value:k,p_bottom:bottom,p_top:top,p_upfirst:.65,p_downfirst:.25,p_unhit:.10,opportunity_score:score,risk_score:k,expected_return:o,es95:k,positive_edge:o>0};}}
+      for(const r of regular){if(fixture[r.symbol]){const [o,k,score,bottom,top]=fixture[r.symbol];r.metrics['10']={status:o===null?'uncalibrated':'calibrated',opportunity_value:o,risk_value:k,p_bottom:bottom,p_top:top,p_bottom_rebound_first:bottom,p_top_reversal_first:top,p_no_directional_turn:bottom===null?null:1-bottom-top,p_two_way_wash:.2,two_way_wash_flag:'normal',p_upfirst:.65,p_downfirst:.25,p_unhit:.10,volatility_bottom_band:[90,95],volatility_top_band:[105,110],opportunity_score:score,risk_score:k,expected_return:o,es95:k,positive_edge:o>0};}}
       DATA.audit_upgrade={latest:{'10':[{symbol:'SNDK',reference:100,p_bottom:.6,p_top:.7,bottom_band_ratio:[.88,.91,.94],top_band_ratio:[1.06,1.09,1.12],fan:{sessions:[0,1,2],p25:[1,.98,.96],p50:[1,1.01,1.03],p75:[1,1.04,1.08]},attribution:[{group:'市场/指数',bottom_delta:.03,top_delta:-.02}],stress:[{market_shock:-.015,p_bottom:.65,p_top:.63},{market_shock:0,p_bottom:.6,p_top:.7}]}]}};
       render();
     }""")
@@ -93,7 +93,7 @@ with sync_playwright() as p:
     assert page.evaluate("regular.find(r=>r.symbol==='SNDK').metrics['10'].opportunity_score")==87
     page.locator('#stockRows .symbol-button',has_text='SNDK').click()
     assert page.locator('#detailBody .fan-chart').count()==1
-    assert '不是下一交易日涨跌预测' in page.locator('#detailBody').inner_text()
+    assert '不作为方向性阶段顶/底决策概率' in page.locator('#detailBody').inner_text()
     assert '65.0% / 25.0% / 10.0%' in page.locator('#detailBody').inner_text()
     page.locator('#detailBody select').select_option('-0.015')
     assert '65.0%' in page.locator('#detailBody').inner_text()

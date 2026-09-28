@@ -19,15 +19,17 @@ class IndexForecastTests(unittest.TestCase):
         record = result['records'][0]
         calibrated = 0
         for h, metric in record['metrics'].items():
-            v = record['validation'][h]['joint_turning']
+            v = record['validation'][h]['directional_turn_exclusive']
             self.assertLess(v['train_label_end'], v['calibration_start'])
             self.assertLess(v['calibration_label_end'], v['test_start'])
             if metric['status']=='calibrated_low_confidence':
                 calibrated += 1
-                for field in ('p_bottom','p_top','p_upfirst','p_downfirst','p_unhit'):
+                for field in ('p_bottom','p_top','p_upfirst','p_downfirst','p_unhit','p_bottom_rebound_first','p_top_reversal_first','p_no_directional_turn','p_two_way_wash'):
                     self.assertTrue(0 <= metric[field] <= 1)
                 self.assertAlmostEqual(sum(metric[k] for k in ('p_upfirst','p_downfirst','p_unhit')),1)
+                self.assertAlmostEqual(sum(metric[k] for k in ('p_bottom_rebound_first','p_top_reversal_first','p_no_directional_turn')),1)
                 self.assertLessEqual(metric['bottom_band'][0],metric['bottom_band'][1])
+                self.assertLessEqual(metric['volatility_bottom_band'][0],metric['volatility_bottom_band'][1])
                 self.assertNotIn('expected_return', metric)
         self.assertGreater(calibrated, 0)
 

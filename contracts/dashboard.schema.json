@@ -25,6 +25,12 @@
         "null"
       ]
     },
+    "directional_model_version": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
     "run_id": {
       "type": [
         "string",
@@ -214,6 +220,26 @@
           "minimum": 0,
           "maximum": 1
         },
+        "p_bottom_rebound_first": {
+          "type": ["number", "null"],
+          "minimum": 0,
+          "maximum": 1
+        },
+        "p_top_reversal_first": {
+          "type": ["number", "null"],
+          "minimum": 0,
+          "maximum": 1
+        },
+        "p_no_directional_turn": {
+          "type": ["number", "null"],
+          "minimum": 0,
+          "maximum": 1
+        },
+        "p_two_way_wash": {
+          "type": ["number", "null"],
+          "minimum": 0,
+          "maximum": 1
+        },
         "bottom_band": {
           "type": [
             "array",
@@ -235,6 +261,18 @@
             "type": "number",
             "exclusiveMinimum": 0
           },
+          "minItems": 2,
+          "maxItems": 2
+        },
+        "volatility_bottom_band": {
+          "type": ["array", "null"],
+          "items": {"type": "number", "exclusiveMinimum": 0},
+          "minItems": 2,
+          "maxItems": 2
+        },
+        "volatility_top_band": {
+          "type": ["array", "null"],
+          "items": {"type": "number", "exclusiveMinimum": 0},
           "minItems": 2,
           "maxItems": 2
         }

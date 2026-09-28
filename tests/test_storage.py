@@ -74,7 +74,7 @@ class PackageTests(unittest.TestCase):
         with (ROOT/'assets/universe_seed.csv').open(encoding='utf-8-sig',newline='') as f:self.rows=list(csv.DictReader(f))
     def test_seed_integrity(self):self.assertEqual(validate_seed(ROOT/'assets/universe_seed.csv'),100)
     def test_original_symbols_and_buckets_preserved(self):
-        baseline=json.loads((ROOT/'tests/baseline-symbols-v1.json').read_text())
+        baseline=json.loads((ROOT/'tests/baseline-symbols-v1.json').read_text(encoding='utf-8'))
         self.assertEqual({r['symbol']:r['coverage_bucket'] for r in self.rows},baseline)
     def test_csv_json_same_metadata(self):
         parsed=[]
@@ -82,17 +82,17 @@ class PackageTests(unittest.TestCase):
             r=dict(r)
             for k in ['business_tags','industry_tags']:r[k]=[v for v in r[k].split('|') if v]
             parsed.append(r)
-        self.assertEqual(parsed,json.loads((ROOT/'assets/universe_seed.json').read_text()))
+        self.assertEqual(parsed,json.loads((ROOT/'assets/universe_seed.json').read_text(encoding='utf-8')))
     def test_subgroup_membership_unique(self):
-        r=json.loads((ROOT/'assets/universe_seed.json').read_text())
+        r=json.loads((ROOT/'assets/universe_seed.json').read_text(encoding='utf-8'))
         for tags,expected in [({'DRAM','HBM'},{'MU'}),({'NAND','SSD'},{'MU','SNDK'}),({'HDD'},{'WDC','STX'})]:
             self.assertEqual({x['symbol'] for x in r if set(x['business_tags'])&tags},expected)
     def test_preview_schema(self):
-        d=json.loads((ROOT/'assets/preview-data.json').read_text())
-        schema=json.loads((ROOT/'contracts/dashboard.schema.json').read_text())
+        d=json.loads((ROOT/'assets/preview-data.json').read_text(encoding='utf-8'))
+        schema=json.loads((ROOT/'contracts/dashboard.schema.json').read_text(encoding='utf-8'))
         jsonschema.Draft202012Validator(schema).validate(d);self.assertEqual(validate_dashboard(d),100)
     def test_no_fabricated_financials(self):
-        d=json.loads((ROOT/'assets/preview-data.json').read_text())
+        d=json.loads((ROOT/'assets/preview-data.json').read_text(encoding='utf-8'))
         self.assertEqual(d['build_mode'],'preview');self.assertIsNone(d['storage_rotation'])
         for r in d['records']:
             self.assertIsNone(r['reference_price'])
@@ -101,13 +101,13 @@ class PackageTests(unittest.TestCase):
                 for k,v in m.items():
                     if k!='status':self.assertIsNone(v)
     def test_schema_legacy_records_accepted(self):
-        schema=json.loads((ROOT/'contracts/dashboard.schema.json').read_text())
+        schema=json.loads((ROOT/'contracts/dashboard.schema.json').read_text(encoding='utf-8'))
         old={'build_mode':'preview','records':[{'symbol':'OLD-TEST','metrics':{str(h):{'status':'uncalibrated'} for h in [5,10,21]}}]}
         jsonschema.Draft202012Validator(schema).validate(old)
     def test_required_original_research_sections(self):
-        s=(ROOT/'references/model-spec.md').read_text()
+        s=(ROOT/'references/model-spec.md').read_text(encoding='utf-8')
         for term in ['市场情绪与持续时间','行业轮动','个股独立表现','结构价带','波动、期权与事件','凯利与执行','共同路径分布','冷启动与降级']:self.assertIn(term,s)
-        s=(ROOT/'assets/dashboard.html').read_text()
+        s=(ROOT/'assets/dashboard.html').read_text(encoding='utf-8')
         for term in ['市场与板块是否同步','确认与失效条件','基本面与事件证据','尾部风险与执行','首次触达路径','数据与模型']:self.assertIn(term,s)
 
 if __name__=='__main__':unittest.main()

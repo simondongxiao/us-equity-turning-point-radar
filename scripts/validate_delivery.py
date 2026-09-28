@@ -5,7 +5,7 @@ import json
 import math
 from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1]
-PROBS=['p_bottom','p_top','p_upfirst','p_downfirst','p_unhit']
+PROBS=['p_bottom','p_top','p_upfirst','p_downfirst','p_unhit','p_bottom_rebound_first','p_top_reversal_first','p_no_directional_turn','p_two_way_wash']
 CALIBRATED={'calibrated','calibrated_low_confidence'}
 def require(test, message):
     if not test: raise ValueError(message)
@@ -47,10 +47,14 @@ def validate_dashboard(data, production=False):
             if any(x is not None for x in triple):
                 require(all(num(x) for x in triple),f'{r["symbol"]}: incomplete competing-risk probabilities')
                 require(abs(sum(triple)-1)<1e-6,f'{r["symbol"]}: competing risks must sum to 1')
+            directional=[m.get(k) for k in ['p_bottom_rebound_first','p_top_reversal_first','p_no_directional_turn']]
+            if calibrated:
+                require(all(num(x) for x in directional),f'{r["symbol"]}: missing exclusive directional-turn probabilities')
+                require(abs(sum(directional)-1)<1e-6,f'{r["symbol"]}: directional-turn probabilities must sum to 1')
             for key in ['opportunity_score','risk_score']:
                 x=m.get(key)
                 if x is not None:require(num(x) and 0<=x<=100 and calibrated,f'{r["symbol"]}: invalid {key}')
-            for key in ['bottom_band','top_band']:
+            for key in ['bottom_band','top_band','volatility_bottom_band','volatility_top_band']:
                 a=m.get(key)
                 if a is not None:require(isinstance(a,list) and len(a)==2 and all(num(v) and v>0 for v in a) and a[0]<=a[1],f'{r["symbol"]}: invalid {key}')
     return len(rows)

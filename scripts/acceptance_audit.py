@@ -6,7 +6,7 @@ ROOT=Path(__file__).resolve().parents[1]
 def main():
     p=argparse.ArgumentParser();p.add_argument('--output',type=Path,default=ROOT/'outputs/upgrade-acceptance.md');args=p.parse_args()
     lines=['# 本轮增量验收','',
-           'PASS仅表示本轮已验证的具体范围；BLOCKED不代表既有能力已删除。B3保留，新增v2.3仅影子比较。','']
+           'PASS仅表示本轮已验证的具体范围；BLOCKED不代表既有能力已删除。B3机会/风险保留；互斥方向拐点为低可信挑战者，旧四态v2.3仅作诊断。','']
     for line in (ROOT/'references/acceptance.md').read_text(encoding='utf-8').splitlines():
         if line.startswith('## '):lines.extend([line,''])
         if not line.startswith('- '):continue
@@ -33,6 +33,12 @@ def main():
             status='BLOCKED';reason='新shadow使用实际成熟日双边purge并通过测试；旧B3的完整同级验证尚未重做，不能以新模型结果替旧模型背书。'
         if '概率校准、价带宽度/覆盖、排序效果和净交易表现分别评价' in line:
             status='PASS';reason='新shadow分别报告Brier/校准桶、条件价带宽度与覆盖、3%误差及次日开盘扣成本结果；晋级仍FAIL。'
+        if '方向性阶段底、方向性阶段顶、无有效拐点' in line:
+            status='PASS';reason='交付校验逐股逐周期验证互斥三项完整且和为1；主表排序仅读取方向挑战者，旧重叠边际移入双向洗盘诊断。'
+        if '结构价带、ATR波动率回退带' in line:
+            status='PASS';reason='主表和详情分别展示结构、波动率回退及期权约束后候选；100股各周期均验证ATR回退带有效。'
+        if '期权特征进入概率前' in line:
+            status='BLOCKED';reason='准入门槛与点时覆盖报告已实现，但连续252日历史尚不足；当前快照不进入概率模型。'
         if '模型置信度依据真实独立样本' in line:
             status='PASS';reason='样本数取真实成熟股票日并按21交易日块重采样；扇形图路径数不冒充独立样本数。'
         if '未校准、样本不足、陈旧和数据异常不能生成假概率' in line:

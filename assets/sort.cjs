@@ -13,8 +13,8 @@
     const aliases = {
       opportunity_value: ['opportunity_score', 'opportunity_value'],
       risk_value: ['risk_score', 'risk_value'],
-      bottom_probability: ['p_bottom'],
-      top_probability: ['p_top']
+      bottom_probability: ['p_bottom_rebound_first'],
+      top_probability: ['p_top_reversal_first']
     };
     const value = (aliases[field] || [field]).map(key => item[key]).find(value => typeof value === 'number' && Number.isFinite(value));
     return typeof value === 'number' && Number.isFinite(value) ? value : null;
