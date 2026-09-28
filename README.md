@@ -1,29 +1,33 @@
 # 美股阶段顶底概率雷达｜Codex Skill交付包
 
-本包交付：一个新的长期Skill、100只初始观察种子、完整模型/回测/前端与安全部署规范、可运行HTML交互模板、模板渲染脚本及接口验收脚本。名称：`us-equity-turning-point-radar`。
+名称：`us-equity-turning-point-radar`；版本：`1.1.1-storage-audit`。本包是同一个Skill的完整增量版本，包含100股种子、模型与回测规范、真实计算引擎源码、冻结台账逻辑、HTML前端、GitHub Pages工作流和测试。
 
-**边界：没有已训练的金融预测引擎，没有实时100股价带，没有已完成的历史策略回测，也没有本次已发布的GitHub网站或任务网关。** 模板的数据为空值且明确标记未校准；排序逻辑有独立的合成测试。执行Skill的首次构建任务是将这些规范落实到真实可运行项目，然后在可用数据和授权下部署并验收。
+当前生产网站为 https://simondongxiao.github.io/us-equity-turning-point-radar/ 。打包文件不包含行情缓存、冻结预测、SQLite、密钥或GitHub凭证；安装后必须在实际项目中恢复自己的状态和授权。生产B3保持低可信，影子Challenger未晋级；正式HTTPS单股任务网关和动态周更仍为BLOCKED，不能因网页已部署而宣称完成。
 
 ## 使用
-在Codex打开`D:\codex`。将本包作为附件提供，或解压到工作区中的临时导入目录。复制`BOOTSTRAP_PROMPT.txt`执行；Codex须先读SKILL与全部参考规范，再创建新项目，不能覆盖旧Skill或旧行情网页。
+在Codex打开`D:\codex`。将本包解压后，把Skill安装到当前支持的Skills目录；本机约定为`D:\codex\skills\us-equity-turning-point-radar`。首次构建或升级前完整读取`SKILL.md`和`references`，先检查同名项目状态，再决定首次构建或原地升级，不能覆盖旧Skill或旧行情网页。
 
-正式完成后日常可说：“按美股阶段顶底雷达做今天更新”；“更新本周人气股池”；“分析MU的阶段顶底并更新网页”。网站输入池外股票通过真实已部署网关执行；不是静态页面自带算力。
+日常可说：“按美股阶段顶底雷达做今天更新”；“更新本周人气股池”；“分析MU的阶段顶底并更新网页”。网站只有在真实鉴权网关已部署时才能运行池外股票；当前Pages会诚实显示网关未部署。
 
 ## 本地检查本包
-`python scripts/render_preview.py`生成`preview.html`，可离线打开查看100股观察种子和交互（所有金融数字保持空值）。
+`python scripts/render_preview.py`生成`preview.html`，可离线查看100股种子和交互；预览金融数字为空值。
 `python scripts/validate_delivery.py --seed assets/universe_seed.csv`检查股票池基础约束。
-`node tests/sort.test.cjs`检查四种排序、空值置底和数值排序。
+`python -m unittest discover -s tests -p "test*.py"`运行Python测试。
+`node tests/sort.test.cjs`检查排序、空值置底和数值排序。
+`python tests/browser_preview.py`运行桌面/手机界面回归。
 
-`preview.html`不是实盘网站，不包含概率、价带或实时数据。首次部署后才会由真实引擎填充同一数据契约。
+`preview.html`不是实盘网站，不包含概率、价带或实时数据。生产构建由`radar_engine.py`、`audit_upgrade.py`和渲染/验证脚本生成，不能用预览测试冒充金融回测或上线。
 
 ## 文件
-SKILL.md为运行编排；references含模型、股票池、页面/网关、回测迭代和验收；assets含100股种子和HTML模板；contracts为结果结构；scripts为渲染/验收工具；tests仅为代码行为测试。
+`SKILL.md`为运行编排；`references`含模型、股票池、页面/网关、回测迭代和验收；`assets`含100股种子和HTML模板；`contracts`为结果结构；`scripts`含引擎、审计、冻结、渲染与部署辅助；`tests`为工程行为测试。
 
 初始60/40是研究覆盖分组，不是正式行业分类。种子是观察对象，不是买入建议，也不是已经统计验证的实时人气100强。数据源与限制见references/sources.md。
 
 ## v1.1存储增强
 本版是原包的完整增量升级，Skill名称不变。新增加“存储与内存”主组（初始MU/SNDK/WDC/STX）、DRAM/HBM、NAND/SSD、HDD筛选，保留100股与原全部研究/回测/安全要求。`references/storage-memory.md`定义轮动与LOO，`references/migration-v1.1.md`兼容首次安装及已有项目升级。
 
-本次只交付规范、元数据、前端和经合成测试的辅助函数，不包含已训练存储概率模型。离线HTML可验证筛选和详情，任务网关仍未部署。新轮动模块对预测质量的增益仍待真实回测。
+分类、筛选与存储轮动已进入生产页面；存储增量因子仍为shadow/challenger，没有套用旧校准器，也未证明提升预测质量。
 
-附加检查：`python -m unittest discover -s tests -p "test_*.py" -v`；`python tests/browser_preview.py`（需Playwright/Chromium）；`python scripts/verify_package.py`。验证明细见`tests/validation-report.json`和`VALIDATION_REPORT.md`。
+## v1.1.1审计增强
+
+B3首次触达`先上冲/先下探/未触达`与阶段顶底场景占比分开展示。影子层新增非对称独立顶底、条件极值带、成熟路径扇形图、分组敏感度和指数压力测试；历史动态成员、板块点时成员及连续期权/GEX数据缺口继续明确标为BLOCKED。
