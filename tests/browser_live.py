@@ -30,7 +30,7 @@ def run() -> None:
             page.locator('#calibrationPanel summary').click()
             assert page.locator('#calibrationBody .calibration-chart').count() == 1
             assert '多数类基线' in page.locator('#calibrationSummary').inner_text()
-            assert page.locator('#calibrationBody tbody tr').count() > 0
+            assert page.locator('#calibrationBody .calibration-table tr').count() > 1
             page.locator('#indexTopSort').click()
             assert page.locator('#indexTopSort').get_attribute('aria-pressed') == 'true'
             page.locator('#indexTopSort').click()
