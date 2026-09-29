@@ -16,6 +16,10 @@ def run() -> None:
             page.on("pageerror", lambda exc: errors.append(str(exc)))
             page.goto(TARGET, wait_until="load")
             assert page.locator("#stockRows tr").count() == 100
+            assert page.locator("#coverage").inner_text() == "100 / 100"
+            as_of = page.evaluate("DATA.as_of")
+            assert page.locator("#asOf").inner_text() == as_of
+            assert "北京时间" in page.locator("#beijing").inner_text()
             assert page.locator('#indexRows tr').count() == 9
             assert page.locator('#indexForecastRows tr').count() == 9
             assert 'SOX' in page.locator('#indexSummary').inner_text()
