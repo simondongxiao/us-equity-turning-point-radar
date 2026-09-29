@@ -1,6 +1,7 @@
 """Desktop/mobile smoke checks against the generated live Pages artifact."""
 from pathlib import Path
 import os
+import re
 from playwright.sync_api import sync_playwright
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -47,12 +48,12 @@ def run() -> None:
             assert page.locator('#indexTopSort').get_attribute('aria-pressed') == 'true'
             page.locator('#indexTopSort').click()
             assert '↑' in page.locator('#indexTopSort').inner_text()
-            page.locator('#indexForecastRows button', has_text='SOX').click()
+            page.locator('#indexForecastRows button').filter(has_text=re.compile(r'^SOX ·')).click()
             assert '独立时间检验' in page.locator('#detailBody').inner_text()
             assert '阶段底' in page.locator('#detailBody').inner_text()
             assert '路径重合' in page.locator('#detailBody').inner_text()
             page.locator('#closeDetail').click()
-            page.locator('#indexForecastRows button', has_text='SOXL').click()
+            page.locator('#indexForecastRows button').filter(has_text=re.compile(r'^SOXL ·')).click()
             leveraged_text = page.locator('#detailDialog').inner_text()
             assert 'ETF自身复权历史' in leveraged_text
             assert '不把基准指数概率乘以杠杆倍数或镜像' in leveraged_text
