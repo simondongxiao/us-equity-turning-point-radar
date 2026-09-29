@@ -48,15 +48,16 @@ def run() -> None:
             assert '阶段底' in page.locator('#detailBody').inner_text()
             assert '路径重合' in page.locator('#detailBody').inner_text()
             page.locator('#closeDetail').click()
-            assert page.locator("#storageQuick").inner_text().startswith("存储与内存 · 4")
+            assert page.locator("#storageQuick, #storageSubFilter, #clearFilters").count() == 0
             assert page.locator("[aria-label='机会分排序：从大到小']").get_attribute("aria-pressed") == "true"
             page.locator("[aria-label='机会分排序：从大到小']").click()
             assert page.locator("[aria-label='机会分排序：从小到大']").get_attribute("aria-pressed") == "true"
             assert page.locator("#sortLabel").inner_text().startswith("机会分：从小到大")
             page.locator("[aria-label='机会分排序：从小到大']").click()
-            page.locator("#storageQuick").click()
-            assert page.locator("#stockRows tr").count() == 4
+            page.select_option("#bucketFilter", "科技与成长主题")
             page.select_option("#groupFilter", "存储与内存")
+            assert page.locator("#stockRows tr").count() == 4
+            assert page.locator("#storagePanel").is_visible()
             page.select_option("#businessTagFilter", "NAND")
             assert set(page.locator("#stockRows button.symbol-button").all_text_contents()) == {"MU", "SNDK"}
             page.select_option("#businessTagFilter", "")
@@ -65,16 +66,14 @@ def run() -> None:
             page.select_option("#stageFilter", stage)
             assert page.locator("#stockRows tr").count() > 0
             page.select_option("#stageFilter", "")
-            page.locator("#storageSubFilter").select_option("nand-ssd")
-            assert page.locator("#stockRows tr").count() == 2
             page.locator("[aria-label='方向性阶段底排序：从大到小']").click()
             assert page.locator("#sortLabel").inner_text().startswith("方向性阶段底：从大到小")
             page.locator("[aria-label='方向性阶段顶排序：从大到小']").click()
             assert page.locator("#sortLabel").inner_text().startswith("方向性阶段顶：从大到小")
             page.locator("[aria-label='参考价排序：从大到小']").click()
             assert page.locator("#sortLabel").inner_text().startswith("参考价：从大到小")
-            page.locator("#clearFilters").click()
-            assert page.locator("#storageQuick").get_attribute("aria-pressed") == "false"
+            page.select_option("#groupFilter", "")
+            page.select_option("#bucketFilter", "")
             assert page.locator("#stockRows tr").count() == 100
             qcom_row = page.locator("#stockRows tr", has=page.locator("button.symbol-button", has_text="QCOM"))
             qcom_touch = page.evaluate("""() => {const m=DATA.records.find(r=>r.symbol==='QCOM').metrics['10'];return [m.p_upfirst,m.p_downfirst,m.p_unhit].map(v=>(v*100).toFixed(1)+'%')}""")
@@ -107,7 +106,7 @@ def run() -> None:
         browser.close()
     if errors:
         raise AssertionError("browser errors: " + "; ".join(errors))
-    print("PASS: live desktop/mobile storage, filter, sorting and gateway-honesty checks")
+    print("PASS: live desktop/mobile simplified filters, storage, sorting and gateway-honesty checks")
 
 
 if __name__ == "__main__":

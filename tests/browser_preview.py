@@ -39,18 +39,20 @@ with sync_playwright() as p:
     page.select_option('#bucketFilter','科技与成长主题');assert page.locator('#stockRows tr').count()==60
     page.select_option('#bucketFilter','非科技主题');assert page.locator('#stockRows tr').count()==40
     checks.append('60 tech / 40 non-tech theme filters')
-    page.locator('#storageQuick').click()
+    for removed in ('#storageQuick','#storageSubFilter','#clearFilters'):
+        assert page.locator(removed).count()==0
+    page.select_option('#bucketFilter','科技与成长主题')
+    page.select_option('#groupFilter','存储与内存')
     assert set(page.locator('#stockRows .symbol-button').all_text_contents())=={'MU','SNDK','WDC','STX'}
     assert page.locator('#storagePanel').is_visible()
-    assert not page.locator('#storageSubFilter').is_disabled()
     assert '尚无同一数据时点' in page.locator('#storageSummaryText').inner_text()
     assert page.locator('#coverage').inner_text()=='100 / 0'
-    checks.append('storage shortcut shows the four original names, no invented rotation')
-    for value,expected in [('dram-hbm',{'MU'}),('nand-ssd',{'MU','SNDK'}),('hdd',{'WDC','STX'})]:
-        page.select_option('#storageSubFilter',value)
+    checks.append('removed duplicate storage/subgroup/all-stock controls; research-group dropdown keeps the four original names')
+    for value,expected in [('DRAM',{'MU'}),('NAND',{'MU','SNDK'}),('HDD',{'WDC','STX'})]:
+        page.select_option('#businessTagFilter',value)
         assert set(page.locator('#stockRows .symbol-button').all_text_contents())==expected
-    checks.append('DRAM/HBM, NAND/SSD, HDD filters; overlapping MU not duplicated')
-    page.select_option('#storageSubFilter','')
+    checks.append('DRAM, NAND and HDD remain selectable through business tags; overlapping MU not duplicated')
+    page.select_option('#businessTagFilter','')
     page.select_option('#businessTagFilter','NAND')
     assert set(page.locator('#stockRows .symbol-button').all_text_contents())=={'MU','SNDK'}
     page.select_option('#businessTagFilter','')
@@ -59,16 +61,16 @@ with sync_playwright() as p:
     page.select_option('#stageFilter',stage)
     assert page.locator('#stockRows tr').count() > 0
     checks.append('research-group, business-tag and stage dropdowns filter without changing scores')
+    page.select_option('#stageFilter','')
     page.select_option('#bucketFilter','非科技主题')
     assert page.locator('#stockRows tr').count()==40
-    assert page.locator('#storageSubFilter').is_disabled()
-    assert page.locator('#storageSubFilter').input_value()==''
-    checks.append('incompatible theme changes clear storage subfilter')
-    page.locator('#clearFilters').click();assert page.locator('#stockRows tr').count()==100
+    assert page.locator('#storagePanel').is_hidden()
+    checks.append('incompatible theme changes clear the storage research-group selection')
+    page.select_option('#bucketFilter','');assert page.locator('#stockRows tr').count()==100
     assert '机会分：从小到大' in page.locator('#sortLabel').inner_text()
     assert '5个交易日' in page.locator('#horizonLabel').inner_text()
-    checks.append('clear filter preserves sort and horizon')
-    page.locator('#storageQuick').click();page.locator('[data-horizon="10"]').click()
+    checks.append('returning dropdowns to all preserves sort and horizon')
+    page.select_option('#bucketFilter','科技与成长主题');page.select_option('#groupFilter','存储与内存');page.locator('[data-horizon="10"]').click()
     page.locator("[data-field='opportunity_value']").click()
     page.screenshot(path=str(ROOT/'tests/preview-storage-desktop.png'),full_page=False)
     page.locator('#stockRows .symbol-button').filter(has_text='SNDK').click()
@@ -99,7 +101,7 @@ with sync_playwright() as p:
     for field,expected in [('opportunity_value',['WDC','MU','SNDK','STX']),('opportunity_value',['SNDK','MU','WDC','STX']),('risk_value',['MU','WDC','SNDK','STX']),('risk_value',['SNDK','WDC','MU','STX']),('bottom_probability',['SNDK','WDC','MU','STX']),('bottom_probability',['MU','WDC','SNDK','STX']),('top_probability',['WDC','MU','SNDK','STX']),('top_probability',['SNDK','MU','WDC','STX'])]:
         page.locator(f"[data-field='{field}']").click()
         assert page.locator('#stockRows .symbol-button').all_text_contents()==expected
-    page.select_option('#storageSubFilter','nand-ssd')
+    page.select_option('#businessTagFilter','NAND')
     assert page.locator('#stockRows tr').count()==2
     assert '上 65.0%' in page.locator('#stockRows tr',has=page.locator('button',has_text='SNDK')).inner_text()
     assert page.evaluate("regular.find(r=>r.symbol==='SNDK').metrics['10'].opportunity_score")==87
@@ -124,14 +126,16 @@ with sync_playwright() as p:
     page=browser.new_page(viewport={'width':390,'height':844},device_scale_factor=1)
     page.on('pageerror',lambda e:errors.append(str(e)))
     page.set_content(HTML,wait_until='load')
-    page.locator('#storageQuick').click()
-    page.select_option('#storageSubFilter','hdd')
+    assert page.locator('#storageQuick, #storageSubFilter, #clearFilters').count()==0
+    page.select_option('#bucketFilter','科技与成长主题')
+    page.select_option('#groupFilter','存储与内存')
+    page.select_option('#businessTagFilter','HDD')
     assert page.locator('#stockRows tr').count()==2
-    page.select_option('#storageSubFilter','')
+    page.select_option('#businessTagFilter','')
     page.screenshot(path=str(ROOT/'tests/preview-mobile.png'),full_page=False)
     assert page.evaluate('document.documentElement.scrollWidth <= window.innerWidth + 2')
     assert not errors,errors
-    checks.append('mobile storage/subgroup controls, no whole-page horizontal overflow, no JS errors')
+    checks.append('mobile simplified filters, no whole-page horizontal overflow, no JS errors')
     browser.close()
 report={'test_type':'synthetic_ui_only','checks':checks,'check_groups':len(checks),'result':'PASS','financial_backtest':False,'github_live_test':False,'gateway_test':False}
 (ROOT/'tests/ui-check-result.json').write_text(json.dumps(report,ensure_ascii=False,indent=2)+'\n')

@@ -30,9 +30,6 @@
 <select id="groupFilter" class="filter" aria-label="研究组"><option value="">全部研究组</option></select>
 <select id="businessTagFilter" class="filter" aria-label="业务标签"><option value="">全部业务标签</option></select>
 <select id="stageFilter" class="filter" aria-label="阶段"><option value="">全部阶段</option></select>
-<button id="storageQuick" class="toggle" aria-pressed="false" aria-label="查看存储与内存研究组">存储与内存 · 4</button>
-<select id="storageSubFilter" class="filter" aria-label="存储细分业务" disabled><option value="">全部存储细分</option><option value="dram-hbm">DRAM / HBM</option><option value="nand-ssd">NAND / SSD</option><option value="hdd">HDD</option></select>
-<button id="clearFilters" class="toggle" aria-label="清空筛选">全部股票</button>
 <label class="small"><input type="checkbox" id="edgeOnly"> 只看正优势</label>
 </div><p class="small" style="margin-top:12px">方向性阶段底 / 阶段顶 / 无有效拐点互斥且合计100%；双向洗盘另列为波动诊断。机会与风险仍可同时偏高。未知/过期结果在任意排序下均置底；筛选不改变全池评分。</p>
 <div id="jobStatus" class="status" role="status" aria-live="polite"></div>
@@ -82,7 +79,6 @@ function selectedMetrics(r){return (r.metrics||{})[String(state.horizon)]||{stat
 function persist(){try{localStorage.setItem('radar-ui-v1',JSON.stringify({horizon:state.horizon,field:state.field,direction:state.direction}));}catch{}}
 function tagList(r,key){const v=r[key];return Array.isArray(v)?v.filter(x=>typeof x==='string'):typeof v==='string'?v.split('|').filter(Boolean):[];}
 function isStorage(r){return r.research_group_id==='storage-memory'||r.research_group==='存储与内存';}
-const SUBFILTERS={'dram-hbm':['DRAM','HBM'],'nand-ssd':['NAND','SSD'],'hdd':['HDD']};
 function refreshFacetOptions(){
  const oldGroup=$('groupFilter').value,oldTag=$('businessTagFilter').value,oldStage=$('stageFilter').value,bucket=$('bucketFilter').value;
  const source=state.view==='regular'?regular:temporary;
@@ -100,11 +96,6 @@ function refreshFacetOptions(){
  $('stageFilter').replaceChildren(node('option','全部阶段'));$('stageFilter').firstChild.value='';
  stages.forEach(stage=>{const o=node('option',stage);o.value=stage;$('stageFilter').append(o);});
  $('stageFilter').value=stages.includes(oldStage)?oldStage:'';
- const active=$('groupFilter').value==='存储与内存';
- $('storageSubFilter').disabled=!active;if(!active)$('storageSubFilter').value='';
- $('storageQuick').setAttribute('aria-pressed',active);
- const count=(state.view==='regular'?regular:temporary).filter(isStorage).length;
- txt($('storageQuick'),`存储与内存 · ${count}`);
 }
 function renderStoragePanel(){
  const active=$('groupFilter').value==='存储与内存';$('storagePanel').hidden=!active;if(!active)return;
@@ -163,9 +154,9 @@ function render(){
  txt($('coverage'),`${regular.length} / ${regular.filter(r=>ready(selectedMetrics(r))).length}`);
  $('regularTab').setAttribute('aria-pressed',state.view==='regular');$('temporaryTab').setAttribute('aria-pressed',state.view==='temporary');
  txt($('temporaryTab'),`临时观察 · ${temporary.length}`);
- const viewRecords=state.view==='regular'?regular:temporary,subTags=SUBFILTERS[$('storageSubFilter').value]||[];
+ const viewRecords=state.view==='regular'?regular:temporary;
  const selectedTag=$('businessTagFilter').value,selectedStage=$('stageFilter').value;
- let records=viewRecords.filter(r=>(!$('bucketFilter').value||r.coverage_bucket===$('bucketFilter').value)&&(!$('groupFilter').value||r.research_group===$('groupFilter').value)&&(!selectedTag||tagList(r,'business_tags').includes(selectedTag))&&(!selectedStage||r.stage===selectedStage)&&(!subTags.length||tagList(r,'business_tags').some(t=>subTags.includes(t)))&&(!$('edgeOnly').checked||(ready(selectedMetrics(r))&&selectedMetrics(r).positive_edge===true)));
+ let records=viewRecords.filter(r=>(!$('bucketFilter').value||r.coverage_bucket===$('bucketFilter').value)&&(!$('groupFilter').value||r.research_group===$('groupFilter').value)&&(!selectedTag||tagList(r,'business_tags').includes(selectedTag))&&(!selectedStage||r.stage===selectedStage)&&(!$('edgeOnly').checked||(ready(selectedMetrics(r))&&selectedMetrics(r).positive_edge===true)));
  txt($('filterCount'),`显示 ${records.length} / ${viewRecords.length} · 全池评分不变`);
  records=RadarUtils.sorted(records,state.field,state.direction,state.horizon);
  $('stockRows').replaceChildren();$('emptyState').hidden=records.length!==0;
@@ -272,7 +263,7 @@ async function runAnalysis(){
     const sameSnapshot=Boolean(DATA.prediction_snapshot_id)&&result.prediction_snapshot_id===DATA.prediction_snapshot_id;
     if(old>=0&&sameSnapshot){regular[old]=result;state.view='regular';}
     else{const j=temporary.findIndex(r=>r.symbol===result.symbol);if(j<0)temporary.push(result);else {const nt=Date.parse(result.as_of||''),ot=Date.parse(temporary[j].as_of||'');if(Number.isFinite(nt)&&(!Number.isFinite(ot)||nt>=ot))temporary[j]=result;}state.view='temporary';}
-    $('bucketFilter').value='';$('groupFilter').value='';$('businessTagFilter').value='';$('stageFilter').value='';$('storageSubFilter').value='';$('edgeOnly').checked=false;render();openDetail(result);showStatus(`分析完成：${result.symbol}；数据截至 ${result.as_of||'未提供'}。`);finished=true;break;
+    $('bucketFilter').value='';$('groupFilter').value='';$('businessTagFilter').value='';$('stageFilter').value='';$('edgeOnly').checked=false;render();openDetail(result);showStatus(`分析完成：${result.symbol}；数据截至 ${result.as_of||'未提供'}。`);finished=true;break;
    }
    showStatus(`任务 ${job.job_id}：${status.status==='running'?'正在计算':'等待执行'}。`);
   }
@@ -282,9 +273,7 @@ async function runAnalysis(){
 document.querySelectorAll('[data-field]').forEach(b=>b.onclick=()=>{if(state.field===b.dataset.field)state.direction=state.direction==='desc'?'asc':'desc';else{state.field=b.dataset.field;state.direction='desc';}render();});
 document.querySelectorAll('[data-index-sort]').forEach(b=>b.onclick=()=>{if(indexSort.field===b.dataset.indexSort)indexSort.direction=indexSort.direction==='desc'?'asc':'desc';else indexSort={field:b.dataset.indexSort,direction:'desc'};renderIndices();});
 document.querySelectorAll('[data-horizon]').forEach(b=>b.onclick=()=>{state.horizon=Number(b.dataset.horizon);render();});
-['bucketFilter','groupFilter','businessTagFilter','stageFilter','storageSubFilter','edgeOnly'].forEach(id=>$(id).onchange=render);
-$('storageQuick').onclick=()=>{$('bucketFilter').value='科技与成长主题';refreshFacetOptions();$('groupFilter').value='存储与内存';$('businessTagFilter').value='';$('stageFilter').value='';$('storageSubFilter').value='';render();};
-$('clearFilters').onclick=()=>{$('bucketFilter').value='';$('groupFilter').value='';$('businessTagFilter').value='';$('stageFilter').value='';$('storageSubFilter').value='';$('edgeOnly').checked=false;render();};
+['bucketFilter','groupFilter','businessTagFilter','stageFilter','edgeOnly'].forEach(id=>$(id).onchange=render);
 $('regularTab').onclick=()=>{state.view='regular';render();};$('temporaryTab').onclick=()=>{state.view='temporary';render();};$('closeDetail').onclick=()=>$('detailDialog').close();
 $('runBtn').onclick=runAnalysis;$('tickerInput').addEventListener('keydown',e=>{if(e.key==='Enter')runAnalysis();});
 refreshFacetOptions();

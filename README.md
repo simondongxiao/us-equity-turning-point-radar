@@ -24,7 +24,7 @@
 初始60/40是研究覆盖分组，不是正式行业分类。种子是观察对象，不是买入建议，也不是已经统计验证的实时人气100强。数据源与限制见references/sources.md。
 
 ## v1.1存储增强
-本版是原包的完整增量升级，Skill名称不变。新增加“存储与内存”主组（初始MU/SNDK/WDC/STX）、DRAM/HBM、NAND/SSD、HDD筛选，保留100股与原全部研究/回测/安全要求。`references/storage-memory.md`定义轮动与LOO，`references/migration-v1.1.md`兼容首次安装及已有项目升级。
+本版是原包的完整增量升级，Skill名称不变。新增加“存储与内存”主组（初始MU/SNDK/WDC/STX），通过统一的研究组与业务标签下拉筛选DRAM/HBM、NAND/SSD、HDD；不单列重复的存储快捷、存储细分和全部股票控件。保留100股与原全部研究/回测/安全要求。`references/storage-memory.md`定义轮动与LOO，`references/migration-v1.1.md`兼容首次安装及已有项目升级。
 
 分类、筛选与存储轮动已进入生产页面；存储增量因子仍为shadow/challenger，没有套用旧校准器，也未证明提升预测质量。
 
