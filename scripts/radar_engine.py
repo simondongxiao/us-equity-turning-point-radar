@@ -211,6 +211,7 @@ def download_prices(symbols: list[str], refresh: bool = False) -> tuple[dict[str
     RAW_DIR.mkdir(parents=True, exist_ok=True)
     frames: dict[str, pd.DataFrame] = {}
     source_errors: dict[str, str] = {}
+    refresh_regressions: dict[str, str] = {}
     utc_date = pd.Timestamp.now(tz="UTC")
     start = (utc_date - pd.DateOffset(years=5)).strftime("%Y-%m-%d")
     end = (utc_date + pd.Timedelta(days=1)).strftime("%Y-%m-%d")
@@ -229,8 +230,24 @@ def download_prices(symbols: list[str], refresh: bool = False) -> tuple[dict[str
         if frame.empty or len(frame) < 80:
             try:
                 raw = yf.download(symbol, start=start, end=end, auto_adjust=False, progress=False, threads=False)
-                frame = flatten_download(raw, symbol)
-                if not frame.empty:
+                downloaded = flatten_download(raw, symbol)
+                if not downloaded.empty:
+                    if not cached_frame.empty:
+                        cached_frame.index = pd.to_datetime(cached_frame.index).tz_localize(None)
+                        cached_latest = cached_frame.index.max()
+                        downloaded_latest = downloaded.index.max()
+                        if downloaded_latest < cached_latest:
+                            refresh_regressions[symbol] = (
+                                f"download ended {downloaded_latest.date()} before verified cache {cached_latest.date()}; "
+                                "retained newer cached sessions"
+                            )
+                        # Prefer the fresh payload on overlapping sessions, but never
+                        # erase newer verified sessions merely because a public source
+                        # returned a temporarily truncated history.
+                        frame = pd.concat([cached_frame, downloaded])
+                        frame = frame[~frame.index.duplicated(keep="last")].sort_index()
+                    else:
+                        frame = downloaded
                     frame.to_csv(cache, date_format="%Y-%m-%d")
             except Exception as exc:
                 source_errors[symbol] = f"{type(exc).__name__}: {exc}"
@@ -262,6 +279,7 @@ def download_prices(symbols: list[str], refresh: bool = False) -> tuple[dict[str
         "usable_symbols": len(frames),
         "missing_symbols": missing,
         "errors": source_errors,
+        "refresh_regressions": refresh_regressions,
         "common_latest_date": latest,
         "latest_complete_date_by_symbol": {
             symbol: max(d for d in frame.index if d.date() <= cutoff_date).strftime("%Y-%m-%d")
