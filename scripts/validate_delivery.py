@@ -51,12 +51,32 @@ def validate_dashboard(data, production=False):
             if calibrated:
                 require(all(num(x) for x in directional),f'{r["symbol"]}: missing exclusive directional-turn probabilities')
                 require(abs(sum(directional)-1)<1e-6,f'{r["symbol"]}: directional-turn probabilities must sum to 1')
+                require(m.get('confidence_level') in {'high','medium','low'},f'{r["symbol"]}: missing confidence tier')
+                require(num(m.get('confidence_score')) and 0<=m['confidence_score']<=100,f'{r["symbol"]}: invalid confidence score')
+                require(num(m.get('path_similarity_score')) and 0<=m['path_similarity_score']<=100,f'{r["symbol"]}: invalid path similarity')
+                require(isinstance(m.get('regime_shift_flag'),bool),f'{r["symbol"]}: invalid regime-shift flag')
+                if m.get('confidence_level')=='high':
+                    require(num(m.get('validation_accuracy_lift')) and m['validation_accuracy_lift']>=.03,f'{r["symbol"]}: high confidence lacks baseline lift')
+                    require(not m['regime_shift_flag'],f'{r["symbol"]}: high confidence cannot be regime-shifted')
+                    require((m.get('validation_test_n') or 0)>=60 and (m.get('validation_unique_dates') or 0)>=40,f'{r["symbol"]}: high confidence lacks independent-date support')
             for key in ['opportunity_score','risk_score']:
                 x=m.get(key)
                 if x is not None:require(num(x) and 0<=x<=100 and calibrated,f'{r["symbol"]}: invalid {key}')
             for key in ['bottom_band','top_band','volatility_bottom_band','volatility_top_band']:
                 a=m.get(key)
                 if a is not None:require(isinstance(a,list) and len(a)==2 and all(num(v) and v>0 for v in a) and a[0]<=a[1],f'{r["symbol"]}: invalid {key}')
+    for h,result in (data.get('backtest',{}).get('one_year_directional_turn',{}).get('horizons',{}) or {}).items():
+        if result.get('status')!='observed':continue
+        require(num(result.get('classification_accuracy')) and num(result.get('majority_baseline_accuracy')),f'{h}d: invalid validation accuracy')
+        require(num(result.get('calibration_ece')) and 0<=result['calibration_ece']<=1,f'{h}d: invalid calibration ECE')
+        curves=result.get('calibration_curve') or {}
+        require(set(curves)=={'bottom_rebound_first','top_reversal_first','no_directional_turn'},f'{h}d: incomplete calibration curves')
+        for event,bins in curves.items():
+            require(bool(bins),f'{h}d {event}: empty calibration curve')
+            for row in bins:
+                require(num(row.get('predicted_mean')) and 0<=row['predicted_mean']<=1,f'{h}d {event}: invalid predicted bin')
+                require(num(row.get('observed_rate')) and 0<=row['observed_rate']<=1,f'{h}d {event}: invalid observed bin')
+                require(isinstance(row.get('n'),int) and row['n']>0,f'{h}d {event}: invalid bin support')
     return len(rows)
 def main():
     p=argparse.ArgumentParser(description=__doc__)

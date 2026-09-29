@@ -25,6 +25,11 @@ with sync_playwright() as p:
     checks.append('single-button direction toggle for reference price, opportunity/risk scores and exclusive directional bottom/top probabilities')
     page.locator('[data-horizon="5"]').click()
     assert '5个交易日' in page.locator('#horizonLabel').inner_text()
+    assert page.locator('[data-horizon="5"]').inner_text()=='5交易日（1周）'
+    assert page.locator('#bottomHorizonHead').inner_text().endswith('5日')
+    page.locator('#calibrationPanel summary').click()
+    assert '尚无成熟样本' in page.locator('#calibrationSummary').inner_text()
+    assert '不能补画理想曲线' in page.locator('#calibrationBody').inner_text()
     page.select_option('#bucketFilter','科技与成长主题');assert page.locator('#stockRows tr').count()==60
     page.select_option('#bucketFilter','非科技主题');assert page.locator('#stockRows tr').count()==40
     checks.append('60 tech / 40 non-tech theme filters')
@@ -62,7 +67,7 @@ with sync_playwright() as p:
     page.screenshot(path=str(ROOT/'tests/preview-storage-desktop.png'),full_page=False)
     page.locator('#stockRows .symbol-button').filter(has_text='SNDK').click()
     detail=page.locator('#detailBody').inner_text()
-    for title in ['研究分组与业务标签','NAND / SSD','剔除自身后的同行','多周期互斥方向拐点','候选顶底五步体系','第一步·Price Structure','第二步·Options Distribution','第三步·合理区间核对','第四步·Options Skew / Put-Call','第五步·Event / Catalyst','候选底部','候选顶部','市场与板块是否同步','确认与失效条件','基本面与事件证据','尾部风险与执行','首次触达路径','数据与模型']:assert title in detail,title
+    for title in ['研究分组与业务标签','NAND / SSD','剔除自身后的同行','多周期互斥方向拐点','候选顶底五步体系','第一步·Price Structure','第二步·Options Distribution','第三步·合理区间核对','第四步·Options Skew / Put-Call','第五步·Event / Catalyst','候选底部','候选顶部','市场与板块是否同步','确认与失效条件','基本面与事件证据','尾部风险与执行','首次触达路径','数据与模型 · 信度']:assert title in detail,title
     page.screenshot(path=str(ROOT/'tests/preview-sndk-detail.png'),full_page=False)
     page.locator('#closeDetail').click()
     checks.append('SNDK detail retains all original research sections plus taxonomy and LOO')
@@ -80,7 +85,8 @@ with sync_playwright() as p:
     # Ephemeral synthetic data: discarded before preview screenshots and never written to JSON.
     page.evaluate("""() => {
       const fixture={MU:[.1,.3,21,.2,.4],SNDK:[.3,.1,87,.7,.1],WDC:[-.1,.2,4,.3,.5],STX:[null,null,null,null,null]};
-      for(const r of regular){if(fixture[r.symbol]){const [o,k,score,bottom,top]=fixture[r.symbol];r.metrics['10']={status:o===null?'uncalibrated':'calibrated',opportunity_value:o,risk_value:k,p_bottom:bottom,p_top:top,p_bottom_rebound_first:bottom,p_top_reversal_first:top,p_no_directional_turn:bottom===null?null:1-bottom-top,p_two_way_wash:.2,two_way_wash_flag:'normal',p_upfirst:.65,p_downfirst:.25,p_unhit:.10,volatility_bottom_band:[90,95],volatility_top_band:[105,110],opportunity_score:score,risk_score:k,expected_return:o,es95:k,positive_edge:o>0};}}
+      for(const r of regular){if(fixture[r.symbol]){const [o,k,score,bottom,top]=fixture[r.symbol];r.metrics['10']={status:o===null?'uncalibrated':'calibrated',opportunity_value:o,risk_value:k,p_bottom:bottom,p_top:top,p_bottom_rebound_first:bottom,p_top_reversal_first:top,p_no_directional_turn:bottom===null?null:1-bottom-top,p_two_way_wash:.2,two_way_wash_flag:'normal',p_upfirst:.65,p_downfirst:.25,p_unhit:.10,volatility_bottom_band:[90,95],volatility_top_band:[105,110],opportunity_score:score,risk_score:k,expected_return:o,es95:k,positive_edge:o>0,confidence_level:'medium',confidence_label:'中确信',confidence_score:64,path_similarity_score:61,validation_ece:.09,validation_accuracy:.58,validation_majority_baseline_accuracy:.54,validation_accuracy_lift:.04,validation_test_n:120,validation_unique_dates:60,regime_shift_flag:false,confidence_reason:'合成界面测试'};}}
+      DATA.backtest.one_year_directional_turn.horizons['10']={status:'observed',matured_classification_n:120,unique_evaluation_dates:60,classification_accuracy:.58,majority_baseline_accuracy:.54,accuracy_lift_vs_majority_baseline:.04,calibration_ece:.09,calibration_curve:{bottom_rebound_first:[{predicted_mean:.25,observed_rate:.22,n:40,date_block_ci_low:.15,date_block_ci_high:.30}],top_reversal_first:[{predicted_mean:.35,observed_rate:.38,n:40,date_block_ci_low:.29,date_block_ci_high:.47}],no_directional_turn:[{predicted_mean:.40,observed_rate:.40,n:40,date_block_ci_low:.31,date_block_ci_high:.49}]}};
       DATA.audit_upgrade={latest:{'10':[{symbol:'SNDK',reference:100,p_bottom:.6,p_top:.7,bottom_band_ratio:[.88,.91,.94],top_band_ratio:[1.06,1.09,1.12],fan:{sessions:[0,1,2],p25:[1,.98,.96],p50:[1,1.01,1.03],p75:[1,1.04,1.08]},attribution:[{group:'市场/指数',bottom_delta:.03,top_delta:-.02}],stress:[{market_shock:-.015,p_bottom:.65,p_top:.63},{market_shock:0,p_bottom:.6,p_top:.7}]}]}};
       render();
     }""")
@@ -93,11 +99,14 @@ with sync_playwright() as p:
     assert page.evaluate("regular.find(r=>r.symbol==='SNDK').metrics['10'].opportunity_score")==87
     page.locator('#stockRows .symbol-button',has_text='SNDK').click()
     assert page.locator('#detailBody .fan-chart').count()==1
+    assert '中确信' in page.locator('#detailBody').inner_text()
     assert '不作为方向性阶段顶/底决策概率' in page.locator('#detailBody').inner_text()
     assert '65.0% / 25.0% / 10.0%' in page.locator('#detailBody').inner_text()
     page.locator('#detailBody select').select_option('-0.015')
     assert '65.0%' in page.locator('#detailBody').inner_text()
     page.locator('#closeDetail').click()
+    assert page.locator('#calibrationBody .calibration-chart').count()==1
+    assert '多数类基线 54.0%' in page.locator('#calibrationSummary').inner_text()
     checks.append('numeric four-direction sorting in storage, null always last, scores unchanged by filter')
     # A synthetic new temporary member only, no backend or authorization claim.
     page.evaluate("""() => {temporary.push({symbol:'TEST-STORAGE',name_zh:'合成测试',coverage_bucket:'科技与成长主题',research_group:'存储与内存',research_group_id:'storage-memory',business_tags:['NAND','SSD'],metrics:{}});state.view='temporary';render();}""")

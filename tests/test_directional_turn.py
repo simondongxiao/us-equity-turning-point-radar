@@ -9,6 +9,63 @@ from scripts import radar_engine as engine
 
 
 class DirectionalTurnTests(unittest.TestCase):
+    def test_calibration_curve_uses_observed_bins_and_date_blocks(self):
+        dates = np.repeat(pd.bdate_range("2026-01-02", periods=60), 2)
+        probabilities = np.tile(np.array([
+            [.72, .18, .10],
+            [.15, .70, .15],
+            [.12, .18, .70],
+        ]), (40, 1))
+        truths = np.resize(np.array([
+            "bottom_rebound_first", "top_reversal_first", "no_directional_turn",
+        ]), len(probabilities))
+        result = engine.calibration_diagnostics(
+            probabilities,
+            truths,
+            ["bottom_rebound_first", "top_reversal_first", "no_directional_turn"],
+            dates,
+            block_ci=True,
+        )
+        self.assertGreaterEqual(result["calibration_ece"], 0)
+        self.assertLessEqual(result["calibration_ece"], 1)
+        rows = [row for curve in result["calibration_curve"].values() for row in curve]
+        self.assertTrue(rows)
+        self.assertEqual(sum(row["n"] for row in result["calibration_curve"]["bottom_rebound_first"]), len(truths))
+        self.assertTrue(any("date_block_ci_low" in row for row in rows))
+        for row in rows:
+            self.assertTrue(0 <= row["predicted_mean"] <= 1)
+            self.assertTrue(0 <= row["observed_rate"] <= 1)
+
+    def test_confidence_tiers_require_validation_skill_and_regime_support(self):
+        high = engine.confidence_from_path_validation(np.full(40, .10), {
+            "calibration_ece": .04,
+            "classification_accuracy": .66,
+            "majority_baseline_accuracy": .55,
+            "accuracy_lift_vs_majority_baseline": .11,
+            "test_n": 180,
+            "unique_test_dates": 80,
+        })
+        medium = engine.confidence_from_path_validation(np.full(40, .50), {
+            "calibration_ece": .08,
+            "classification_accuracy": .55,
+            "majority_baseline_accuracy": .55,
+            "accuracy_lift_vs_majority_baseline": 0.0,
+            "test_n": 180,
+            "unique_test_dates": 80,
+        })
+        low = engine.confidence_from_path_validation(np.full(40, 3.0), {
+            "calibration_ece": .04,
+            "classification_accuracy": .66,
+            "majority_baseline_accuracy": .55,
+            "accuracy_lift_vs_majority_baseline": .11,
+            "test_n": 180,
+            "unique_test_dates": 80,
+        })
+        self.assertEqual(high["confidence_level"], "high")
+        self.assertEqual(medium["confidence_level"], "medium")
+        self.assertEqual(low["confidence_level"], "low")
+        self.assertTrue(low["regime_shift_flag"])
+
     def test_mutually_exclusive_labels(self):
         source = pd.DataFrame({
             "label": ["downfirst", "upfirst", "unhit", "downfirst", None],

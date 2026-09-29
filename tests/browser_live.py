@@ -22,8 +22,15 @@ def run() -> None:
             first = page.locator('#indexSummary').inner_text()
             page.locator('[data-horizon="5"]').click()
             assert page.locator('#indexSummary').inner_text().startswith('5交易日')
+            assert page.locator('[data-horizon="5"]').inner_text() == '5交易日（1周）'
+            assert page.locator('#bottomHorizonHead').inner_text().endswith('5日')
             page.locator('[data-horizon="10"]').click()
             assert page.locator('#indexSummary').inner_text() == first
+            assert page.locator('#bottomHorizonHead').inner_text().endswith('10日')
+            page.locator('#calibrationPanel summary').click()
+            assert page.locator('#calibrationBody .calibration-chart').count() == 1
+            assert '多数类基线' in page.locator('#calibrationSummary').inner_text()
+            assert page.locator('#calibrationBody tbody tr').count() > 0
             page.locator('#indexTopSort').click()
             assert page.locator('#indexTopSort').get_attribute('aria-pressed') == 'true'
             page.locator('#indexTopSort').click()
@@ -31,6 +38,7 @@ def run() -> None:
             page.locator('#indexForecastRows button', has_text='SOX').click()
             assert '独立时间检验' in page.locator('#detailBody').inner_text()
             assert '阶段底' in page.locator('#detailBody').inner_text()
+            assert '路径重合' in page.locator('#detailBody').inner_text()
             page.locator('#closeDetail').click()
             assert page.locator("#storageQuick").inner_text().startswith("存储与内存 · 4")
             assert page.locator("[aria-label='机会分排序：从大到小']").get_attribute("aria-pressed") == "true"
@@ -68,6 +76,8 @@ def run() -> None:
             assert "多周期互斥方向拐点" in qcom_text
             assert " / ".join(qcom_touch) in qcom_text
             assert "双向洗盘是可重叠事件诊断" in qcom_text
+            assert '数据与模型 · 信度' in qcom_text
+            assert any(label in qcom_text for label in ('高确信','中确信','低可信/无明显偏向'))
             assert page.locator("#detailBody .fan-chart").count() == 1
             page.locator("#closeDetail").click()
             page.locator("#stockRows button.symbol-button", has_text="SNDK").click()

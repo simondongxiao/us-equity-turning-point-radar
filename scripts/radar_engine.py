@@ -52,6 +52,7 @@ FEATURE_VERSION = "b3-point-in-time-v1"
 CHALLENGER_FEATURE_VERSION = "storage-shadow-loo-v1"
 MODEL_VERSION = "champion-b3-calibrated-low-confidence-v1"
 DIRECTIONAL_MODEL_VERSION = "challenger-exclusive-directional-turn-v1"
+CONFIDENCE_METHOD_VERSION = "path-validation-confidence-v1"
 STRATEGY_VERSION = "next-open-atr-1x-cost-15bp-v1"
 SOURCE_NAME = "Yahoo Finance chart OHLCV via yfinance; SEC company_tickers.json for issuer identity"
 HORIZONS = (5, 10, 21)
@@ -483,6 +484,59 @@ class ModelBundle:
         return calibrated / total if total > 0 else raw / raw.sum()
 
 
+def calibration_diagnostics(probabilities: np.ndarray, truths: Iterable[Any], classes: list[str],
+                            dates: Iterable[Any] | None = None, block_ci: bool = False) -> dict[str, Any]:
+    """Return auditable multiclass calibration bins and an average classwise ECE.
+
+    The optional confidence interval resamples whole evaluation dates, not
+    individual stock rows, so a 100-stock market day is not treated as 100
+    independent observations. The curve remains a diagnostic; it is not a
+    claim that every probability bin is stable in a new regime.
+    """
+    probability_array = np.asarray(probabilities, dtype=float)
+    truth_array = np.asarray([str(value) for value in truths], dtype=object)
+    if probability_array.ndim != 2 or len(probability_array) != len(truth_array) or not len(truth_array):
+        return {"calibration_curve": {}, "calibration_ece": None}
+    date_array = np.asarray([str(pd.to_datetime(value).date()) for value in dates], dtype=object) if dates is not None else None
+    edges = np.linspace(0.0, 1.0, 11)
+    curves: dict[str, list[dict[str, Any]]] = {}
+    class_eces: list[float] = []
+    rng = np.random.default_rng(20260929)
+    for class_index, class_name in enumerate(classes):
+        predicted = probability_array[:, class_index]
+        actual = (truth_array == str(class_name)).astype(float)
+        bins: list[dict[str, Any]] = []
+        weighted_gap = 0.0
+        for bin_index in range(10):
+            lower, upper = float(edges[bin_index]), float(edges[bin_index + 1])
+            mask = (predicted >= lower) & ((predicted < upper) if bin_index < 9 else (predicted <= upper))
+            count = int(mask.sum())
+            if not count:
+                continue
+            predicted_mean = float(predicted[mask].mean())
+            observed_rate = float(actual[mask].mean())
+            row: dict[str, Any] = {"bin_lower": lower, "bin_upper": upper, "predicted_mean": predicted_mean,
+                "observed_rate": observed_rate, "n": count}
+            if block_ci and date_array is not None:
+                selected_dates = date_array[mask]
+                unique_dates = np.unique(selected_dates)
+                if len(unique_dates) >= 10:
+                    daily_success = np.array([actual[mask][selected_dates == day].sum() for day in unique_dates], dtype=float)
+                    daily_count = np.array([(selected_dates == day).sum() for day in unique_dates], dtype=float)
+                    draws = rng.integers(0, len(unique_dates), size=(300, len(unique_dates)))
+                    rates = daily_success[draws].sum(axis=1) / np.maximum(daily_count[draws].sum(axis=1), 1.0)
+                    row["date_block_ci_low"] = float(np.quantile(rates, 0.025))
+                    row["date_block_ci_high"] = float(np.quantile(rates, 0.975))
+                    row["unique_dates"] = int(len(unique_dates))
+            bins.append(row)
+            weighted_gap += count / len(actual) * abs(predicted_mean - observed_rate)
+        curves[str(class_name)] = bins
+        class_eces.append(weighted_gap)
+    return {"calibration_curve": curves, "calibration_ece": float(np.mean(class_eces)) if class_eces else None,
+        "calibration_bin_policy": "fixed 0.1 bins; classwise ECE averaged across classes",
+        "calibration_ci_policy": "whole-date block bootstrap, 300 draws" if block_ci else "not included in per-model summary"}
+
+
 def train_bundle(samples: pd.DataFrame, features: list[str], horizon: int, strict_time: bool = False,
                  target_col: str = "label") -> ModelBundle | None:
     if target_col not in samples:
@@ -542,12 +596,21 @@ def train_bundle(samples: pd.DataFrame, features: list[str], horizon: int, stric
         y = pd.Categorical(test[target_col], categories=model.classes_).codes
         one_hot = np.eye(len(model.classes_))[y]
         predicted = model.classes_[np.argmax(test_cal, axis=1)]
+        baseline_class = str(train[target_col].value_counts().idxmax())
+        baseline_accuracy = float(np.mean(test[target_col].astype(str).to_numpy() == baseline_class))
+        diagnostics = calibration_diagnostics(test_cal, test[target_col], [str(value) for value in model.classes_],
+            dates=test.get("date"), block_ci=False)
         test_metrics.update({
             "brier_multiclass": float(np.mean(np.sum((test_cal - one_hot) ** 2, axis=1))),
             "log_loss": float(log_loss(test[target_col], test_cal, labels=list(model.classes_))),
             "classification_accuracy": float(np.mean(predicted == test[target_col].to_numpy())),
+            "majority_baseline_class": baseline_class,
+            "majority_baseline_accuracy": baseline_accuracy,
+            "accuracy_lift_vs_majority_baseline": float(np.mean(predicted == test[target_col].to_numpy())) - baseline_accuracy,
+            "unique_test_dates": int(pd.to_datetime(test["date"]).nunique()) if "date" in test else None,
             "test_start": str(pd.to_datetime(test["date"]).min().date()),
             "test_end": str(pd.to_datetime(test["date"]).max().date()),
+            **diagnostics,
         })
         if strict_time and set(model.classes_).issubset({'00','01','10','11'}):
             for side, index in [('bottom', 0), ('top', 1)]:
@@ -733,6 +796,8 @@ def one_year_directional_turn_backtest(samples: dict[int, pd.DataFrame]) -> dict
         edges[-1] = end_date + pd.Timedelta(days=1)
         truths: list[str] = []
         probabilities: list[list[float]] = []
+        baseline_predictions: list[str] = []
+        evaluation_dates: list[str] = []
         folds: list[dict[str, Any]] = []
         for fold in range(4):
             fold_start, fold_end = edges[fold], edges[fold + 1]
@@ -743,11 +808,14 @@ def one_year_directional_turn_backtest(samples: dict[int, pd.DataFrame]) -> dict
             if bundle is None or test.empty:
                 folds.append({"fold": fold + 1, "status": "insufficient_training_data", "train_n": int(len(train)), "test_n": int(len(test))})
                 continue
+            baseline_class = str(train["turn_label"].value_counts().idxmax())
             for _, row in test.iterrows():
                 predicted = bundle.predict(row)
                 mapped = dict(zip((str(c) for c in bundle.model.classes_), predicted))
                 probabilities.append([float(mapped.get(cls, 0.0)) for cls in classes])
                 truths.append(str(row["turn_label"]))
+                baseline_predictions.append(baseline_class)
+                evaluation_dates.append(str(row["date"].date()))
             folds.append({"fold": fold + 1, "status": "observed", "train_n": int(len(train)), "test_n": int(len(test)),
                 "test_start": str(test["date"].min().date()), "test_end": str(test["date"].max().date())})
         if not truths:
@@ -757,14 +825,21 @@ def one_year_directional_turn_backtest(samples: dict[int, pd.DataFrame]) -> dict
         probability_array /= np.maximum(probability_array.sum(axis=1, keepdims=True), 1e-9)
         actual = np.eye(len(classes))[[classes.index(value) for value in truths]]
         predicted = np.asarray(classes)[np.argmax(probability_array, axis=1)]
+        accuracy = float(np.mean(predicted == np.asarray(truths)))
+        baseline_accuracy = float(np.mean(np.asarray(baseline_predictions) == np.asarray(truths)))
+        diagnostics = calibration_diagnostics(probability_array, truths, classes, evaluation_dates, block_ci=True)
         output["horizons"][str(horizon)] = {
             "status": "observed",
             "matured_classification_n": len(truths),
-            "classification_accuracy": float(np.mean(predicted == np.asarray(truths))),
+            "classification_accuracy": accuracy,
+            "majority_baseline_accuracy": baseline_accuracy,
+            "accuracy_lift_vs_majority_baseline": accuracy - baseline_accuracy,
+            "unique_evaluation_dates": int(len(set(evaluation_dates))),
             "brier_multiclass": float(np.mean(np.sum((probability_array - actual) ** 2, axis=1))),
             "log_loss": float(log_loss(truths, probability_array, labels=classes)),
             "observed_class_rates": {cls: float(np.mean(np.asarray(truths) == cls)) for cls in classes},
             "folds": folds,
+            **diagnostics,
             "limitations": "overlapping daily outcomes are correlated; no 70% claim; direction classes do not replace B3 opportunity/risk",
         }
     return output
@@ -803,6 +878,54 @@ def make_samples(frames: dict[str, pd.DataFrame], seeds: list[dict[str, Any]], m
     return {h: pd.concat(v, ignore_index=True) if v else pd.DataFrame() for h, v in all_samples.items()}, feature_frames
 
 
+def confidence_from_path_validation(distances: np.ndarray, validation: dict[str, Any] | None) -> dict[str, Any]:
+    """Grade evidence quality without converting it into a turning probability.
+
+    High confidence is deliberately gated on positive recent validation lift
+    over the training-period majority-class baseline. Medium confidence means
+    the path support and calibration are usable but predictive lift is not yet
+    strong enough for the high tier. This score never changes the probability,
+    opportunity, risk, or ranking values.
+    """
+    finite_distances = np.sort(np.asarray(distances, dtype=float)[np.isfinite(distances)])
+    nearest = finite_distances[: min(40, len(finite_distances))]
+    path_score = float(100.0 * np.mean(np.exp(-np.clip(nearest, 0.0, 8.0)))) if len(nearest) else 0.0
+    nearest_distance = float(nearest[0]) if len(nearest) else None
+    validation = validation or {}
+    ece = clean_num(validation.get("calibration_ece"))
+    accuracy = clean_num(validation.get("classification_accuracy"))
+    baseline = clean_num(validation.get("majority_baseline_accuracy"))
+    lift = clean_num(validation.get("accuracy_lift_vs_majority_baseline"))
+    if lift is None and accuracy is not None and baseline is not None:
+        lift = accuracy - baseline
+    test_n = int(validation.get("test_n") or 0)
+    unique_dates = int(validation.get("unique_test_dates") or 0)
+    calibration_score = max(0.0, 100.0 * (1.0 - min(1.0, (ece if ece is not None else 0.30) / 0.25)))
+    skill_score = max(0.0, min(100.0, 50.0 + 500.0 * (lift if lift is not None else -0.10)))
+    support_score = min(100.0, 100.0 * min(test_n / 120.0, unique_dates / 60.0 if unique_dates else 0.0))
+    regime_shift = bool(path_score < 25.0 or (nearest_distance is not None and nearest_distance > 2.5))
+    score = float(np.clip(0.40 * path_score + 0.35 * calibration_score + 0.15 * skill_score + 0.10 * support_score, 0.0, 100.0))
+    enough_support = test_n >= 60 and unique_dates >= 40
+    if enough_support and not regime_shift and score >= 75 and path_score >= 55 and calibration_score >= 70 and lift is not None and lift >= 0.03:
+        level, label = "high", "高确信"
+        reason = "历史路径重合较高，近期独立测试校准较好，且准确率明确高于训练期多数类基线。"
+    elif enough_support and not regime_shift and score >= 50 and path_score >= 35 and calibration_score >= 50:
+        level, label = "medium", "中确信"
+        reason = ("历史路径重合与近期校准可用，但相对多数类基线的增益尚不足以进入高确信。" if lift is None or lift < 0.03
+                  else "历史路径与近期校准支持中等，仍未满足高确信的全部门槛。")
+    else:
+        level, label = "low", "低可信/无明显偏向"
+        reason = ("当前状态偏离可用历史近邻，可能存在体制切换。" if regime_shift else
+                  "近期校准、基线增益或真实测试日期支持不足。")
+    return {"confidence_method_version": CONFIDENCE_METHOD_VERSION, "confidence_level": level,
+        "confidence_label": label, "confidence_score": score, "path_similarity_score": path_score,
+        "nearest_path_distance": nearest_distance, "validation_calibration_score": calibration_score,
+        "validation_ece": ece, "validation_accuracy": accuracy, "validation_majority_baseline_accuracy": baseline,
+        "validation_accuracy_lift": lift, "validation_test_n": test_n, "validation_unique_dates": unique_dates,
+        "regime_shift_flag": regime_shift, "confidence_reason": reason,
+        "confidence_note": "信度只评价证据质量，不改变方向概率，也不是预期收益或胜率。"}
+
+
 def build_scenario_metric(symbol: str, current: pd.Series, historical: pd.DataFrame, bundle: ModelBundle | None, horizon: int,
                           current_frame: pd.DataFrame, event_bundle: ModelBundle | None = None, relative_atr: bool = False,
                           directional_bundle: ModelBundle | None = None) -> dict[str, Any]:
@@ -825,6 +948,8 @@ def build_scenario_metric(symbol: str, current: pd.Series, historical: pd.DataFr
     scale = np.nanstd(mat, axis=0); scale[~np.isfinite(scale) | (scale == 0)] = 1.0
     dist = np.sqrt(np.nanmean(((mat - vec) / scale) ** 2, axis=1))
     candidate = candidate.assign(_distance=dist).sort_values(["_distance", "date"], kind="mergesort").head(160)
+    confidence = confidence_from_path_validation(candidate["_distance"].to_numpy(dtype=float),
+        directional_bundle.test_metrics if directional_bundle is not None else None)
     if bundle:
         model_p = dict(zip(bundle.model.classes_, bundle.predict(current)))
     else:
@@ -888,14 +1013,14 @@ def build_scenario_metric(symbol: str, current: pd.Series, historical: pd.DataFr
         if np.isfinite(triple).all() and triple.sum() > 0:
             triple /= triple.sum()
             directional = {"p_bottom_rebound_first": float(triple[0]), "p_top_reversal_first": float(triple[1]),
-                "p_no_directional_turn": float(triple[2]), "directional_turn_status": "calibrated_low_confidence"}
+                "p_no_directional_turn": float(triple[2]), "directional_turn_status": "calibrated"}
     two_way_mask = bottom_mask & top_mask
     two_way_share = event_prob(two_way_mask)
     volatility_scale = math.sqrt(max(horizon, 1) / 5.0)
     volatility_bottom_band = [max(0.01, ref - 1.25 * atr * volatility_scale), max(0.01, ref - 0.75 * atr * volatility_scale)]
     volatility_top_band = [ref + 0.75 * atr * volatility_scale, ref + 1.25 * atr * volatility_scale]
     return {
-        "status": "calibrated_low_confidence", "opportunity_value": clean_num(opportunity), "risk_value": risk,
+        "status": "calibrated", "opportunity_value": clean_num(opportunity), "risk_value": risk,
         "expected_return": expected, "es95": risk, "mu_lcb": mu_lcb, "effective_scenario_n": eff_n,
         "p_upfirst": float(np.sum(weights * np.array([r["label"] == "upfirst" for r in records]))),
         "p_downfirst": float(np.sum(weights * np.array([r["label"] == "downfirst" for r in records]))),
@@ -919,6 +1044,7 @@ def build_scenario_metric(symbol: str, current: pd.Series, historical: pd.DataFr
         "terminal_p10": weighted_quantile(terminal, weights, 0.1), "terminal_p50": weighted_quantile(terminal, weights, 0.5), "terminal_p90": weighted_quantile(terminal, weights, 0.9),
         "scenario_set": "nearest-point-in-time-history-with-model-class-reweighting",
         "scenario_count": len(records), "cost_assumption": 0.0015,
+        **confidence,
     }
 
 
@@ -1159,7 +1285,7 @@ def build(refresh: bool = False, run_id: str | None = None, extra_symbol: str | 
         with mother_file.open(encoding="utf-8-sig", newline="") as fh:
             mother_count = max(0, sum(1 for _ in fh) - 1)
     source["mother_pool"] = {"source": "us-share-daily-market-html/all_metrics.csv", "available_symbols": mother_count, "qualification_verified": False, "note": "母池规模来自旧美股行情项目快照；本项目未把它改写成当前人气排名。"}
-    data = {"build_mode": "live", "status_message": "真实日线行情已接入。机会/风险仍由原B3共同路径生成；新增方向性阶段底、阶段顶与无有效拐点为互斥且独立校准的低可信挑战者，三项严格合计100%。原可重叠顶底场景只保留为双向洗盘诊断。结构价带与ATR波动率价带分层显示；期权快照只约束范围，历史不足时不进入概率模型。", "generated_at": iso(utc_now()), "as_of": as_of.strftime("%Y-%m-%d"), "as_of_beijing": f"{as_of.strftime('%Y-%m-%d')} 纽约收盘数据；北京时间日期需按交易日换算", "run_id": run_id, "prediction_snapshot_id": run_id, "model_version": MODEL_VERSION, "directional_model_version": DIRECTIONAL_MODEL_VERSION, "feature_version": FEATURE_VERSION, "potential_range_version": "structure-volatility-option-layered-v3", "strategy_version": STRATEGY_VERSION, "universe_version": "curated-seed-20260915-v1.1-live-validation", "taxonomy_version": TAXONOMY_VERSION, "source_manifest": source, "records": records, "temporary": temporary, "storage_rotation": rotation, "options_model_gate": option_gate, "rotation_summary": [rotation["summary"], "存储四只为同一主研究组；细分视图允许MU重叠，主表不重复计数。", "存储新因子为shadow/challenger，未套用旧校准器；不要把MU强弱写成SNDK/WDC/STX的固定结论。"], "public_config": {"api_base_url": None}, "backtest": backtest, "coverage": {"regular_pool": len(records), "valid_forecast_records": valid, "usable_price_records": sum(1 for r in records if r.get("reference_price") is not None), "data_cutoff": as_of.strftime("%Y-%m-%d"), "financial_backtest_status": "B3 first-touch and exclusive directional-turn time-split metrics computed; options B4 and storage incremental alpha remain gated"}}
+    data = {"build_mode": "live", "status_message": "真实日线行情已接入。机会/风险仍由原B3共同路径生成；方向性阶段底、阶段顶与无有效拐点为互斥且独立校准的挑战者，三项严格合计100%。信度按历史路径重合、近期独立测试校准、相对多数类基线增益与真实日期支持分级；信度不改写概率。结构价带与ATR波动率价带分层显示；期权快照只约束范围，历史不足时不进入概率模型。", "generated_at": iso(utc_now()), "as_of": as_of.strftime("%Y-%m-%d"), "as_of_beijing": f"{as_of.strftime('%Y-%m-%d')} 纽约收盘数据；北京时间日期需按交易日换算", "run_id": run_id, "prediction_snapshot_id": run_id, "model_version": MODEL_VERSION, "directional_model_version": DIRECTIONAL_MODEL_VERSION, "confidence_method_version": CONFIDENCE_METHOD_VERSION, "feature_version": FEATURE_VERSION, "potential_range_version": "structure-volatility-option-layered-v3", "strategy_version": STRATEGY_VERSION, "universe_version": "curated-seed-20260915-v1.1-live-validation", "taxonomy_version": TAXONOMY_VERSION, "source_manifest": source, "records": records, "temporary": temporary, "storage_rotation": rotation, "options_model_gate": option_gate, "rotation_summary": [rotation["summary"], "存储四只为同一主研究组；细分视图允许MU重叠，主表不重复计数。", "存储新因子为shadow/challenger，未套用旧校准器；不要把MU强弱写成SNDK/WDC/STX的固定结论。"], "public_config": {"api_base_url": None}, "backtest": backtest, "coverage": {"regular_pool": len(records), "valid_forecast_records": valid, "usable_price_records": sum(1 for r in records if r.get("reference_price") is not None), "data_cutoff": as_of.strftime("%Y-%m-%d"), "financial_backtest_status": "B3 first-touch and exclusive directional-turn time-split metrics computed; options B4 and storage incremental alpha remain gated"}}
     # Context benchmarks cannot move the champion's stock/market cutoff date.
     index_frames, index_source = download_prices([s for s in INDEX_SPECS if s not in frames], refresh=refresh)
     context_frames = {**frames, **index_frames}
@@ -1173,7 +1299,7 @@ def build(refresh: bool = False, run_id: str | None = None, extra_symbol: str | 
     source["index_context"] = index_source
     write_json(OUTPUT_DIR / f"dashboard-{run_id}.json", data)
     write_json(OUTPUT_DIR / f"backtest-{run_id}.json", backtest)
-    write_json(STATE_DIR / "model_card.json", {"model_version": MODEL_VERSION, "directional_model_version": DIRECTIONAL_MODEL_VERSION, "feature_version": FEATURE_VERSION, "calibration": "first-touch classes and exclusive directional-turn classes use independent chronological calibration; overlapping stage-event marginals are diagnostic scenario shares only", "status": "calibrated_low_confidence", "champion": "B3 opportunity/risk without storage or option challenger", "challenger": "exclusive directional turn displayed low-confidence; storage LOO/subgroup and options B4 remain gated", "backtest": backtest, "source": source})
+    write_json(STATE_DIR / "model_card.json", {"model_version": MODEL_VERSION, "directional_model_version": DIRECTIONAL_MODEL_VERSION, "confidence_method_version": CONFIDENCE_METHOD_VERSION, "feature_version": FEATURE_VERSION, "calibration": "first-touch classes and exclusive directional-turn classes use independent chronological calibration; overlapping stage-event marginals are diagnostic scenario shares only", "status": "calibrated_confidence_tiered", "champion": "B3 opportunity/risk without storage or option challenger", "challenger": "exclusive directional turn retains challenger status; evidence confidence is tiered per asset/horizon and does not imply promotion; storage LOO/subgroup and options B4 remain gated", "backtest": backtest, "source": source})
     db = ensure_ledger()
     db.execute("INSERT INTO runs VALUES (?,?,?,?,?,?,?)", (run_id, iso(utc_now()), data["as_of"], MODEL_VERSION, FEATURE_VERSION, "succeeded", str(OUTPUT_DIR / f"dashboard-{run_id}.json")))
     for rec in records + data['index_forecasts']['records']:

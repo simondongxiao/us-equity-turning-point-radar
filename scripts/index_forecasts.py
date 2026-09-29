@@ -62,5 +62,5 @@ def build_index_forecasts(engine, frames, context, as_of):
         results.append(record)
         print(f'[radar] index forecast {symbol} ready', flush=True)
     return {'model_version':VERSION, 'as_of':str(as_of.date()), 'records':results,
-            'status':'independently_trained_low_confidence',
-            'note':'每个指数单独训练、校准、测试；方向性阶段底/顶/无有效拐点互斥并归一，原四态联合事件仅保留为双向洗盘诊断。'}
+            'status':'independently_trained_confidence_tiered',
+            'note':'每个指数单独训练、校准、测试；方向性阶段底/顶/无有效拐点互斥并归一，原四态联合事件仅保留为双向洗盘诊断。信度按指数自身路径支持与独立测试分级，不改变概率。'}

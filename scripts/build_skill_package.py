@@ -12,7 +12,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 PACKAGE = "us-equity-turning-point-radar"
-VERSION = "1.1.2-directional-turn"
+VERSION = "1.1.3-confidence-calibration"
 ROOT_FILES = (
     "SKILL.md",
     "CHANGELOG.md",

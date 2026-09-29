@@ -31,6 +31,12 @@
         "null"
       ]
     },
+    "confidence_method_version": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
     "run_id": {
       "type": [
         "string",
@@ -239,6 +245,54 @@
           "type": ["number", "null"],
           "minimum": 0,
           "maximum": 1
+        },
+        "confidence_level": {
+          "type": ["string", "null"],
+          "enum": ["high", "medium", "low", null]
+        },
+        "confidence_label": {
+          "type": ["string", "null"]
+        },
+        "confidence_score": {
+          "type": ["number", "null"],
+          "minimum": 0,
+          "maximum": 100
+        },
+        "path_similarity_score": {
+          "type": ["number", "null"],
+          "minimum": 0,
+          "maximum": 100
+        },
+        "validation_ece": {
+          "type": ["number", "null"],
+          "minimum": 0
+        },
+        "validation_accuracy_lift": {
+          "type": ["number", "null"]
+        },
+        "validation_accuracy": {
+          "type": ["number", "null"],
+          "minimum": 0,
+          "maximum": 1
+        },
+        "validation_majority_baseline_accuracy": {
+          "type": ["number", "null"],
+          "minimum": 0,
+          "maximum": 1
+        },
+        "validation_test_n": {
+          "type": ["integer", "null"],
+          "minimum": 0
+        },
+        "validation_unique_dates": {
+          "type": ["integer", "null"],
+          "minimum": 0
+        },
+        "confidence_reason": {
+          "type": ["string", "null"]
+        },
+        "regime_shift_flag": {
+          "type": ["boolean", "null"]
         },
         "bottom_band": {
           "type": [
