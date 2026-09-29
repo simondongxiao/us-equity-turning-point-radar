@@ -10,21 +10,36 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 
 
+def latest_eligible_snapshot(source_root: Path, as_of: str) -> tuple[Path | None, list[dict[str, str]]]:
+    """Choose by the data's base_date, not by the directory/build date.
+
+    A screener built on the morning after a US close legitimately lives in a
+    later-dated directory. Historical audits must still reject rows whose
+    base_date is after the requested point in time.
+    """
+    candidates = sorted(source_root.glob("*/all_metrics.csv"), reverse=True)
+    for path in candidates:
+        with path.open(encoding="utf-8-sig", newline="") as fh:
+            rows = [
+                row for row in csv.DictReader(fh)
+                if row.get("base_date") and row["base_date"] <= as_of
+            ]
+        if rows:
+            return path, rows
+    return None, []
+
+
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--as-of", default=datetime.now(timezone.utc).strftime("%Y-%m-%d"))
     args = parser.parse_args()
     seed = list(csv.DictReader((ROOT / "assets" / "universe_seed.csv").open(encoding="utf-8-sig", newline="")))
     source_root = Path(r"D:\codex\us-share-daily-market-html\outputs\us_share_technical_screener")
-    candidates = sorted(p for p in source_root.glob("*/all_metrics.csv") if p.parent.name <= args.as_of)
-    all_metrics = candidates[-1] if candidates else None
+    all_metrics, rows = latest_eligible_snapshot(source_root, args.as_of)
     mother_count = 0
     source_dates = []
     storage_candidates = []
     if all_metrics and all_metrics.exists():
-        with all_metrics.open(encoding="utf-8-sig", newline="") as fh:
-            rows = list(csv.DictReader(fh))
-        rows = [row for row in rows if row.get("base_date") and row["base_date"] <= args.as_of]
         mother_count = len(rows)
         source_dates = sorted({row["base_date"] for row in rows})
         storage_candidates = [row.get("symbol") for row in rows if row.get("symbol") in {"MU", "SNDK", "WDC", "STX", "PSTG", "NTAP"}]
