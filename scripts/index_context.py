@@ -12,7 +12,19 @@ INDEX_SPECS = {
     "^VIX": ("VIX · 波动率指数", "volatility_index"),
     "SPY": ("SPY · 标普500 ETF", "etf_proxy"),
     "QQQ": ("QQQ · 纳斯达克100 ETF", "etf_proxy"),
+    "SOXL": ("SOXL · 半导体3倍做多ETF", "leveraged_etf"),
+    "SOXS": ("SOXS · 半导体3倍反向ETF", "leveraged_etf"),
+    "TQQQ": ("TQQQ · 纳指100三倍做多ETF", "leveraged_etf"),
+    "SQQQ": ("SQQQ · 纳指100三倍反向ETF", "leveraged_etf"),
 }
+
+LEVERAGED_ETF_META = {
+    "SOXL": {"daily_target": 3.0, "benchmark": "NYSE Semiconductor Index", "source_url": "https://www.direxion.com/product/daily-semiconductor-bull-bear-3x-etfs"},
+    "SOXS": {"daily_target": -3.0, "benchmark": "NYSE Semiconductor Index", "source_url": "https://www.direxion.com/product/daily-semiconductor-bull-bear-3x-etfs"},
+    "TQQQ": {"daily_target": 3.0, "benchmark": "Nasdaq-100 Index", "source_url": "https://www.proshares.com/our-etfs/leveraged-and-inverse/tqqq"},
+    "SQQQ": {"daily_target": -3.0, "benchmark": "Nasdaq-100 Index", "source_url": "https://www.proshares.com/our-etfs/leveraged-and-inverse/sqqq"},
+}
+ETF_KINDS = {"etf_proxy", "leveraged_etf"}
 
 
 def number(value):
@@ -20,7 +32,7 @@ def number(value):
 
 
 def aligned_close(frame, calendar, kind="price_index"):
-    column = "adj_close" if kind == "etf_proxy" else "close"
+    column = "adj_close" if kind in ETF_KINDS else "close"
     if frame is None or column not in frame:
         return pd.Series(index=calendar, dtype=float)
     return frame[column].reindex(calendar)  # never fill gaps or use future data
@@ -38,10 +50,17 @@ def build_index_context(frames, records, as_of):
         for h in (1, 5, 10, 21):
             window = values.iloc[-h-1:]
             changes[str(h)] = number(window.iloc[-1] / window.iloc[0] - 1) if len(window) == h+1 and window.notna().all() and window.iloc[0] > 0 else None
+        leveraged = LEVERAGED_ETF_META.get(symbol)
+        if leveraged:
+            note = f"每日目标{leveraged['daily_target']:+.0f}倍；使用自身复权价格，多日表现受每日重置、复利与波动拖累影响"
+        elif kind == "volatility_index":
+            note = "VIX变化不是股票收益或触底概率"
+        else:
+            note = "ETF为调整后价格；指数为价格指数，口径不同"
         rows.append({"symbol": symbol, "name": name, "kind": kind, "as_of": str(as_of.date()),
                      "status": "observed" if current is not None else "unavailable", "level": current,
-                     "returns": changes, "unit": "index_points" if kind != "etf_proxy" else "adjusted_usd",
-                     "note": "VIX变化不是股票收益或触底概率" if kind == "volatility_index" else "ETF为调整后价格；指数为价格指数，口径不同"})
+                     "returns": changes, "unit": "adjusted_usd" if kind in ETF_KINDS else "index_points",
+                     "note": note, **(leveraged or {})})
     for record in records:
         stock = aligned_close(frames.get(record["symbol"]), calendar, "etf_proxy")
         comparisons = []
@@ -55,7 +74,8 @@ def build_index_context(frames, records, as_of):
         record["index_context"] = {"as_of": str(as_of.date()), "comparisons": comparisons,
             "model_status": "context_only_not_calibrated", "self_excluded": False,
             "note": "指数可能包含本股，未剔除自身；只作外部市场对照，不替代LOO同行、不重复加权、不改变生产概率。"}
-    return {"version": "index-context-v1", "as_of": str(as_of.date()), "rows": rows,
+    return {"version": "index-context-v2-leveraged-etf", "as_of": str(as_of.date()), "rows": rows,
             "model_status": "context_only_not_calibrated", "source": "Yahoo Finance daily index/ETF observations",
             "definition_source": "https://indexes.nasdaq.com/Index/Overview/SOX",
-            "note": "SOX使用^SOX原指数，不用SOXX冒充。新增指数仅作同时间观察，未纳入生产概率。"}
+            "product_sources": sorted({meta["source_url"] for meta in LEVERAGED_ETF_META.values()}),
+            "note": "SOX使用^SOX原指数，不用SOXX冒充。SOXL/SOXS跟踪NYSE Semiconductor Index而非SOX；四只杠杆/反向ETF按自身复权价格独立建模，不把基准指数概率乘3或取反。"}

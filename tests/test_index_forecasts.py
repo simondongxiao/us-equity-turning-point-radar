@@ -2,10 +2,18 @@ import unittest
 import numpy as np
 import pandas as pd
 from scripts import radar_engine as engine
-from scripts.index_forecasts import build_index_forecasts
+from scripts.index_forecasts import build_index_forecasts, prepare_asset_frame
 
 
 class IndexForecastTests(unittest.TestCase):
+    def test_leveraged_etf_uses_adjusted_ohlc(self):
+        raw = pd.DataFrame({'open':[9.0], 'high':[11.0], 'low':[8.0], 'close':[10.0], 'adj_close':[5.0]})
+        frame = prepare_asset_frame(raw, 'leveraged_etf')
+        self.assertEqual(frame.loc[0, 'open'], 4.5)
+        self.assertEqual(frame.loc[0, 'high'], 5.5)
+        self.assertEqual(frame.loc[0, 'low'], 4.0)
+        self.assertEqual(frame.loc[0, 'close'], 5.0)
+
     def test_own_history_joint_probabilities_and_purged_dates(self):
         rng = np.random.default_rng(751)
         dates = pd.bdate_range('2021-01-01', periods=1300)

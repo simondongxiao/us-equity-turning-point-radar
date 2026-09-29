@@ -1,6 +1,6 @@
 import unittest
 import pandas as pd
-from scripts.index_context import build_index_context
+from scripts.index_context import INDEX_SPECS, build_index_context
 
 
 class IndexContextTests(unittest.TestCase):
@@ -27,6 +27,20 @@ class IndexContextTests(unittest.TestCase):
     def test_future_rows_excluded(self):
         result = build_index_context({'SPY':self.frame, '^SOX':self.frame}, [], self.dates[-2])
         self.assertEqual(result['rows'][0]['level'], 128)
+
+    def test_leveraged_etfs_are_separate_adjusted_price_assets(self):
+        leveraged = self.frame.copy()
+        leveraged['adj_close'] = leveraged['close'] * 2
+        result = build_index_context({'SPY':self.frame, 'SOXL':leveraged}, [], self.dates[-1])
+        row = next(r for r in result['rows'] if r['symbol'] == 'SOXL')
+        self.assertEqual(row['kind'], 'leveraged_etf')
+        self.assertEqual(row['level'], 258)
+        self.assertEqual(row['daily_target'], 3.0)
+        self.assertIn('复利', row['note'])
+        self.assertEqual(
+            {'SOXL', 'SOXS', 'TQQQ', 'SQQQ'},
+            {symbol for symbol, (_, kind) in INDEX_SPECS.items() if kind == 'leveraged_etf'},
+        )
 
 
 if __name__ == '__main__':

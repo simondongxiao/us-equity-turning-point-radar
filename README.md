@@ -4,6 +4,8 @@
 
 当前生产网站为 https://simondongxiao.github.io/us-equity-turning-point-radar/ 。打包文件不包含行情缓存、冻结预测、SQLite、密钥或GitHub凭证；安装后必须在实际项目中恢复自己的状态和授权。生产B3保持低可信，影子Challenger未晋级；正式HTTPS单股任务网关和动态周更仍为BLOCKED，不能因网页已部署而宣称完成。
 
+“指数方向性拐点”独立展示7项指数/VIX、SPY/QQQ以及SOXL、SOXS、TQQQ、SQQQ，共13项。杠杆/反向ETF使用自身复权历史独立计算，不是把基准概率乘以3或互相镜像，也不占常态100股。
+
 ## 使用
 在Codex打开`D:\codex`。将本包解压后，把Skill安装到当前支持的Skills目录；本机约定为`D:\codex\skills\us-equity-turning-point-radar`。首次构建或升级前完整读取`SKILL.md`和`references`，先检查同名项目状态，再决定首次构建或原地升级，不能覆盖旧Skill或旧行情网页。
 

@@ -55,6 +55,10 @@ def main():
             status='PASS';reason='近一年四段样本外概率按固定桶生成三事件曲线，并用完整交易日分块重采样区间；空样本不画假曲线。'
         if '周期按钮完整标明5交易日' in line:
             status='PASS';reason='全局三周期使用完整交易日文字，股票表头、指数、详情和校准面板同步切换；桌面/手机浏览器测试覆盖。'
+        if '指数区标题仅为“指数方向性拐点”' in line:
+            status='PASS';reason='页面标题为精确文本；指数区包含7项指数/VIX、SPY/QQQ和四只杠杆/反向ETF，且与常态100股分离。'
+        if '四只杠杆/反向ETF按自身复权OHLC' in line:
+            status='PASS';reason='SOXL/SOXS/TQQQ/SQQQ各自使用复权OHLC训练与预测；单元和浏览器验收拒绝概率乘倍数或多空镜像。'
         if '未校准、样本不足、陈旧和数据异常不能生成假概率' in line:
             status='PASS';reason='未校准或支持不足返回状态/空值；发布流程含完成交易日防陈旧检查；B3场景占比已单独标注。'
         if any(s in line for s in ('同bar','固定价位触达概率','共同路径概率及区间自洽')):

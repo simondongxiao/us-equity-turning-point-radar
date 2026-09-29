@@ -1,5 +1,11 @@
 # v1.1 实施状态
 
+## 2026-09-29 杠杆/反向ETF指数区增量
+
+- “指数方向性拐点”标题去除“SOX 与大盘”后缀；指数区从9项扩展为13项，新增SOXL、SOXS、TQQQ、SQQQ，不占常态100股。
+- 四只ETF读取自身复权OHLC，分别训练与校准；不把指数概率乘以3，不把做多ETF结果反向镜像。SOXL/SOXS按官方NYSE Semiconductor Index基准标识，不冒充SOX原指数杠杆版。
+- 模型版本升级为`index-exclusive-directional-turn-purged-v3-leveraged-etf`，市场对照版本升级为`index-context-v2-leveraged-etf`。每日重置、复利/波动损耗、费用及跳空风险已进入详情说明。
+
 ## 2026-09-29 v1.1.3 信度与校准呈现
 
 - 工具栏删除重复的“存储与内存”“全部存储细分”“全部股票”控件；研究组和业务标签下拉继续承接存储四股与DRAM/HBM/NAND/SSD/HDD筛选，未改股票池、轮动详情或模型。

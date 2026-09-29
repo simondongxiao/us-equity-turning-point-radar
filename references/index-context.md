@@ -1,6 +1,6 @@
-# 指数对照 v1（2026-09-25）
+# 指数与杠杆ETF对照 v2（2026-09-29）
 
-市场对照版本为 `index-context-v1`；指数自身预测版本升级为 `index-exclusive-directional-turn-purged-v2`，两者不占100股名额。指数自身预测已接入共享首达标签、互斥方向拐点标签、训练和路径引擎；指数因子影响个股B3概率仍是另一项待验证变更。
+市场对照版本为 `index-context-v2-leveraged-etf`；指数与ETF自身预测版本升级为 `index-exclusive-directional-turn-purged-v3-leveraged-etf`，均不占100股名额。每项资产都接入共享首达标签、互斥方向拐点标签、训练和路径引擎；指数因子影响个股B3概率仍是另一项待验证变更。
 
 ## 数据映射
 
@@ -15,10 +15,16 @@
 | ^VIX | VIX | 波动率指数点位及变化 |
 | SPY | 标普500 ETF | 调整后价格代理 |
 | QQQ | 纳斯达克100 ETF | 调整后价格代理 |
+| SOXL | 半导体3倍做多ETF | 自身复权OHLC；每日目标+300% NYSE Semiconductor Index |
+| SOXS | 半导体3倍反向ETF | 自身复权OHLC；每日目标-300% NYSE Semiconductor Index |
+| TQQQ | 纳指100三倍做多ETF | 自身复权OHLC；每日目标+300% Nasdaq-100 |
+| SQQQ | 纳指100三倍反向ETF | 自身复权OHLC；每日目标-300% Nasdaq-100 |
 
 SOX官方定义：https://indexes.nasdaq.com/Index/Overview/SOX
 
 SOXX官方基准说明：https://www.ishares.com/us/products/239705/fund 。SOXX跟踪NYSE Semiconductor Index，不作为SOX原指数替代。本模块不自动用SOXX/SMH/股票研究组填补SOX缺失。
+
+SOXL/SOXS官方产品说明：https://www.direxion.com/product/daily-semiconductor-bull-bear-3x-etfs 。TQQQ官方产品说明：https://www.proshares.com/our-etfs/leveraged-and-inverse/tqqq 。SQQQ官方产品说明：https://www.proshares.com/our-etfs/leveraged-and-inverse/sqqq 。四者均为每日重置目标；SOXL/SOXS的正式基准是NYSE Semiconductor Index，不冒充SOX原指数杠杆版。
 
 ## 时间与缺失
 
@@ -26,11 +32,12 @@ SOXX官方基准说明：https://www.ishares.com/us/products/239705/fund 。SOXX
 - 指数独立下载，不参与常态100股批次的共同截止日选择；不因指数停更拖后整池。
 - 窗口内任一缺失则该窗口结果为null；不向前填充、不填0、不使用as_of后的观察。
 - 价格指数点位与ETF调整后美元价格分别标识；跨口径收益差为描述性比较，不宣称严格总回报超额收益。
+- 杠杆/反向ETF使用各自真实复权OHLC独立训练和预测；禁止把指数概率乘以3，也禁止把做多ETF概率镜像成反向ETF概率。多日结果受每日重置、复利、波动损耗、费用及跳空影响。
 - VIX涨跌反映波动率指数变化，不是持有股票的收益率，也不是见底概率。
 
 ## 页面与个股
 
-首页短摘要及折叠矩阵跟随周期按钮同步。所有个股追加相对SOX、S&P500、Nasdaq100及Russell2000的5/10/21日收益差，保留原详情、分组、阶段和独立顶底概率。
+首页“指数方向性拐点”表和折叠矩阵跟随周期按钮同步，包含7项指数/VIX、SPY/QQQ和4只杠杆/反向ETF，共13项。所有个股追加相对SOX、S&P500、Nasdaq100及Russell2000的5/10/21日收益差，保留原详情、分组、阶段和独立顶底概率。
 
 指数可能包含本股，`self_excluded=false`。该比较不是按发行人LOO的同行因子，也不与含相同成分的篮子重复加权。原存储LOO及分类状态继续独立披露。
 
@@ -40,7 +47,7 @@ SOXX官方基准说明：https://www.ishares.com/us/products/239705/fund 。SOXX
 
 ### 指数自身预测
 
-- 每个指数及ETF分别使用自身五年日线，复用原`add_features`、`label_paths`、`path_summary_frame`、`train_bundle`和`build_scenario_metric`；VIX不与股票样本混训。
+- 每个指数及ETF分别使用自身五年日线，复用原`add_features`、`label_paths`、`path_summary_frame`、`train_bundle`和`build_scenario_metric`；VIX不与股票样本混训，四只杠杆/反向ETF也不与其基准或对应方向ETF混训。
 - 特征使用同一技术量价引擎；指数自身模型不依赖旧B3的错误QQQ字段。ETF的OHLC与调整后收盘价保持复权口径一致。
 - 训练、校准、测试严格按时间切分；以实际`label_end`剔除跨校准/测试边界的未成熟标签，不使用按行比例随机回退。样本不足即未校准。
 - 共享原标签：窗口内下探至少0.75个当时ATR后反弹1ATR为底部事件；上冲后回落为顶部事件。四态00/01/10/11联合分类分别校准，再分别取底/顶边际。它们允许同窗发生，不要求概率相加为1，不等于统计独立。

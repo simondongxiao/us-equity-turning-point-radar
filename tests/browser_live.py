@@ -24,8 +24,12 @@ def run() -> None:
             assert "母池 5310" in weekly_text
             assert "完整人气分 1367" in weekly_text
             assert "自动调池：BLOCKED" in weekly_text
-            assert page.locator('#indexRows tr').count() == 9
-            assert page.locator('#indexForecastRows tr').count() == 9
+            assert page.locator('[aria-label="指数顶底概率"] h2').inner_text() == '指数方向性拐点'
+            assert page.locator('#indexRows tr').count() == 13
+            assert page.locator('#indexForecastRows tr').count() == 13
+            index_names = set(page.locator('#indexForecastRows button').all_text_contents())
+            for symbol in ('SOXL','SOXS','TQQQ','SQQQ'):
+                assert any(name.startswith(symbol + ' ·') for name in index_names)
             assert 'SOX' in page.locator('#indexSummary').inner_text()
             first = page.locator('#indexSummary').inner_text()
             page.locator('[data-horizon="5"]').click()
@@ -47,6 +51,12 @@ def run() -> None:
             assert '独立时间检验' in page.locator('#detailBody').inner_text()
             assert '阶段底' in page.locator('#detailBody').inner_text()
             assert '路径重合' in page.locator('#detailBody').inner_text()
+            page.locator('#closeDetail').click()
+            page.locator('#indexForecastRows button', has_text='SOXL').click()
+            leveraged_text = page.locator('#detailDialog').inner_text()
+            assert 'ETF自身复权历史' in leveraged_text
+            assert '不把基准指数概率乘以杠杆倍数或镜像' in leveraged_text
+            assert '复利衰减' in leveraged_text
             page.locator('#closeDetail').click()
             assert page.locator("#storageQuick, #storageSubFilter, #clearFilters").count() == 0
             assert page.locator("[aria-label='机会分排序：从大到小']").get_attribute("aria-pressed") == "true"

@@ -12,6 +12,7 @@ with sync_playwright() as p:
     page=browser.new_page(viewport={'width':1440,'height':1080},device_scale_factor=1)
     errors=[];page.on('pageerror',lambda e:errors.append(str(e)))
     page.set_content(HTML,wait_until='load')
+    assert page.locator('[aria-label="指数顶底概率"] h2').inner_text()=='指数方向性拐点'
     assert page.locator('#stockRows tr').count()==100
     assert page.locator('#coverage').inner_text()=='100 / 0'
     assert '当前100股保持不变' in page.locator('#weeklyPoolText').inner_text()
