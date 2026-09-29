@@ -14,7 +14,13 @@ with sync_playwright() as p:
     page.set_content(HTML,wait_until='load')
     assert page.locator('#stockRows tr').count()==100
     assert page.locator('#coverage').inner_text()=='100 / 0'
-    checks.append('100 unchanged seeds and explicit 0 valid forecasts')
+    assert '当前100股保持不变' in page.locator('#weeklyPoolText').inner_text()
+    page.evaluate("""() => {DATA.weekly_pool_audit={as_of:'2026-09-28',mother_pool_observed_count:5310,complete_popularity_security_count:1367,regular_pool_count:100,current_member_source_gaps:[{symbol:'BRK-B'},{symbol:'GOOGL'}],storage_candidate_ranks:{WDC:32,MU:72,SNDK:78,STX:80,NTAP:236},automatic_reselection_status:'BLOCKED'};renderWeeklyPool();}""")
+    assert '母池 5310' in page.locator('#weeklyPoolText').inner_text()
+    assert '完整人气分 1367' in page.locator('#weeklyPoolText').inner_text()
+    assert 'BRK-B / GOOGL' in page.locator('#weeklyPoolText').inner_text()
+    assert '自动调池：BLOCKED' in page.locator('#weeklyPoolText').inner_text()
+    checks.append('100 unchanged seeds, explicit 0 valid forecasts and visible weekly-pool audit status')
     page.screenshot(path=str(ROOT/'tests/preview-desktop.png'),full_page=False)
     for field,label in [('reference_price','参考价'),('risk_value','风险分'),('bottom_probability','方向性阶段底'),('top_probability','方向性阶段顶'),('opportunity_value','机会分')]:
         button=page.locator(f"[data-field='{field}']")

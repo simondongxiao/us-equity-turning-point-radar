@@ -1,0 +1,48 @@
+{
+  "schema_version": "weekly-pool-audit-v1",
+  "as_of": "2026-09-28",
+  "generated_at": "2026-09-29T13:24:13Z",
+  "source": "read-only legacy screener point-in-time snapshot",
+  "popularity_model_version": "price-volume-pit-v1",
+  "mother_pool_observed_count": 5310,
+  "chart_symbols_observed": 5482,
+  "scored_symbols": 5477,
+  "qualified_security_count": 1374,
+  "complete_popularity_security_count": 1367,
+  "qualified_issuer_count": 1367,
+  "regular_pool_count": 100,
+  "tech_growth_count": 60,
+  "nontech_count": 40,
+  "current_member_audit_count": 98,
+  "current_member_qualified_count": 98,
+  "current_member_complete_popularity_count": 98,
+  "current_member_source_gaps": [
+    {
+      "symbol": "BRK-B",
+      "same_issuer_other_class": "BRK.A",
+      "status": "other_share_class_visible_not_used_as_liquidity_substitute"
+    },
+    {
+      "symbol": "GOOGL",
+      "same_issuer_other_class": "GOOG",
+      "status": "other_share_class_visible_not_used_as_liquidity_substitute"
+    }
+  ],
+  "storage_candidate_ranks": {
+    "WDC": 32,
+    "MU": 72,
+    "SNDK": 78,
+    "STX": 80,
+    "NTAP": 236
+  },
+  "storage_members": [
+    "MU",
+    "WDC",
+    "SNDK",
+    "STX"
+  ],
+  "pool_action": "retain",
+  "automatic_reselection_status": "BLOCKED",
+  "automatic_reselection_reason": "正式研究分类映射、拆股量价口径独立认证和GitHub runner母池入口尚未完成；本轮未改动生产100股。",
+  "historical_pool_preserved": true
+}

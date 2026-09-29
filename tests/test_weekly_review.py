@@ -17,6 +17,17 @@ def write_snapshot(path: Path, base_date: str) -> None:
 
 
 class WeeklyReviewTests(unittest.TestCase):
+    def test_public_weekly_audit_keeps_pool_and_blocker_explicit(self):
+        root = Path(__file__).resolve().parents[1]
+        payload = __import__("json").loads((root / "data" / "weekly_pool_audit.json").read_text(encoding="utf-8"))
+
+        self.assertEqual(payload["regular_pool_count"], 100)
+        self.assertEqual(payload["tech_growth_count"], 60)
+        self.assertEqual(payload["nontech_count"], 40)
+        self.assertGreaterEqual(payload["complete_popularity_security_count"], 300)
+        self.assertEqual(payload["automatic_reselection_status"], "BLOCKED")
+        self.assertTrue(payload["historical_pool_preserved"])
+
     def test_next_day_build_directory_is_eligible_for_prior_close(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = Path(tmp)

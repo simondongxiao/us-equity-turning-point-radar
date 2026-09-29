@@ -73,6 +73,17 @@
         "null"
       ]
     },
+    "weekly_pool_audit": {
+      "type": ["object", "null"],
+      "properties": {
+        "schema_version": {"type": "string"},
+        "as_of": {"type": "string"},
+        "mother_pool_observed_count": {"type": "integer", "minimum": 0},
+        "complete_popularity_security_count": {"type": "integer", "minimum": 0},
+        "regular_pool_count": {"type": "integer", "minimum": 0},
+        "automatic_reselection_status": {"type": "string"}
+      }
+    },
     "storage_rotation": {
       "type": [
         "object",

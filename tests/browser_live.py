@@ -20,6 +20,10 @@ def run() -> None:
             as_of = page.evaluate("DATA.as_of")
             assert page.locator("#asOf").inner_text() == as_of
             assert "北京时间" in page.locator("#beijing").inner_text()
+            weekly_text = page.locator("#weeklyPoolText").inner_text()
+            assert "母池 5310" in weekly_text
+            assert "完整人气分 1367" in weekly_text
+            assert "自动调池：BLOCKED" in weekly_text
             assert page.locator('#indexRows tr').count() == 9
             assert page.locator('#indexForecastRows tr').count() == 9
             assert 'SOX' in page.locator('#indexSummary').inner_text()

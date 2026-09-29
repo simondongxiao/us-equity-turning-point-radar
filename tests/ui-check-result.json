@@ -1,7 +1,7 @@
 {
   "test_type": "synthetic_ui_only",
   "checks": [
-    "100 unchanged seeds and explicit 0 valid forecasts",
+    "100 unchanged seeds, explicit 0 valid forecasts and visible weekly-pool audit status",
     "single-button direction toggle for reference price, opportunity/risk scores and exclusive directional bottom/top probabilities",
     "60 tech / 40 non-tech theme filters",
     "storage shortcut shows the four original names, no invented rotation",

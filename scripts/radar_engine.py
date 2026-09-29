@@ -1297,13 +1297,30 @@ def build(refresh: bool = False, run_id: str | None = None, extra_symbol: str | 
     rotation = storage_rotation(model_frames, seeds, as_of)
     print("[radar] storage rotation ready", flush=True)
     valid = sum(1 for r in records if any(r["metrics"].get(str(h), {}).get("status") in ("calibrated", "calibrated_low_confidence") for h in HORIZONS))
+    weekly_audit: dict[str, Any] | None = None
+    weekly_audit_file = ROOT / "data" / "weekly_pool_audit.json"
+    if weekly_audit_file.exists():
+        try:
+            candidate = json.loads(weekly_audit_file.read_text(encoding="utf-8"))
+            if candidate.get("as_of") and candidate["as_of"] <= as_of.strftime("%Y-%m-%d"):
+                weekly_audit = candidate
+        except (OSError, json.JSONDecodeError, TypeError):
+            weekly_audit = None
     mother_file = Path(r"D:\codex\us-share-daily-market-html\outputs\us_share_technical_screener\2026-09-13\all_metrics.csv")
     mother_count = 0
     if mother_file.exists():
         with mother_file.open(encoding="utf-8-sig", newline="") as fh:
             mother_count = max(0, sum(1 for _ in fh) - 1)
-    source["mother_pool"] = {"source": "us-share-daily-market-html/all_metrics.csv", "available_symbols": mother_count, "qualification_verified": False, "note": "母池规模来自旧美股行情项目快照；本项目未把它改写成当前人气排名。"}
-    data = {"build_mode": "live", "status_message": "真实日线行情已接入。机会/风险仍由原B3共同路径生成；方向性阶段底、阶段顶与无有效拐点为互斥且独立校准的挑战者，三项严格合计100%。信度按历史路径重合、近期独立测试校准、相对多数类基线增益与真实日期支持分级；信度不改写概率。结构价带与ATR波动率价带分层显示；期权快照只约束范围，历史不足时不进入概率模型。", "generated_at": iso(utc_now()), "as_of": as_of.strftime("%Y-%m-%d"), "as_of_beijing": f"{as_of.strftime('%Y-%m-%d')} 纽约收盘数据；北京时间日期需按交易日换算", "run_id": run_id, "prediction_snapshot_id": run_id, "model_version": MODEL_VERSION, "directional_model_version": DIRECTIONAL_MODEL_VERSION, "confidence_method_version": CONFIDENCE_METHOD_VERSION, "feature_version": FEATURE_VERSION, "potential_range_version": "structure-volatility-option-layered-v3", "strategy_version": STRATEGY_VERSION, "universe_version": "curated-seed-20260915-v1.1-live-validation", "taxonomy_version": TAXONOMY_VERSION, "source_manifest": source, "records": records, "temporary": temporary, "storage_rotation": rotation, "options_model_gate": option_gate, "rotation_summary": [rotation["summary"], "存储四只为同一主研究组；细分视图允许MU重叠，主表不重复计数。", "存储新因子为shadow/challenger，未套用旧校准器；不要把MU强弱写成SNDK/WDC/STX的固定结论。"], "public_config": {"api_base_url": None}, "backtest": backtest, "coverage": {"regular_pool": len(records), "valid_forecast_records": valid, "usable_price_records": sum(1 for r in records if r.get("reference_price") is not None), "data_cutoff": as_of.strftime("%Y-%m-%d"), "financial_backtest_status": "B3 first-touch and exclusive directional-turn time-split metrics computed; options B4 and storage incremental alpha remain gated"}}
+    if weekly_audit:
+        mother_count = int(weekly_audit.get("mother_pool_observed_count") or mother_count)
+    source["mother_pool"] = {
+        "source": "read-only legacy screener snapshot via committed weekly audit" if weekly_audit else "us-share-daily-market-html/all_metrics.csv",
+        "available_symbols": mother_count,
+        "qualification_verified": bool(weekly_audit and weekly_audit.get("complete_popularity_security_count", 0) >= 300),
+        "automatic_reselection_status": weekly_audit.get("automatic_reselection_status") if weekly_audit else "BLOCKED",
+        "note": "点时资格与人气评分已审计；自动换池仍受独立门槛约束。" if weekly_audit else "母池规模来自旧美股行情项目快照；本项目未把它改写成当前人气排名。",
+    }
+    data = {"build_mode": "live", "status_message": "真实日线行情已接入。机会/风险仍由原B3共同路径生成；方向性阶段底、阶段顶与无有效拐点为互斥且独立校准的挑战者，三项严格合计100%。信度按历史路径重合、近期独立测试校准、相对多数类基线增益与真实日期支持分级；信度不改写概率。结构价带与ATR波动率价带分层显示；期权快照只约束范围，历史不足时不进入概率模型。", "generated_at": iso(utc_now()), "as_of": as_of.strftime("%Y-%m-%d"), "as_of_beijing": f"{as_of.strftime('%Y-%m-%d')} 纽约收盘数据；北京时间日期需按交易日换算", "run_id": run_id, "prediction_snapshot_id": run_id, "model_version": MODEL_VERSION, "directional_model_version": DIRECTIONAL_MODEL_VERSION, "confidence_method_version": CONFIDENCE_METHOD_VERSION, "feature_version": FEATURE_VERSION, "potential_range_version": "structure-volatility-option-layered-v3", "strategy_version": STRATEGY_VERSION, "universe_version": "curated-seed-20260915-v1.1-live-validation", "taxonomy_version": TAXONOMY_VERSION, "source_manifest": source, "records": records, "temporary": temporary, "storage_rotation": rotation, "weekly_pool_audit": weekly_audit, "options_model_gate": option_gate, "rotation_summary": [rotation["summary"], "存储四只为同一主研究组；细分视图允许MU重叠，主表不重复计数。", "存储新因子为shadow/challenger，未套用旧校准器；不要把MU强弱写成SNDK/WDC/STX的固定结论。"], "public_config": {"api_base_url": None}, "backtest": backtest, "coverage": {"regular_pool": len(records), "valid_forecast_records": valid, "usable_price_records": sum(1 for r in records if r.get("reference_price") is not None), "data_cutoff": as_of.strftime("%Y-%m-%d"), "financial_backtest_status": "B3 first-touch and exclusive directional-turn time-split metrics computed; options B4 and storage incremental alpha remain gated"}}
     # Context benchmarks cannot move the champion's stock/market cutoff date.
     index_frames, index_source = download_prices([s for s in INDEX_SPECS if s not in frames], refresh=refresh)
     context_frames = {**frames, **index_frames}
