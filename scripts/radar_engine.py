@@ -1171,17 +1171,34 @@ def enrich_record(row: dict[str, Any], frame: pd.DataFrame, metric_by_h: dict[in
             bottom["arrival_probability"] = clean_num(metric.get("p_downfirst"))
             bottom["directional_turn_probability"] = clean_num(metric.get("p_bottom_rebound_first"))
             bottom["scenario_event_share"] = clean_num(metric.get("p_bottom"))
-            bottom["structural_band"] = structure.get("support_band")
+            bottom["structural_band"] = (structure.get("core_bottom_zone") or {}).get("band") or structure.get("support_band")
+            bottom["core_zone"] = structure.get("core_bottom_zone")
             bottom["volatility_band"] = metric.get("volatility_bottom_band")
             bottom["probability_note"] = "方向性阶段底要求先触及下边界并在同窗完成反弹确认；与阶段顶、无有效拐点互斥。原共同路径底部事件占比仅作双向波动诊断。"
         if isinstance(top, dict):
             top["arrival_probability"] = clean_num(metric.get("p_upfirst"))
             top["directional_turn_probability"] = clean_num(metric.get("p_top_reversal_first"))
             top["scenario_event_share"] = clean_num(metric.get("p_top"))
-            top["structural_band"] = structure.get("resistance_band")
+            top["structural_band"] = (structure.get("core_top_zone") or {}).get("band") or structure.get("resistance_band")
+            top["core_zone"] = structure.get("core_top_zone")
             top["volatility_band"] = metric.get("volatility_top_band")
             top["probability_note"] = "方向性阶段顶要求先触及上边界并在同窗完成回落确认；与阶段底、无有效拐点互斥。原共同路径顶部事件占比仅作双向波动诊断。"
-    return {**row, "as_of": as_of.strftime("%Y-%m-%d"), "reference_price": clean_num(current["adj_close"]), "metrics": safe_json(metrics), "stage": stage, "issuer_id": identity.get("issuer_id"), "issuer_identity_source": identity.get("source"), "peer_context": safe_json({**peers, "note": peer_note, "issuer_id": identity.get("issuer_id"), "subgroup_context": peers.get("subgroup_context", {})}), "potential_ranges": safe_json(potential_payload), "rotation_explanation": "真实日线数据已接入；市场、研究组与个股残差分别计算，允许不同步。" + (" 存储细分与LOO为影子候选，未进入正式校准分数。" if storage else ""), "trigger_summary": "确认：先由Price Structure形成候选位；只有先触边界且同窗满足反转条件才计入互斥方向性阶段顶/底。失效：跳空、事件冲击或重新突破结构。到达概率、方向性拐点、双向洗盘诊断和交易成功不可混同。", "event_summary": "本次生产构建未抓取并公开长文本财报、产品发布或宏观事件正文；事件特征为缺失，不把标题或业务分类当作催化概率。", "risk_summary": "风险值来自共同历史路径的最差5%不利幅度均值，未假设保护价一定成交；执行成本按策略版本扣除。", "data_note": f"数据源：{SOURCE_NAME}；截止{as_of.strftime('%Y-%m-%d')}。B3机会/风险与首次触达保持原口径；方向性阶段底、阶段顶、无有效拐点由独立时间校准的三分类挑战者生成并严格归一。重叠顶底事件仅作双向洗盘诊断。结构价带与ATR波动率回退带分开显示。期权历史不足，尚未进入概率模型。"}
+        if isinstance(horizon_payload, dict):
+            horizon_payload["model_path_band"] = {
+                "terminal_band": metric.get("terminal_band"),
+                "bottom_band": metric.get("bottom_band"),
+                "top_band": metric.get("top_band"),
+                "volatility_bottom_band": metric.get("volatility_bottom_band"),
+                "volatility_top_band": metric.get("volatility_top_band"),
+                "note": "模型共同路径条件价带；与原始统计包络、结构核心区分层展示，不替代方向性概率。",
+            }
+            horizon_payload["direction_probabilities"] = {
+                "bottom_rebound_first": clean_num(metric.get("p_bottom_rebound_first")),
+                "top_reversal_first": clean_num(metric.get("p_top_reversal_first")),
+                "no_directional_turn": clean_num(metric.get("p_no_directional_turn")),
+                "note": "三项互斥方向性分类严格合计100%；结构共振不进入该概率。",
+            }
+    return {**row, "as_of": as_of.strftime("%Y-%m-%d"), "reference_price": clean_num(current["adj_close"]), "metrics": safe_json(metrics), "stage": stage, "issuer_id": identity.get("issuer_id"), "issuer_identity_source": identity.get("source"), "peer_context": safe_json({**peers, "note": peer_note, "issuer_id": identity.get("issuer_id"), "subgroup_context": peers.get("subgroup_context", {})}), "potential_ranges": safe_json(potential_payload), "rotation_explanation": "真实日线数据已接入；市场、研究组与个股残差分别计算，允许不同步。" + (" 存储细分与LOO为影子候选，未进入正式校准分数。" if storage else ""), "trigger_summary": "确认：先由Price Structure形成候选位；只有先触边界且同窗满足反转条件才计入互斥方向性阶段顶/底。失效：跳空、事件冲击或重新突破结构。到达概率、方向性拐点、双向洗盘诊断和交易成功不可混同。结构共振只用于解释核心区，不进入概率。", "event_summary": "本次生产构建未抓取并公开长文本财报、产品发布或宏观事件正文；事件特征为缺失，不把标题或业务分类当作催化概率。", "risk_summary": "风险值来自共同历史路径的最差5%不利幅度均值，未假设保护价一定成交；执行成本按策略版本扣除。", "data_note": f"数据源：{SOURCE_NAME}；截止{as_of.strftime('%Y-%m-%d')}。B3机会/风险与首次触达保持原口径；方向性阶段底、阶段顶、无有效拐点由独立时间校准的三分类挑战者生成并严格归一。重叠顶底事件仅作双向洗盘诊断。现在分层展示实现波动率统计包络、结构核心区、模型路径区和方向概率；统计/结构层不反推概率。期权历史不足，尚未进入概率模型。"}
 
 
 def ensure_ledger() -> sqlite3.Connection:
@@ -1320,7 +1337,7 @@ def build(refresh: bool = False, run_id: str | None = None, extra_symbol: str | 
         "automatic_reselection_status": weekly_audit.get("automatic_reselection_status") if weekly_audit else "BLOCKED",
         "note": "点时资格与人气评分已审计；自动换池仍受独立门槛约束。" if weekly_audit else "母池规模来自旧美股行情项目快照；本项目未把它改写成当前人气排名。",
     }
-    data = {"build_mode": "live", "status_message": "真实日线行情已接入。机会/风险仍由原B3共同路径生成；方向性阶段底、阶段顶与无有效拐点为互斥且独立校准的挑战者，三项严格合计100%。信度按历史路径重合、近期独立测试校准、相对多数类基线增益与真实日期支持分级；信度不改写概率。结构价带与ATR波动率价带分层显示；期权快照只约束范围，历史不足时不进入概率模型。", "generated_at": iso(utc_now()), "as_of": as_of.strftime("%Y-%m-%d"), "as_of_beijing": f"{as_of.strftime('%Y-%m-%d')} 纽约收盘数据；北京时间日期需按交易日换算", "run_id": run_id, "prediction_snapshot_id": run_id, "model_version": MODEL_VERSION, "directional_model_version": DIRECTIONAL_MODEL_VERSION, "confidence_method_version": CONFIDENCE_METHOD_VERSION, "feature_version": FEATURE_VERSION, "potential_range_version": "structure-volatility-option-layered-v3", "strategy_version": STRATEGY_VERSION, "universe_version": "curated-seed-20260915-v1.1-live-validation", "taxonomy_version": TAXONOMY_VERSION, "source_manifest": source, "records": records, "temporary": temporary, "storage_rotation": rotation, "weekly_pool_audit": weekly_audit, "options_model_gate": option_gate, "rotation_summary": [rotation["summary"], "存储四只为同一主研究组；细分视图允许MU重叠，主表不重复计数。", "存储新因子为shadow/challenger，未套用旧校准器；不要把MU强弱写成SNDK/WDC/STX的固定结论。"], "public_config": {"api_base_url": None}, "backtest": backtest, "coverage": {"regular_pool": len(records), "valid_forecast_records": valid, "usable_price_records": sum(1 for r in records if r.get("reference_price") is not None), "data_cutoff": as_of.strftime("%Y-%m-%d"), "financial_backtest_status": "B3 first-touch and exclusive directional-turn time-split metrics computed; options B4 and storage incremental alpha remain gated"}}
+    data = {"build_mode": "live", "status_message": "真实日线行情已接入。机会/风险仍由原B3共同路径生成；方向性阶段底、阶段顶与无有效拐点为互斥且独立校准的挑战者，三项严格合计100%。信度按历史路径重合、近期独立测试校准、相对多数类基线增益与真实日期支持分级；信度不改写概率。详情按四层展示实现波动率统计包络、结构核心区、模型路径区和方向概率；结构/统计/期权显示层不反推概率，事件未接入时显式标注。", "generated_at": iso(utc_now()), "as_of": as_of.strftime("%Y-%m-%d"), "as_of_beijing": f"{as_of.strftime('%Y-%m-%d')} 纽约收盘数据；北京时间日期需按交易日换算", "run_id": run_id, "prediction_snapshot_id": run_id, "model_version": MODEL_VERSION, "directional_model_version": DIRECTIONAL_MODEL_VERSION, "confidence_method_version": CONFIDENCE_METHOD_VERSION, "feature_version": FEATURE_VERSION, "potential_range_version": "structure-statistical-model-option-four-layer-v4", "strategy_version": STRATEGY_VERSION, "universe_version": "curated-seed-20260915-v1.1-live-validation", "taxonomy_version": TAXONOMY_VERSION, "source_manifest": source, "records": records, "temporary": temporary, "storage_rotation": rotation, "weekly_pool_audit": weekly_audit, "options_model_gate": option_gate, "rotation_summary": [rotation["summary"], "存储四只为同一主研究组；细分视图允许MU重叠，主表不重复计数。", "存储新因子为shadow/challenger，未套用旧校准器；不要把MU强弱写成SNDK/WDC/STX的固定结论。"], "public_config": {"api_base_url": None}, "backtest": backtest, "coverage": {"regular_pool": len(records), "valid_forecast_records": valid, "usable_price_records": sum(1 for r in records if r.get("reference_price") is not None), "data_cutoff": as_of.strftime("%Y-%m-%d"), "financial_backtest_status": "B3 first-touch and exclusive directional-turn time-split metrics computed; options B4 and storage incremental alpha remain gated"}}
     # Context benchmarks cannot move the champion's stock/market cutoff date.
     index_frames, index_source = download_prices([s for s in INDEX_SPECS if s not in frames], refresh=refresh)
     context_frames = {**frames, **index_frames}
