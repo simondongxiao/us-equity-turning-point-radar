@@ -5,7 +5,27 @@ description: 构建、运行并发布美股阶段顶底概率雷达。以每周�
 
 # 美股阶段顶底概率雷达
 
-版本：`1.2.0-structure-range-layer`。本次为原包增量升级；不得删减原有研究、回测、网页或安全功能。
+版本：`1.3.0-decision-consistency-and-risk-audit`。本次为原包增量升级；不得删减原有研究、回测、网页或安全功能。
+
+## v1.3 决策一致性与风险审计增量
+
+每次模型或页面变更前，先生成并阅读 `diagnostics/decision_consistency_audit.md`。审计必须逐项记录机会值、风险值/ES95、收益分布、概率定义、排序字段、历史来源、单位、样本有效性和页面语义；不得先用阈值、clamp 或显示层格式掩盖异常。
+
+主页固定分离三类结果：
+
+1. `收益机会排序`：收益/风险统计横截面排序，不是底部概率、买入胜率或未来上涨概率；显示分数必须标注 `/100`。
+2. `尾部风险排序`：尾部风险横截面排序，不是未来必跌概率；风险单位异常时保留原始值，但不得进入风险榜。
+3. `决策榜`：阶段底候选与阶段顶警告分开排序，主键是方向校准概率、相对基线优势、候选区距离、触达后反转联合概率、信度和数据质量，不以机会分优先，两个方向榜不强制互斥。
+
+每个 symbol/horizon 输出有限枚举 `stage_primary_judgment`：`bottom_reversal_candidate`、`top_reversal_warning`、`two_way_high_volatility_wash`、`trend_continuation_up`、`trend_continuation_down`、`direction_unclear`、`data_model_pending_review`。它只能来自方向模型、候选区、证据质量和数据质量，不能用机会分减风险分生成。增加 `decision_eligible` 与 `decision_block_reason`；原始概率和原始分数必须保留。阻塞原因使用机器可读键：`insufficient_effective_samples`、`poor_calibration`、`regime_drift`、`data_quality_failure`、`symbol_history_issue`、`metric_unit_anomaly`、`stale_data`、`horizon_mismatch`、`low_directional_separation`。
+
+候选底/顶必须输出对称字段：`bottom_zone_low/high`、`distance_to_bottom_zone_pct`、`p_touch_bottom_zone`、`p_rebound_given_touch`、`p_touch_and_rebound` 及顶部对应字段。优先使用方向性拐点条件区；统计包络、结构区、终值分布和条件转折区必须分层，`±1σ` 不能称作顶底区。当前已经进入候选区时，页面主文案显示“当前已进入候选底部/顶部区”，不再把未来触达概率作为主信息。联合概率必须是直接路径事件，条件概率只能由联合事件除以其父事件得到。
+
+ES95 必须声明 `risk_metric_definition`、`risk_metric_unit`、`risk_metric_valid`、`risk_metric_validation_reason`。普通未杠杆多头简单价格亏损若出现超过100%或路径价格为负，不得截断；应追溯复权OHLC、公司行动、杠杆/衍生品路径和单位，并从风险排名剔除。期望收益同时输出加权均值、中位数、P25/P75/P05/P95、亏损概率、Expected Shortfall、上行尾部贡献和最差5%路径对均值贡献，并标记均值是否由尾部驱动。
+
+历史样本必须区分 `own_history`、`peer_transfer`、`regime_neighbor`，记录自身样本数、转移样本数、名义路径数、ESS、独立交易日、独立体制、最大单路径权重和前5%权重占比。低ESS只降低决策资格，不修改原始概率；常态股票不能拼接同行历史，临时观察才可明确标记为转移样本。方向分离阈值必须来自样本外回测，不得硬编码50%。
+
+v1.3 必须保留并运行 Case A–E 合成测试、SNDK 新旧三期限案例、100股池、指数/ETF自身历史、存储轮动、临时股票、GitHub Pages、冻结预测台账和原有安全门。
 
 ## v1.2 统计包络与结构核心区增量
 

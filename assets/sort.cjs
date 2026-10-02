@@ -11,8 +11,8 @@
     const item = record.metrics && record.metrics[String(horizon)];
     if (!item || !['calibrated','calibrated_low_confidence'].includes(item.status)) return null;
     const aliases = {
-      opportunity_value: ['opportunity_score', 'opportunity_value'],
-      risk_value: ['risk_score', 'risk_value'],
+      opportunity_value: item.opportunity_rank_eligible === false ? [] : ['opportunity_score', 'opportunity_value'],
+      risk_value: item.risk_rank_eligible === false ? [] : ['risk_score', 'risk_value'],
       bottom_probability: ['p_bottom_rebound_first'],
       top_probability: ['p_top_reversal_first']
     };

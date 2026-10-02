@@ -22,8 +22,8 @@
 <div class="controls">
 <div class="control-group" id="horizonControls"><span class="control-label">全局周期</span><button class="toggle" data-horizon="5" aria-pressed="false">5交易日（1周）</button><button class="toggle" data-horizon="10" aria-pressed="true">10交易日（2周）</button><button class="toggle" data-horizon="21" aria-pressed="false">21交易日（约1月）</button></div>
 <div class="control-group"><span class="control-label">参考价</span><button class="toggle sort-toggle" data-field="reference_price" aria-pressed="false" aria-label="参考价排序：从大到小" title="点击切换从大到小 / 从小到大">↓ 大到小</button></div>
-<div class="control-group"><span class="control-label">机会分</span><button class="toggle sort-toggle" data-field="opportunity_value" aria-pressed="true" aria-label="机会分排序：从大到小" title="点击切换从大到小 / 从小到大">↓ 大到小</button></div>
-<div class="control-group"><span class="control-label">风险分</span><button class="toggle sort-toggle" data-field="risk_value" aria-pressed="false" aria-label="风险分排序：从大到小" title="点击切换从大到小 / 从小到大">↓ 大到小</button></div>
+<div class="control-group"><span class="control-label">收益机会排序</span><button class="toggle sort-toggle" data-field="opportunity_value" aria-pressed="true" aria-label="收益机会排序：从大到小" title="横截面收益机会分，不是底部概率或买入胜率；点击切换方向">↓ 大到小</button></div>
+<div class="control-group"><span class="control-label">尾部风险排序</span><button class="toggle sort-toggle" data-field="risk_value" aria-pressed="false" aria-label="尾部风险排序：从大到小" title="横截面尾部风险分，不是未来必跌概率；异常风险不入榜">↓ 大到小</button></div>
 <div class="control-group"><span class="control-label">方向性阶段底</span><button class="toggle sort-toggle" data-field="bottom_probability" aria-pressed="false" aria-label="方向性阶段底概率排序：从大到小" title="先触及下边界并在同窗完成反弹确认；点击切换方向">↓ 大到小</button></div>
 <div class="control-group"><span class="control-label">方向性阶段顶</span><button class="toggle sort-toggle" data-field="top_probability" aria-pressed="false" aria-label="方向性阶段顶概率排序：从大到小" title="先触及上边界并在同窗完成回落确认；点击切换方向">↓ 大到小</button></div>
 <select id="bucketFilter" class="filter" aria-label="研究覆盖分类"><option value="">全部研究主题</option><option>科技与成长主题</option><option>非科技主题</option></select>
@@ -31,14 +31,15 @@
 <select id="businessTagFilter" class="filter" aria-label="业务标签"><option value="">全部业务标签</option></select>
 <select id="stageFilter" class="filter" aria-label="阶段"><option value="">全部阶段</option></select>
 <label class="small"><input type="checkbox" id="edgeOnly"> 只看正优势</label>
-</div><p class="small" style="margin-top:12px">方向性阶段底 / 阶段顶 / 无有效拐点互斥且合计100%；双向洗盘另列为波动诊断。机会与风险仍可同时偏高。未知/过期结果在任意排序下均置底；筛选不改变全池评分。</p>
+</div><p class="small" style="margin-top:12px">“收益机会排序”是收益/风险统计榜，不是底部概率或买入胜率；“尾部风险排序”是尾部损失统计榜，不是未来必跌概率。页面显示的0–100均为横截面分数 `/100`。方向性阶段底 / 阶段顶 / 无有效拐点互斥且合计100%；双向洗盘另列为波动诊断。机会与风险仍可同时偏高。未知/过期/单位异常结果在相应榜单剔除；筛选不改变全池评分。</p>
 <div id="jobStatus" class="status" role="status" aria-live="polite"></div>
 </section>
 <section class="panel rotation" aria-label="指数顶底概率"><h2>指数方向性拐点</h2><p id="indexSummary" class="small"></p><div class="controls"><button id="indexBottomSort" class="toggle" data-index-sort="bottom_probability">方向性阶段底 ↓</button><button id="indexTopSort" class="toggle" data-index-sort="top_probability">方向性阶段顶 ↓</button><span class="small">与上方5 / 10 / 21交易日全局周期同步；本区指数与ETF不占100股名额</span></div><div class="table-scroll"><table><thead><tr><th>指数 / ETF</th><th>参考点位 / 价格</th><th>方向性阶段底</th><th>方向性阶段顶</th><th>无有效拐点</th><th>双向洗盘诊断</th><th>条件底部区</th><th>条件顶部区</th><th>信度</th></tr></thead><tbody id="indexForecastRows"></tbody></table></div><details><summary>展开指数与ETF涨跌矩阵</summary><div class="table-scroll"><table><thead><tr><th>指数 / ETF</th><th>截至</th><th>点位 / 价格</th><th>1日变化</th><th>所选周期变化</th><th>口径</th></tr></thead><tbody id="indexRows"></tbody></table></div></details></section>
 <section class="panel rotation" aria-label="方向概率校准"><details id="calibrationPanel"><summary><strong>概率胜率校准曲线</strong> · 预测概率与实际发生频率</summary><p id="calibrationSummary" class="small"></p><div id="calibrationBody" class="calibration-wrap"></div><p class="small">曲线来自近一年四段时间滚动样本外预测；置信区间按完整交易日分块重采样。对角线表示理想校准，不代表达到该概率就一定发生。</p></details></section>
 <section id="storagePanel" class="panel rotation" hidden aria-label="存储与内存轮动观察"><h2>存储与内存 · 轮动观察</h2><p id="storageSummaryText" class="small"></p><details><summary>展开跨板块与细分观察</summary><div id="storageMatrixBody" class="small"></div></details></section>
+<section id="decisionPanel" class="panel rotation" aria-label="阶段决策榜"><h2>决策榜</h2><p class="small">阶段底候选与阶段顶警告独立排序。排序依据是方向校准概率、相对基线优势、候选区距离、触达后反转联合概率及证据质量；不以机会分优先，也不强制两榜互斥。</p><div class="table-scroll"><table class="detail-table"><thead><tr><th>方向</th><th>排名</th><th>股票</th><th>阶段主判断</th><th>方向概率</th><th>候选区 / 距离</th><th>触达且反转</th><th>信度 / 资格</th></tr></thead><tbody id="decisionRows"></tbody></table></div><p id="decisionEmpty" class="small" hidden>当前周期没有满足决策资格的方向候选；原始概率与统计榜仍保留。</p></section>
 <section class="panel"><div class="board-head"><div class="tabs"><button id="regularTab" class="toggle" aria-pressed="true">常态100股</button><button id="temporaryTab" class="toggle" aria-pressed="false">临时观察 · 0</button></div><div><span id="filterCount" class="small" style="margin-right:12px">显示100/100</span><span class="small" id="sortLabel">机会：从大到小 · 2周</span></div></div>
-<div class="table-scroll"><table class="stock-table"><thead><tr><th>序号</th><th>股票 / 公司</th><th>研究组 / 业务标签</th><th>参考价</th><th>阶段</th><th id="touchHorizonHead">先上冲 / 先下探 / 未触达 · 10日</th><th>机会分 / 净期望</th><th>风险分 / ES95</th><th>底部价带</th><th>顶部价带</th><th id="bottomHorizonHead">方向性阶段底 · 10日</th><th id="topHorizonHead">方向性阶段顶 · 10日</th><th id="noneHorizonHead">无有效拐点 · 10日</th><th>双向洗盘</th><th>信度</th></tr></thead><tbody id="stockRows"></tbody></table><div class="empty" id="emptyState" hidden>当前筛选下没有匹配结果。</div></div>
+<div class="table-scroll"><table class="stock-table"><thead><tr><th>序号</th><th>股票 / 公司</th><th>研究组 / 业务标签</th><th>参考价</th><th>阶段</th><th>阶段主判断</th><th>方向概率</th><th>候选区 / 距离</th><th>触达且反转</th><th>状态 / 资格</th><th id="touchHorizonHead">先上冲 / 先下探 / 未触达 · 10日</th><th>收益机会 `/100` / 净期望</th><th>尾部风险 `/100` / ES95</th><th>底部价带</th><th>顶部价带</th><th id="bottomHorizonHead">方向性阶段底 · 10日</th><th id="topHorizonHead">方向性阶段顶 · 10日</th><th id="noneHorizonHead">无有效拐点 · 10日</th><th>双向洗盘</th><th>证据</th></tr></thead><tbody id="stockRows"></tbody></table><div class="empty" id="emptyState" hidden>当前筛选下没有匹配结果。</div></div>
 <div class="footnote">方向性阶段底、阶段顶、无有效拐点是独立时间校准的互斥三分类，合计100%。双向洗盘是共同历史路径中同窗出现顶底事件的诊断占比，不参与三项归一，也不是方向信号。</div></section>
 <footer class="footer"><span id="buildNote">研究与风险管理工具，不执行交易。</span><a href="validation.html">预测验证 · 冻结记录与挑战者</a><span>首版观察种子 · 科技成长60 / 非科技40</span></footer>
 </main>
@@ -51,7 +52,7 @@ const DATA=JSON.parse(document.getElementById('radarData').textContent);
 const PUBLIC_CONFIG=DATA.public_config||{};
 let state={horizon:10,field:'opportunity_value',direction:'desc',view:'regular'};
 let indexSort={field:'bottom_probability',direction:'desc'};
-const SORT_NAMES={reference_price:'参考价',opportunity_value:'机会分',risk_value:'风险分',bottom_probability:'方向性阶段底',top_probability:'方向性阶段顶'};
+const SORT_NAMES={reference_price:'参考价',opportunity_value:'收益机会排序',risk_value:'尾部风险排序',bottom_probability:'方向性阶段底',top_probability:'方向性阶段顶'};
 const SORT_FIELDS=Object.keys(SORT_NAMES);
 try{const saved=JSON.parse(localStorage.getItem('radar-ui-v1')||'null');const field=saved?.field==='stage_probability'?'bottom_probability':saved?.field;if(saved&&[5,10,21].includes(saved.horizon)&&SORT_FIELDS.includes(field)&&['asc','desc'].includes(saved.direction))state={...state,...saved,field,view:'regular'};}catch{}
 let regular=DATA.records||[],temporary=DATA.temporary||[];
@@ -76,9 +77,21 @@ function confidenceText(m){if(!ready(m))return statusText[m?.status]||'待分析
 function confidenceBadge(m){const span=node('span',confidenceText(m),'confidence-badge '+(m?.confidence_level||'low'));span.title=m?.confidence_reason||'信度根据历史路径重合与近期独立验证计算，不改变方向概率。';return span;}
 function confidenceDetail(m){if(!ready(m))return confidenceText(m);return`${confidenceText(m)}。路径重合 ${finite(m.path_similarity_score)?m.path_similarity_score.toFixed(0):'—'}/100；近期校准ECE ${finite(m.validation_ece)?m.validation_ece.toFixed(3):'—'}；准确率 ${pct(m.validation_accuracy)}，多数类基线 ${pct(m.validation_majority_baseline_accuracy)}，增益 ${pp(m.validation_accuracy_lift)}；测试 ${m.validation_test_n??'—'} 条 / ${m.validation_unique_dates??'—'} 个交易日。${m.confidence_reason||''} 信度不改变方向概率，也不是收益率。`;}
 function selectedMetrics(r){return (r.metrics||{})[String(state.horizon)]||{status:'uncalibrated'};}
+function scoreText(m,key){return finite(m?.[key])?`${m[key].toFixed(0)}/100`:'—';}
+function riskText(m){if(!finite(m?.es95))return'—';return m.risk_metric_valid===false?`异常 ${pct(m.es95)}`:pct(m.es95);}
+function decisionSide(m){const p=m?.stage_primary_judgment;return p==='bottom_reversal_candidate'?'底 '+pct(m.p_bottom_rebound_first):p==='top_reversal_warning'?'顶 '+pct(m.p_top_reversal_first):p==='two_way_high_volatility_wash'?'洗盘 '+pct(m.p_two_way_wash):p==='trend_continuation_up'?'上行 '+pct(m.p_no_directional_turn):p==='trend_continuation_down'?'下行 '+pct(m.p_no_directional_turn):'—';}
+function decisionZone(m){const bottom=m?.stage_primary_judgment==='bottom_reversal_candidate',zone=bottom?m?.bottom_zone:m?.top_zone,distance=bottom?m?.distance_to_bottom_zone_pct:m?.distance_to_top_zone_pct;return `${band(zone)}${finite(distance)?` · ${pct(distance)}距离`:''}`;}
+function decisionStatus(m){if(!ready(m))return statusText[m?.status]||'待分析';return m.decision_eligible?'可进入决策榜':`待复核 · ${(m.decision_block_reason||[]).join('、')||'未说明'}`;}
 function persist(){try{localStorage.setItem('radar-ui-v1',JSON.stringify({horizon:state.horizon,field:state.field,direction:state.direction}));}catch{}}
 function tagList(r,key){const v=r[key];return Array.isArray(v)?v.filter(x=>typeof x==='string'):typeof v==='string'?v.split('|').filter(Boolean):[];}
 function isStorage(r){return r.research_group_id==='storage-memory'||r.research_group==='存储与内存';}
+function renderDecisionBoard(){
+ const body=$('decisionRows'),empty=$('decisionEmpty');body.replaceChildren();
+ const board=DATA.decision_board?.horizons?.[String(state.horizon)]||{};
+ const rows=[...(board.stage_bottom_candidates||[]),...(board.stage_top_warnings||[])].sort((a,b)=>a.side.localeCompare(b.side)||a.decision_rank-b.decision_rank);
+ empty.hidden=rows.length>0;
+ rows.slice(0,30).forEach(x=>{const tr=node('tr');[x.side==='stage-bottom'?'阶段底候选':'阶段顶警告',`#${x.decision_rank}`,x.symbol, x.stage_primary_judgment||'—',pct(x.directional_probability),`${band(x.zone)}${finite(x.distance_to_zone_pct)?` · ${pct(x.distance_to_zone_pct)}`:''}`,pct(x.joint_probability),`${finite(x.confidence_score)?x.confidence_score.toFixed(0)+'/100':'—'} · 可用`].forEach(v=>tr.append(node('td',v)));body.append(tr);});
+}
 function refreshFacetOptions(){
  const oldGroup=$('groupFilter').value,oldTag=$('businessTagFilter').value,oldStage=$('stageFilter').value,bucket=$('bucketFilter').value;
  const source=state.view==='regular'?regular:temporary;
@@ -138,7 +151,7 @@ function renderCalibration(){
 }
 
 function render(){
- refreshFacetOptions();renderStoragePanel();renderCalibration();
+ refreshFacetOptions();renderStoragePanel();renderCalibration();renderDecisionBoard();
  renderIndices();
  const period={5:'1周',10:'2周',21:'约1月'}[state.horizon];
  document.querySelectorAll('[data-horizon]').forEach(b=>b.setAttribute('aria-pressed',Number(b.dataset.horizon)===state.horizon));
@@ -164,8 +177,10 @@ function render(){
  const m=selectedMetrics(r),ok=ready(m),tr=node('tr');
  tr.append(node('td',String(i+1),'small'));
  const nameCell=node('td'),btn=node('button',r.symbol,'symbol-button');btn.onclick=()=>openDetail(r);nameCell.append(btn,node('div',r.name_zh||r.name||'','company'));tr.append(nameCell);
- const groupCell=node('td',undefined,'small');groupCell.append(node('div',r.research_group||'待解析'));const tags=tagList(r,'business_tags');if(tags.length)groupCell.append(node('div',tags.join(' / '),'sub'));const touchCell=node('td',undefined,'num');touchCell.append(node('div',ok?`上 ${pct(m.p_upfirst)}`:'—'),node('div',ok?`下 ${pct(m.p_downfirst)} ｜ 未 ${pct(m.p_unhit)}`:'未校准','sub'));tr.append(groupCell,node('td',price(r.reference_price),'num'),node('td',r.stage||'待分析'),touchCell);
- for(const [score,secondary] of [['opportunity_score','expected_return'],['risk_score','es95']]){const td=node('td');td.append(node('div',ok&&finite(m[score])?m[score].toFixed(0):'—','num'),node('div',ok?pct(m[secondary]):'未校准','sub'));tr.append(td);}
+ const groupCell=node('td',undefined,'small');groupCell.append(node('div',r.research_group||'待解析'));const tags=tagList(r,'business_tags');if(tags.length)groupCell.append(node('div',tags.join(' / '),'sub'));tr.append(groupCell,node('td',price(r.reference_price),'num'),node('td',r.stage||'待分析'));
+ const statusCell=node('td',undefined,'small');statusCell.append(node('div',m.stage_primary_judgment_label||'数据/模型待复核'),node('div',decisionStatus(m),'sub'));tr.append(statusCell,node('td',decisionSide(m),'num'),node('td',decisionZone(m),'small'),node('td',ok?pct(m.p_touch_and_rebound||m.p_touch_and_reversal):'—','num'),node('td',m.decision_eligible?'可进入决策榜':`待复核${m.risk_metric_valid===false?' · 风险单位异常':''}`,'small'));
+ const touchCell=node('td',undefined,'num');touchCell.append(node('div',ok?`上 ${pct(m.p_upfirst)}`:'—'),node('div',ok?`下 ${pct(m.p_downfirst)} ｜ 未 ${pct(m.p_unhit)}`:'未校准','sub'));tr.append(touchCell);
+ for(const [score,secondary] of [['opportunity_score','expected_return'],['risk_score','es95']]){const td=node('td');td.append(node('div',scoreText(m,score),'num'),node('div',secondary==='es95'?riskText(m):(ok?pct(m[secondary]):'未校准'),'sub'));tr.append(td);}
  const potential=potentialFor(r,state.horizon),confidenceCell=node('td',undefined,'small');confidenceCell.append(confidenceBadge(m));tr.append(rangeCell(m,potential,'support'),rangeCell(m,potential,'resistance'),node('td',ok?pct(m.p_bottom_rebound_first):'—','num'),node('td',ok?pct(m.p_top_reversal_first):'—','num'),node('td',ok?pct(m.p_no_directional_turn):'—','num'),node('td',ok?`${m.two_way_wash_flag==='high'?'高波动 · ':''}${pct(m.p_two_way_wash)}`:'—','num'),confidenceCell);
  $('stockRows').append(tr);
  });persist();
@@ -219,6 +234,9 @@ function openDetail(r){
  txt($('detailTitle'),`${r.symbol} · ${r.name_zh||r.name||''}`);txt($('detailSubtitle'),`${r.research_group||'待解析'} ｜ 参考价 ${price(r.reference_price)} ｜ ${r.as_of||DATA.as_of||'未接入行情'}`);
  const body=$('detailBody');body.replaceChildren();
  body.append(detailBlock('当前判断',r.summary||'尚未运行真实数据与校准模型，不提供虚构的阶段判断或价格区间。'));
+ const dm=selectedMetrics(r);body.append(detailBlock('阶段主判断与决策资格',`${dm.stage_primary_judgment_label||'数据/模型待复核'}；方向概率边际 ${finite(dm.probability_margin_top1_top2)?pct(dm.probability_margin_top1_top2):'—'}，回测阈值 ${finite(dm.probability_margin_threshold_backtest)?pct(dm.probability_margin_threshold_backtest):'—'}；方向相对基线 ${JSON.stringify(dm.directional_edge_vs_baseline||{})}。${dm.decision_eligible?'当前满足决策榜资格。':`当前不满足决策榜资格，原因：${(dm.decision_block_reason||[]).join('、')||'未说明'}。`} 不使用机会分减风险分。`));
+ body.append(detailBlock('候选区与联合事件',`底部区 ${band(dm.bottom_zone)}；距离 ${finite(dm.distance_to_bottom_zone_pct)?pct(dm.distance_to_bottom_zone_pct):'—'}；${dm.bottom_zone_status_note||'—'}；触达 ${pct(dm.p_touch_bottom_zone)}，触达后反转 ${pct(dm.p_rebound_given_touch)}，触达且反转 ${pct(dm.p_touch_and_rebound)}。顶部区 ${band(dm.top_zone)}；距离 ${finite(dm.distance_to_top_zone_pct)?pct(dm.distance_to_top_zone_pct):'—'}；${dm.top_zone_status_note||'—'}；触达 ${pct(dm.p_touch_top_zone)}，触达后回落 ${pct(dm.p_reversal_given_touch)}，触达且回落 ${pct(dm.p_touch_and_reversal)}。`));
+ body.append(detailBlock('风险与样本审计',`风险定义：${dm.risk_metric_definition||'—'}；单位：${dm.risk_metric_unit||'—'}；有效：${dm.risk_metric_valid===true?'是':dm.risk_metric_valid===false?'否 · '+(dm.risk_metric_validation_reason||'未说明'):'—'}。原始风险值 ${finite(dm.risk_value_raw)?pct(dm.risk_value_raw):'—'}，不做截断。历史来源 ${dm.history_source||'—'}；自身样本 ${dm.own_history_sample_count??'—'}；转移样本 ${dm.peer_transfer_sample_count??'—'}；名义路径 ${dm.nominal_path_count??'—'}；ESS ${finite(dm.effective_weighted_sample_size)?dm.effective_weighted_sample_size.toFixed(1):'—'}；独立日期 ${dm.unique_trade_dates??'—'}；最大权重 ${pct(dm.max_single_path_weight)}。`));
  const ic=r.index_context;
  const indexText=ic&&ic.as_of===r.as_of?(ic.comparisons||[]).map(c=>`${c.name}：1周 ${pct(c.relative_returns?.['5'])} / 2周 ${pct(c.relative_returns?.['10'])} / 约1月 ${pct(c.relative_returns?.['21'])}`).join('；')+'。'+ic.note:'同时间指数对照缺失。';
  body.append(detailBlock('相对SOX与大盘的独立强弱（收益差）',indexText));

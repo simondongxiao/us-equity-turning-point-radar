@@ -59,3 +59,10 @@
 新增点时LOO参考工具与合成测试、扩展schema/交付校验/浏览器测试；新增存储母池/轮动/降级/回测规范和安全迁移说明。
 
 金融预测引擎、实盘数据、真实历史回测、GitHub部署与网关仍未在本交付包内完成。原规范继续要求首次实施落实这些组件，不能用本次测试冒充上线。
+# v1.3.0 · decision consistency and risk audit
+
+- Added pre-change `diagnostics/decision_consistency_audit.md` with formula, unit, ranking, sample-source and SNDK baseline audit.
+- Added explicit risk/ES validity, expected-return distribution, tail-contribution, own-history/peer-transfer and ESS fields.
+- Added candidate-zone distance/touch/joint-event fields, stage primary judgment, decision eligibility and backtest-derived directional margin threshold.
+- Added an independent stage-bottom/stage-top decision board while preserving the opportunity/risk statistical boards and the existing universe/index/ETF/storage/temporary workflows.
+- Updated the HTML labels so `/100` scores are not presented as probabilities or buying win rates; invalid ordinary-long tail risk remains visible as an anomaly and is excluded from ranking.

@@ -50,10 +50,11 @@ SITE_DIR = ROOT / "site"
 TAXONOMY_VERSION = "research-taxonomy-20260915-v1.1"
 FEATURE_VERSION = "b3-point-in-time-v1"
 CHALLENGER_FEATURE_VERSION = "storage-shadow-loo-v1"
-MODEL_VERSION = "champion-b3-calibrated-low-confidence-v1"
-DIRECTIONAL_MODEL_VERSION = "challenger-exclusive-directional-turn-v1"
-CONFIDENCE_METHOD_VERSION = "path-validation-confidence-v1"
-STRATEGY_VERSION = "next-open-atr-1x-cost-15bp-v1"
+MODEL_VERSION = "champion-b3-calibrated-low-confidence-v1.3.0"
+DIRECTIONAL_MODEL_VERSION = "challenger-exclusive-directional-turn-v1.3.0"
+CONFIDENCE_METHOD_VERSION = "path-validation-confidence-v1.3.0"
+STRATEGY_VERSION = "next-open-atr-1x-cost-15bp-decision-audit-v1.3.0"
+DECISION_AUDIT_VERSION = "decision-consistency-and-risk-audit-v1.3.0"
 SOURCE_NAME = "Yahoo Finance chart OHLCV via yfinance; SEC company_tickers.json for issuer identity"
 HORIZONS = (5, 10, 21)
 MARKET_SYMBOLS = ("SPY", "QQQ")
@@ -598,7 +599,8 @@ def train_bundle(samples: pd.DataFrame, features: list[str], horizon: int, stric
         ir.fit(cal_raw[:, i], (cal[target_col].to_numpy() == cls).astype(float))
         calibrators[str(cls)] = ir
     test_metrics: dict[str, Any] = {"horizon": horizon, "target": target_col, "classes": [str(c) for c in model.classes_],
-        "train_n": len(train), "calibration_n": len(cal), "test_n": len(test), "ambiguous_excluded": int(samples["ambiguous"].sum())}
+        "train_n": len(train), "calibration_n": len(cal), "test_n": len(test), "ambiguous_excluded": int(samples["ambiguous"].sum()),
+        "train_class_rates": {str(cls): float((train[target_col].astype(str) == str(cls)).mean()) for cls in model.classes_}}
     if strict_time:
         test_metrics.update({"purged": True, "train_label_end": str(pd.to_datetime(train['label_end']).max().date()),
             "calibration_start": str(pd.to_datetime(cal['date']).min().date()),
@@ -626,10 +628,14 @@ def train_bundle(samples: pd.DataFrame, features: list[str], horizon: int, stric
             "majority_baseline_accuracy": baseline_accuracy,
             "accuracy_lift_vs_majority_baseline": float(np.mean(predicted == test[target_col].to_numpy())) - baseline_accuracy,
             "unique_test_dates": int(pd.to_datetime(test["date"]).nunique()) if "date" in test else None,
+            "probability_margin_threshold": None,
             "test_start": str(pd.to_datetime(test["date"]).min().date()),
             "test_end": str(pd.to_datetime(test["date"]).max().date()),
             **diagnostics,
         })
+        margins = np.sort(test_cal, axis=1)[:, -1] - np.sort(test_cal, axis=1)[:, -2]
+        correct_margins = margins[predicted == test[target_col].to_numpy()]
+        test_metrics["probability_margin_threshold"] = float(np.quantile(correct_margins, 0.25)) if len(correct_margins) else float(np.quantile(margins, 0.75))
         if strict_time and set(model.classes_).issubset({'00','01','10','11'}):
             for side, index in [('bottom', 0), ('top', 1)]:
                 probability = test_cal[:, [str(c)[index] == '1' for c in model.classes_]].sum(axis=1)
@@ -846,6 +852,9 @@ def one_year_directional_turn_backtest(samples: dict[int, pd.DataFrame]) -> dict
         accuracy = float(np.mean(predicted == np.asarray(truths)))
         baseline_accuracy = float(np.mean(np.asarray(baseline_predictions) == np.asarray(truths)))
         diagnostics = calibration_diagnostics(probability_array, truths, classes, evaluation_dates, block_ci=True)
+        margins = np.sort(probability_array, axis=1)[:, -1] - np.sort(probability_array, axis=1)[:, -2]
+        correct_margins = margins[predicted == np.asarray(truths)]
+        decision_margin_threshold = float(np.quantile(correct_margins, 0.25)) if len(correct_margins) else float(np.quantile(margins, 0.75))
         output["horizons"][str(horizon)] = {
             "status": "observed",
             "matured_classification_n": len(truths),
@@ -855,6 +864,8 @@ def one_year_directional_turn_backtest(samples: dict[int, pd.DataFrame]) -> dict
             "unique_evaluation_dates": int(len(set(evaluation_dates))),
             "brier_multiclass": float(np.mean(np.sum((probability_array - actual) ** 2, axis=1))),
             "log_loss": float(log_loss(truths, probability_array, labels=classes)),
+            "decision_margin_threshold": decision_margin_threshold,
+            "decision_margin_threshold_policy": "25th percentile of correct out-of-sample top1-top2 margins; fallback 75th percentile of all margins",
             "observed_class_rates": {cls: float(np.mean(np.asarray(truths) == cls)) for cls in classes},
             "folds": folds,
             **diagnostics,
@@ -944,9 +955,164 @@ def confidence_from_path_validation(distances: np.ndarray, validation: dict[str,
         "confidence_note": "信度只评价证据质量，不改变方向概率，也不是预期收益或胜率。"}
 
 
+def _valid_band(value: Any) -> list[float] | None:
+    if not isinstance(value, (list, tuple)) or len(value) != 2:
+        return None
+    nums = [clean_num(v) for v in value]
+    if any(v is None for v in nums) or nums[0] > nums[1] or nums[0] <= 0:
+        return None
+    return [float(nums[0]), float(nums[1])]
+
+
+def _weighted_quantile_array(values: np.ndarray, weights: np.ndarray, q: float) -> float | None:
+    if len(values) == 0:
+        return None
+    try:
+        return clean_num(weighted_quantile(values, weights, q))
+    except (ValueError, FloatingPointError):
+        return None
+
+
+def _risk_and_return_audit(terminal: np.ndarray, mins: np.ndarray, ref: float,
+                           weights: np.ndarray, net: np.ndarray) -> dict[str, Any]:
+    """Return raw tail metrics plus explicit unit validation.
+
+    Raw values remain available when the ordinary-long interpretation is
+    invalid. Clipping would hide a path-generation or unit problem.
+    """
+    tail_n = max(1, int(math.ceil(len(net) * 0.05)))
+    order = np.argsort(net)
+    loss_tail = order[:tail_n]
+    upside_order = order[-tail_n:]
+    dd = np.maximum(0.0, 1.0 - mins / max(ref, 1e-9))
+    dd_tail = np.sort(dd)[-tail_n:]
+    raw_risk = float(np.mean(dd_tail)) if len(dd_tail) else None
+    weighted_loss = np.maximum(0.0, -net)
+    positive = np.maximum(0.0, net)
+    expected = float(np.sum(weights * net))
+    tail_contribution = float(np.sum(weights[upside_order] * positive[upside_order])) if len(upside_order) else 0.0
+    mean_tail_share = tail_contribution / expected if expected > 0 else None
+    invalid_reasons: list[str] = []
+    if not math.isfinite(ref) or ref <= 0:
+        invalid_reasons.append("reference_price_nonpositive")
+    if not np.isfinite(mins).all() or not np.isfinite(terminal).all():
+        invalid_reasons.append("nonfinite_path_price")
+    if np.nanmin(mins) < 0:
+        invalid_reasons.append("negative_modeled_price")
+    if np.nanmax(terminal) <= 0:
+        invalid_reasons.append("nonpositive_terminal_price")
+    risk_valid = not invalid_reasons
+    return {
+        "risk_value_raw": raw_risk,
+        "es95_raw": raw_risk,
+        "risk_metric_definition": "ordinary_unlevered_long_simple_price_drawdown_mean_of_worst_5pct_paths",
+        "risk_metric_unit": "fraction_of_reference_price",
+        "risk_metric_tail_probability": 0.05,
+        "risk_metric_valid": risk_valid,
+        "risk_metric_validation_reason": "valid" if risk_valid else ";".join(invalid_reasons),
+        "expected_return_weighted_mean": expected,
+        "expected_return_median": _weighted_quantile_array(net, weights, 0.50),
+        "expected_return_p25": _weighted_quantile_array(net, weights, 0.25),
+        "expected_return_p75": _weighted_quantile_array(net, weights, 0.75),
+        "expected_return_p05": _weighted_quantile_array(net, weights, 0.05),
+        "expected_return_p95": _weighted_quantile_array(net, weights, 0.95),
+        "probability_of_loss": float(np.sum(weights[net < 0])) if len(net) else None,
+        "expected_shortfall": float(np.sum(weights[loss_tail] * weighted_loss[loss_tail]) / max(np.sum(weights[loss_tail]), 1e-9)) if len(loss_tail) else None,
+        "upside_tail_contribution": tail_contribution,
+        "top_5pct_paths_contribution_to_mean": mean_tail_share,
+        "mean_tail_driven": bool(mean_tail_share is not None and mean_tail_share > 0.50),
+    }
+
+
+def _sample_audit(candidate: pd.DataFrame, records: list[dict[str, Any]], weights: np.ndarray,
+                  history_source: str, own_history_count: int | None = None,
+                  peer_transfer_count: int | None = None) -> dict[str, Any]:
+    dates = pd.to_datetime(candidate.get("date"), errors="coerce").dropna() if "date" in candidate else pd.Series(dtype="datetime64[ns]")
+    selected_dates = dates.iloc[:len(records)] if len(dates) >= len(records) else dates
+    labels = candidate.get("label", pd.Series(dtype=object)).dropna()
+    max_weight = float(np.max(weights)) if len(weights) else None
+    top_n = max(1, int(math.ceil(len(weights) * 0.05))) if len(weights) else 0
+    top_share = float(np.sort(weights)[-top_n:].sum()) if top_n else None
+    return {
+        "history_source": history_source,
+        "own_history_sample_count": int(own_history_count if own_history_count is not None else len(candidate)),
+        "peer_transfer_sample_count": int(peer_transfer_count or 0),
+        "nominal_path_count": int(len(records)),
+        "effective_weighted_sample_size": float(1.0 / np.sum(weights ** 2)) if len(weights) else None,
+        "effective_scenario_n": float(1.0 / np.sum(weights ** 2)) if len(weights) else None,
+        "unique_trade_dates": int(selected_dates.nunique()),
+        "unique_regimes": int(labels.nunique()),
+        "max_single_path_weight": max_weight,
+        "top_5_weights_share": top_share,
+        "sample_audit_note": "ESS只影响决策资格，不重写原始概率；unique_regimes为可审计标签状态数，不宣称独立体制样本数。",
+    }
+
+
+def _decision_fields(metric: dict[str, Any], current: pd.Series, margin_threshold: float | None = None) -> dict[str, Any]:
+    """Derive a decision layer without using opportunity minus risk."""
+    bottom = clean_num(metric.get("p_bottom_rebound_first")); top = clean_num(metric.get("p_top_reversal_first")); no_turn = clean_num(metric.get("p_no_directional_turn"))
+    probs = {"bottom_reversal_candidate": bottom, "top_reversal_warning": top, "direction_unclear": no_turn}
+    ordered = sorted(((k, v) for k, v in probs.items() if v is not None), key=lambda kv: (-kv[1], kv[0]))
+    top1 = ordered[0][1] if ordered else None; top2 = ordered[1][1] if len(ordered) > 1 else None
+    margin = top1 - top2 if top1 is not None and top2 is not None else None
+    baseline = metric.get("directional_baseline_rates") or {}
+    edge = {
+        "bottom_reversal_candidate": bottom - (clean_num(baseline.get("bottom_rebound_first", 0.0)) or 0.0) if bottom is not None else None,
+        "top_reversal_warning": top - (clean_num(baseline.get("top_reversal_first", 0.0)) or 0.0) if top is not None else None,
+        "direction_unclear": no_turn - (clean_num(baseline.get("no_directional_turn", 0.0)) or 0.0) if no_turn is not None else None,
+    }
+    reasons: list[str] = []
+    if metric.get("risk_metric_valid") is False:
+        reasons.extend(["data_quality_failure", "metric_unit_anomaly"])
+    if clean_num(metric.get("effective_weighted_sample_size")) is None or float(metric.get("effective_weighted_sample_size", 0)) < 40:
+        reasons.append("insufficient_effective_samples")
+    if metric.get("history_source") != "own_history":
+        reasons.append("symbol_history_issue")
+    ece = clean_num(metric.get("validation_ece"))
+    if ece is None or ece > 0.20:
+        reasons.append("poor_calibration")
+    if metric.get("regime_shift_flag") is True:
+        reasons.append("regime_drift")
+    if margin_threshold is not None and margin is not None and margin < margin_threshold:
+        reasons.append("low_directional_separation")
+    if margin_threshold is None:
+        reasons.append("horizon_mismatch")
+    bottom_zone = _valid_band(metric.get("bottom_zone")); top_zone = _valid_band(metric.get("top_zone"))
+    eligible = not reasons and bool(ordered) and bottom_zone is not None and top_zone is not None
+    if bottom_zone is None or top_zone is None:
+        reasons.append("data_quality_failure")
+    if eligible and clean_num(metric.get("p_two_way_wash")) is not None and float(metric["p_two_way_wash"]) >= 0.40 and metric.get("two_way_wash_status") == "scenario_diagnostic_not_direction_probability":
+        primary = "two_way_high_volatility_wash"
+    elif not eligible:
+        primary = "data_model_pending_review"
+    elif bottom is not None and top is not None and bottom > top and (margin_threshold is None or bottom - top >= margin_threshold):
+        primary = "bottom_reversal_candidate"
+    elif top is not None and bottom is not None and top > bottom and (margin_threshold is None or top - bottom >= margin_threshold):
+        primary = "top_reversal_warning"
+    else:
+        trend = clean_num(current.get("dist_ma20")); ret20 = clean_num(current.get("ret_20"))
+        if no_turn is not None and no_turn >= max(bottom or 0.0, top or 0.0) and trend is not None and ret20 is not None and trend > 0 and ret20 > 0:
+            primary = "trend_continuation_up"
+        elif no_turn is not None and no_turn >= max(bottom or 0.0, top or 0.0) and trend is not None and ret20 is not None and trend < 0 and ret20 < 0:
+            primary = "trend_continuation_down"
+        else:
+            primary = "direction_unclear"
+    return {
+        "stage_primary_judgment": primary,
+        "stage_primary_judgment_label": {"bottom_reversal_candidate":"底部反转候选","top_reversal_warning":"顶部反转警告","two_way_high_volatility_wash":"双向高波动/洗盘","trend_continuation_up":"上行趋势延续","trend_continuation_down":"下行趋势延续","direction_unclear":"方向不明确","data_model_pending_review":"数据/模型待复核"}.get(primary, "数据/模型待复核"),
+        "decision_eligible": bool(eligible),
+        "decision_block_reason": sorted(set(reasons)),
+        "directional_edge_vs_baseline": edge,
+        "probability_margin_top1_top2": margin,
+        "probability_margin_threshold_backtest": margin_threshold,
+        "decision_rule_note": "阶段主判断只由方向模型、候选区、证据质量和数据质量生成；不使用机会分减风险分。",
+    }
+
+
 def build_scenario_metric(symbol: str, current: pd.Series, historical: pd.DataFrame, bundle: ModelBundle | None, horizon: int,
                           current_frame: pd.DataFrame, event_bundle: ModelBundle | None = None, relative_atr: bool = False,
-                          directional_bundle: ModelBundle | None = None) -> dict[str, Any]:
+                          directional_bundle: ModelBundle | None = None, history_source: str = "own_history",
+                          peer_transfer_count: int = 0, margin_threshold: float | None = None) -> dict[str, Any]:
     ref, atr = clean_num(current.get("adj_close")), clean_num(current.get("atr"))
     if not ref or not atr or atr <= 0:
         return {"status": "data_error"}
@@ -959,6 +1125,7 @@ def build_scenario_metric(symbol: str, current: pd.Series, historical: pd.DataFr
     candidate = candidate.dropna(subset=path_columns)
     if candidate.empty:
         return {"status": "structural_only"}
+    own_history_count = int(len(candidate)) if history_source == "own_history" else 0
     cur_vec = current.reindex(features).astype(float)
     med = candidate[features].median(numeric_only=True).fillna(0.0)
     mat = candidate[features].fillna(med).to_numpy(dtype=float)
@@ -1020,6 +1187,8 @@ def build_scenario_metric(symbol: str, current: pd.Series, historical: pd.DataFr
     eff_n = float(1 / np.sum(weights ** 2)); mu_lcb = expected - 1.645 * sd / math.sqrt(max(eff_n, 1))
     risk = float(np.mean(np.sort(dds)[-max(1, int(math.ceil(len(dds) * 0.05))):]))
     opportunity = mu_lcb / max(risk, 0.02)
+    risk_audit = _risk_and_return_audit(terminal, mins, ref, weights, net)
+    sample_audit = _sample_audit(candidate, records, weights, history_source, own_history_count, peer_transfer_count)
     bottom_mask = np.array([r["bottom"] for r in records], dtype=bool); top_mask = np.array([r["top"] for r in records], dtype=bool)
     def event_prob(mask: np.ndarray) -> float: return float(np.sum(weights[mask])) if mask.any() else 0.0
     directional = {"p_bottom_rebound_first": None, "p_top_reversal_first": None, "p_no_directional_turn": None,
@@ -1032,6 +1201,7 @@ def build_scenario_metric(symbol: str, current: pd.Series, historical: pd.DataFr
             triple /= triple.sum()
             directional = {"p_bottom_rebound_first": float(triple[0]), "p_top_reversal_first": float(triple[1]),
                 "p_no_directional_turn": float(triple[2]), "directional_turn_status": "calibrated"}
+            directional["directional_baseline_rates"] = directional_bundle.test_metrics.get("train_class_rates", {})
     two_way_mask = bottom_mask & top_mask
     two_way_share = event_prob(two_way_mask)
     volatility_scale = math.sqrt(max(horizon, 1) / 5.0)
@@ -1062,6 +1232,16 @@ def build_scenario_metric(symbol: str, current: pd.Series, historical: pd.DataFr
         "terminal_p10": weighted_quantile(terminal, weights, 0.1), "terminal_p50": weighted_quantile(terminal, weights, 0.5), "terminal_p90": weighted_quantile(terminal, weights, 0.9),
         "scenario_set": "nearest-point-in-time-history-with-model-class-reweighting",
         "scenario_count": len(records), "cost_assumption": 0.0015,
+        "decision_audit_version": DECISION_AUDIT_VERSION,
+        "history_source": history_source,
+        "peer_transfer_count": int(peer_transfer_count or 0),
+        "risk_rank_eligible": bool(risk_audit["risk_metric_valid"]),
+        "opportunity_rank_eligible": bool(risk_audit["risk_metric_valid"]),
+        "probability_unit": "fraction_0_to_1",
+        "score_unit": "cross_sectional_rank_0_to_100_not_probability",
+        "directional_margin_threshold_source": "one_year_directional_turn_backtest",
+        "probability_margin_threshold_backtest": margin_threshold,
+        **risk_audit, **sample_audit,
         **confidence,
     }
 
@@ -1198,7 +1378,37 @@ def enrich_record(row: dict[str, Any], frame: pd.DataFrame, metric_by_h: dict[in
                 "no_directional_turn": clean_num(metric.get("p_no_directional_turn")),
                 "note": "三项互斥方向性分类严格合计100%；结构共振不进入该概率。",
             }
-    return {**row, "as_of": as_of.strftime("%Y-%m-%d"), "reference_price": clean_num(current["adj_close"]), "metrics": safe_json(metrics), "stage": stage, "issuer_id": identity.get("issuer_id"), "issuer_identity_source": identity.get("source"), "peer_context": safe_json({**peers, "note": peer_note, "issuer_id": identity.get("issuer_id"), "subgroup_context": peers.get("subgroup_context", {})}), "potential_ranges": safe_json(potential_payload), "rotation_explanation": "真实日线数据已接入；市场、研究组与个股残差分别计算，允许不同步。" + (" 存储细分与LOO为影子候选，未进入正式校准分数。" if storage else ""), "trigger_summary": "确认：先由Price Structure形成候选位；只有先触边界且同窗满足反转条件才计入互斥方向性阶段顶/底。失效：跳空、事件冲击或重新突破结构。到达概率、方向性拐点、双向洗盘诊断和交易成功不可混同。结构共振只用于解释核心区，不进入概率。", "event_summary": "本次生产构建未抓取并公开长文本财报、产品发布或宏观事件正文；事件特征为缺失，不把标题或业务分类当作催化概率。", "risk_summary": "风险值来自共同历史路径的最差5%不利幅度均值，未假设保护价一定成交；执行成本按策略版本扣除。", "data_note": f"数据源：{SOURCE_NAME}；截止{as_of.strftime('%Y-%m-%d')}。B3机会/风险与首次触达保持原口径；方向性阶段底、阶段顶、无有效拐点由独立时间校准的三分类挑战者生成并严格归一。重叠顶底事件仅作双向洗盘诊断。现在分层展示实现波动率统计包络、结构核心区、模型路径区和方向概率；统计/结构层不反推概率。期权历史不足，尚未进入概率模型。"}
+        if metric.get("status") in ("calibrated", "calibrated_low_confidence"):
+            bottom_candidate = bottom if isinstance(bottom, dict) else {}
+            top_candidate = top if isinstance(top, dict) else {}
+            structure_bottom = (structure.get("core_bottom_zone") or {}).get("band") or structure.get("support_band")
+            structure_top = (structure.get("core_top_zone") or {}).get("band") or structure.get("resistance_band")
+            bottom_fallback = bottom_candidate.get("band") if bottom_candidate.get("status") in ("converged", "structure_only") else structure_bottom
+            top_fallback = top_candidate.get("band") if top_candidate.get("status") in ("converged", "structure_only") else structure_top
+            bottom_zone = _valid_band(metric.get("bottom_band")) or _valid_band(bottom_fallback)
+            top_zone = _valid_band(metric.get("top_band")) or _valid_band(top_fallback)
+            metric["bottom_zone"] = bottom_zone
+            metric["top_zone"] = top_zone
+            metric["bottom_zone_source"] = "turning_point_conditional_path" if _valid_band(metric.get("bottom_band")) else "price_structure_evidence_fallback"
+            metric["top_zone_source"] = "turning_point_conditional_path" if _valid_band(metric.get("top_band")) else "price_structure_evidence_fallback"
+            metric["bottom_zone_definition"] = "方向性阶段底条件路径区；不是±1σ统计包络，也不是结构共振本身。"
+            metric["top_zone_definition"] = "方向性阶段顶条件路径区；不是±1σ统计包络，也不是结构共振本身。"
+            metric["distance_to_bottom_zone_pct"] = _distance_to_band(clean_num(current.get("adj_close")), bottom_zone)
+            metric["distance_to_top_zone_pct"] = _distance_to_band(clean_num(current.get("adj_close")), top_zone)
+            metric["current_in_bottom_zone"] = bool(bottom_zone and bottom_zone[0] <= float(current["adj_close"]) <= bottom_zone[1])
+            metric["current_in_top_zone"] = bool(top_zone and top_zone[0] <= float(current["adj_close"]) <= top_zone[1])
+            metric["distance_to_bottom_zone_pct"] = 0.0 if metric["current_in_bottom_zone"] else metric["distance_to_bottom_zone_pct"]
+            metric["distance_to_top_zone_pct"] = 0.0 if metric["current_in_top_zone"] else metric["distance_to_top_zone_pct"]
+            metric["p_touch_bottom_zone"] = 1.0 if metric["current_in_bottom_zone"] else clean_num(metric.get("p_downfirst"))
+            metric["p_touch_top_zone"] = 1.0 if metric["current_in_top_zone"] else clean_num(metric.get("p_upfirst"))
+            metric["p_rebound_given_touch"] = (clean_num(metric.get("p_bottom_rebound_first")) / max(metric["p_touch_bottom_zone"], 1e-9)) if metric.get("p_touch_bottom_zone") else None
+            metric["p_reversal_given_touch"] = (clean_num(metric.get("p_top_reversal_first")) / max(metric["p_touch_top_zone"], 1e-9)) if metric.get("p_touch_top_zone") else None
+            metric["p_touch_and_rebound"] = clean_num(metric.get("p_bottom_rebound_first"))
+            metric["p_touch_and_reversal"] = clean_num(metric.get("p_top_reversal_first"))
+            metric["joint_event_definition"] = "方向性模型直接输出的先触达且同窗反转联合事件；条件概率仅在该联合事件为触达事件子集时展示。"
+            metric.update(_decision_fields(metric, current, metric.get("probability_margin_threshold_backtest")))
+            metric["candidate_zone_status"] = {"bottom": "当前已进入候选底部区" if metric["current_in_bottom_zone"] else "候选底部区尚未进入", "top": "当前已进入候选顶部区" if metric["current_in_top_zone"] else "候选顶部区尚未进入"}
+    return {**row, "as_of": as_of.strftime("%Y-%m-%d"), "reference_price": clean_num(current["adj_close"]), "metrics": safe_json(metrics), "stage": stage, "issuer_id": identity.get("issuer_id"), "issuer_identity_source": identity.get("source"), "peer_context": safe_json({**peers, "note": peer_note, "issuer_id": identity.get("issuer_id"), "subgroup_context": peers.get("subgroup_context", {})}), "potential_ranges": safe_json(potential_payload), "rotation_explanation": "真实日线数据已接入；市场、研究组与个股残差分别计算，允许不同步。" + (" 存储细分与LOO为影子候选，未进入正式校准分数。" if storage else ""), "trigger_summary": "确认：先由Price Structure形成候选位；只有先触边界且同窗满足反转条件才计入互斥方向性阶段顶/底。失效：跳空、事件冲击或重新突破结构。到达概率、方向性拐点、双向洗盘诊断和交易成功不可混同。结构共振只用于解释核心区，不进入概率。", "event_summary": "本次生产构建未抓取并公开长文本财报、产品发布或宏观事件正文；事件特征为缺失，不把标题或业务分类当作催化概率。", "risk_summary": "风险值来自共同历史路径的最差5%不利幅度均值；风险指标另有合法性审计，异常原值保留但不进入风险榜。", "data_note": f"数据源：{SOURCE_NAME}；截止{as_of.strftime('%Y-%m-%d')}。统计机会/风险榜与方向决策榜分离；方向性阶段底、阶段顶、无有效拐点由独立时间校准的三分类挑战者生成并严格归一。重叠顶底事件仅作双向洗盘诊断。统计/结构/模型路径层不互相伪造概率；期权历史不足，尚未进入概率模型。"}
 
 
 def ensure_ledger() -> sqlite3.Connection:
@@ -1255,6 +1465,10 @@ def build(refresh: bool = False, run_id: str | None = None, extra_symbol: str | 
         print(f"[radar] model {h}d ready", flush=True)
     backtest["one_year_walk_forward"] = one_year_walk_forward_backtest(samples)
     backtest["one_year_directional_turn"] = one_year_directional_turn_backtest(samples)
+    decision_margin_thresholds = {
+        h: clean_num((backtest.get("one_year_directional_turn", {}).get("horizons", {}).get(str(h), {}) or {}).get("decision_margin_threshold"))
+        for h in HORIZONS
+    }
     print("[radar] one-year walk-forward backtest ready", flush=True)
     potential_symbols = list(dict.fromkeys(seed_symbols + ([extra_symbol] if extra_symbol else [])))
     potential_ranges, potential_source = build_potential_ranges(frames, potential_symbols, as_of)
@@ -1275,7 +1489,8 @@ def build(refresh: bool = False, run_id: str | None = None, extra_symbol: str | 
         for h in HORIZONS:
             hist = samples[h][samples[h]["symbol"] == symbol].copy()
             metric_by_h[h] = build_scenario_metric(symbol, current, hist, bundles[h], h, frame,
-                directional_bundle=directional_bundles[h])
+                directional_bundle=directional_bundles[h], history_source="own_history",
+                margin_threshold=decision_margin_thresholds.get(h))
             latest_metrics[h][symbol] = metric_by_h[h].get("opportunity_value")
         peers = {"status": "unavailable", "self_excluded": False, "peer_symbols": [], "peer_count": 0, "effective_n": None, "weight_coverage": None, "note": "非存储股票不计算存储同行。"}
         if row.get("research_group_id") == "storage-memory":
@@ -1289,8 +1504,9 @@ def build(refresh: bool = False, run_id: str | None = None, extra_symbol: str | 
         if len(records) % 10 == 0:
             print(f"[radar] records {len(records)}/100", flush=True)
     for h in HORIZONS:
-        opp = pct_rank(latest_metrics[h])
-        risk_vals = {s: (clean_num(records[[r["symbol"] for r in records].index(s)]["metrics"].get(str(h), {}).get("risk_value")) if s in [r["symbol"] for r in records] else None) for s in latest_metrics[h]}
+        opp_values = {s: (clean_num(next((r["metrics"].get(str(h), {}).get("opportunity_value") for r in records if r["symbol"] == s), None)) if bool(next((r["metrics"].get(str(h), {}).get("opportunity_rank_eligible") for r in records if r["symbol"] == s), False)) else None) for s in latest_metrics[h]}
+        opp = pct_rank(opp_values)
+        risk_vals = {s: (clean_num(next((r["metrics"].get(str(h), {}).get("risk_value") for r in records if r["symbol"] == s), None)) if bool(next((r["metrics"].get(str(h), {}).get("risk_rank_eligible") for r in records if r["symbol"] == s), False)) else None) for s in latest_metrics[h]}
         risk = pct_rank(risk_vals)
         for rec in records:
             m = rec["metrics"].get(str(h), {})
@@ -1298,6 +1514,14 @@ def build(refresh: bool = False, run_id: str | None = None, extra_symbol: str | 
                 m["opportunity_score"] = opp.get(rec["symbol"])
                 m["risk_score"] = risk.get(rec["symbol"])
                 m["positive_edge"] = bool((m.get("mu_lcb") or 0) > 0)
+                m["opportunity_score_unit"] = "/100横截面分，不是百分比或概率"
+                m["risk_score_unit"] = "/100横截面分，不是百分比或概率"
+                m["opportunity_ranking_definition"] = "仅在risk_metric_valid=true时，按全体常态股票同期限opportunity_value横截面排序"
+                m["risk_ranking_definition"] = "仅在risk_metric_valid=true时，按全体常态股票同期限risk_value横截面排序"
+                if m.get("opportunity_score") is None:
+                    m["opportunity_rank_excluded_reason"] = "risk_metric_invalid_or_data_quality_failure"
+                if m.get("risk_score") is None:
+                    m["risk_rank_excluded_reason"] = "risk_metric_invalid_or_data_quality_failure"
     temporary: list[dict[str, Any]] = []
     if extra_symbol and extra_symbol in frames:
         extra_row = {"symbol": extra_symbol, "name_zh": "临时观察", "coverage_bucket": "临时观察", "research_group": "未归类", "research_group_id": "temporary", "legacy_research_group": "", "business_tags": [], "industry_tags": [], "taxonomy_version": TAXONOMY_VERSION, "taxonomy_effective_from": "2026-09-15", "metadata_as_of": as_of.strftime("%Y-%m-%d")}
@@ -1307,9 +1531,35 @@ def build(refresh: bool = False, run_id: str | None = None, extra_symbol: str | 
         for h in HORIZONS:
             extra_hist = samples[h].copy()
             extra_metrics[h] = build_scenario_metric(extra_symbol, current_extra, extra_hist, bundles[h], h, raw_extra,
-                directional_bundle=directional_bundles[h])
+                directional_bundle=directional_bundles[h], history_source="peer_transfer",
+                peer_transfer_count=len(extra_hist), margin_threshold=decision_margin_thresholds.get(h))
         extra_peers = {"status": "unavailable", "self_excluded": False, "peer_symbols": [], "peer_count": 0, "effective_n": None, "weight_coverage": None, "note": "临时股票未被强行归入存储或其他研究组；结果与常态100池分开保存。"}
         temporary.append(enrich_record(extra_row, raw_extra, extra_metrics, {"issuer_id": sec.get(extra_symbol, {}).get("issuer_id"), "source": sec.get(extra_symbol, {}).get("source", "unverified")}, extra_peers, as_of, potential_ranges.get(extra_symbol)))
+    decision_board: dict[str, Any] = {"version": DECISION_AUDIT_VERSION, "ranking_basis": "directional_calibrated_probability + baseline_edge + candidate_zone_distance + joint_event_probability + confidence/data_quality; opportunity_value is not a primary key", "horizons": {}}
+    for h in HORIZONS:
+        bottom_items: list[dict[str, Any]] = []; top_items: list[dict[str, Any]] = []
+        for rec in records:
+            metric = rec.get("metrics", {}).get(str(h), {})
+            if not metric.get("decision_eligible"):
+                continue
+            base = {
+                "symbol": rec["symbol"], "name_zh": rec.get("name_zh", rec["symbol"]),
+                "horizon": h, "stage_primary_judgment": metric.get("stage_primary_judgment"),
+                "decision_eligible": True, "confidence_score": metric.get("confidence_score"),
+                "probability_margin_top1_top2": metric.get("probability_margin_top1_top2"),
+                "candidate_zone_status": metric.get("candidate_zone_status"),
+            }
+            bprob = clean_num(metric.get("p_bottom_rebound_first")); tprob = clean_num(metric.get("p_top_reversal_first"))
+            bedge = clean_num((metric.get("directional_edge_vs_baseline") or {}).get("bottom_reversal_candidate")); tedge = clean_num((metric.get("directional_edge_vs_baseline") or {}).get("top_reversal_warning"))
+            if bprob is not None:
+                bottom_items.append({**base, "side": "stage-bottom", "directional_probability": bprob, "directional_edge_vs_baseline": bedge, "distance_to_zone_pct": metric.get("distance_to_bottom_zone_pct"), "joint_probability": metric.get("p_touch_and_rebound"), "conditional_reversal": metric.get("p_rebound_given_touch"), "zone": metric.get("bottom_zone")})
+            if tprob is not None:
+                top_items.append({**base, "side": "stage-top", "directional_probability": tprob, "directional_edge_vs_baseline": tedge, "distance_to_zone_pct": metric.get("distance_to_top_zone_pct"), "joint_probability": metric.get("p_touch_and_reversal"), "conditional_reversal": metric.get("p_reversal_given_touch"), "zone": metric.get("top_zone")})
+        bottom_items.sort(key=lambda x: (x.get("directional_probability") or -1, x.get("directional_edge_vs_baseline") or -1, x.get("joint_probability") or -1, x.get("confidence_score") or -1, -(x.get("distance_to_zone_pct") or 999)), reverse=True)
+        top_items.sort(key=lambda x: (x.get("directional_probability") or -1, x.get("directional_edge_vs_baseline") or -1, x.get("joint_probability") or -1, x.get("confidence_score") or -1, -(x.get("distance_to_zone_pct") or 999)), reverse=True)
+        for rank, item in enumerate(bottom_items, 1): item["decision_rank"] = rank
+        for rank, item in enumerate(top_items, 1): item["decision_rank"] = rank
+        decision_board["horizons"][str(h)] = {"stage_bottom_candidates": bottom_items, "stage_top_warnings": top_items, "note": "两榜独立，单一股票可同时出现；排序不以机会分优先。"}
     run_id = run_id or f"radar-{as_of.strftime('%Y%m%d')}-{uuid.uuid4().hex[:8]}"
     rotation = storage_rotation(model_frames, seeds, as_of)
     print("[radar] storage rotation ready", flush=True)
@@ -1338,6 +1588,8 @@ def build(refresh: bool = False, run_id: str | None = None, extra_symbol: str | 
         "note": "点时资格与人气评分已审计；自动换池仍受独立门槛约束。" if weekly_audit else "母池规模来自旧美股行情项目快照；本项目未把它改写成当前人气排名。",
     }
     data = {"build_mode": "live", "status_message": "真实日线行情已接入。机会/风险仍由原B3共同路径生成；方向性阶段底、阶段顶与无有效拐点为互斥且独立校准的挑战者，三项严格合计100%。信度按历史路径重合、近期独立测试校准、相对多数类基线增益与真实日期支持分级；信度不改写概率。详情按四层展示实现波动率统计包络、结构核心区、模型路径区和方向概率；结构/统计/期权显示层不反推概率，事件未接入时显式标注。", "generated_at": iso(utc_now()), "as_of": as_of.strftime("%Y-%m-%d"), "as_of_beijing": f"{as_of.strftime('%Y-%m-%d')} 纽约收盘数据；北京时间日期需按交易日换算", "run_id": run_id, "prediction_snapshot_id": run_id, "model_version": MODEL_VERSION, "directional_model_version": DIRECTIONAL_MODEL_VERSION, "confidence_method_version": CONFIDENCE_METHOD_VERSION, "feature_version": FEATURE_VERSION, "potential_range_version": "structure-statistical-model-option-four-layer-v4", "strategy_version": STRATEGY_VERSION, "universe_version": "curated-seed-20260915-v1.1-live-validation", "taxonomy_version": TAXONOMY_VERSION, "source_manifest": source, "records": records, "temporary": temporary, "storage_rotation": rotation, "weekly_pool_audit": weekly_audit, "options_model_gate": option_gate, "rotation_summary": [rotation["summary"], "存储四只为同一主研究组；细分视图允许MU重叠，主表不重复计数。", "存储新因子为shadow/challenger，未套用旧校准器；不要把MU强弱写成SNDK/WDC/STX的固定结论。"], "public_config": {"api_base_url": None}, "backtest": backtest, "coverage": {"regular_pool": len(records), "valid_forecast_records": valid, "usable_price_records": sum(1 for r in records if r.get("reference_price") is not None), "data_cutoff": as_of.strftime("%Y-%m-%d"), "financial_backtest_status": "B3 first-touch and exclusive directional-turn time-split metrics computed; options B4 and storage incremental alpha remain gated"}}
+    data["decision_board"] = decision_board
+    data["status_message"] = "真实日线行情已接入。统计机会/风险榜与方向决策榜分离；风险单位异常保留原值但不进入风险榜。方向性阶段底、阶段顶与无有效拐点为互斥且独立校准的挑战者，三项严格合计100%。信度、ESS、数据质量和校准门共同决定决策资格，不改写原始概率。详情按统计包络、结构核心区、模型路径区和候选联合事件展示；事件未接入时显式标注。"
     # Context benchmarks cannot move the champion's stock/market cutoff date.
     index_frames, index_source = download_prices([s for s in INDEX_SPECS if s not in frames], refresh=refresh)
     context_frames = {**frames, **index_frames}
