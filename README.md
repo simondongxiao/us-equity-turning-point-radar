@@ -1,6 +1,6 @@
 # 美股阶段顶底概率雷达｜Codex Skill交付包
 
-名称：`us-equity-turning-point-radar`；版本：`1.1.3-confidence-calibration`。本包是同一个Skill的完整增量版本，包含100股种子、模型与回测规范、真实计算引擎源码、冻结台账逻辑、HTML前端、GitHub Pages工作流和测试。
+名称：`us-equity-turning-point-radar`；版本：`1.2.0-structure-range-layer`。本包是同一个Skill的完整增量版本，包含100股种子、模型与回测规范、真实计算引擎源码、冻结台账逻辑、HTML前端、GitHub Pages工作流和测试。
 
 当前生产网站为 https://simondongxiao.github.io/us-equity-turning-point-radar/ 。打包文件不包含行情缓存、冻结预测、SQLite、密钥或GitHub凭证；安装后必须在实际项目中恢复自己的状态和授权。生产B3保持低可信，影子Challenger未晋级；正式HTTPS单股任务网关和动态周更仍为BLOCKED，不能因网页已部署而宣称完成。
 
