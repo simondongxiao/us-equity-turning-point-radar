@@ -39,6 +39,68 @@ def _weighted_median(values: np.ndarray, weights: np.ndarray) -> float | None:
     return float(values[np.searchsorted(np.cumsum(weights), np.sum(weights) / 2, side="left")])
 
 
+def _cluster_levels(levels: list[dict[str, Any]], spot: float, atr: float, side: str) -> list[dict[str, Any]]:
+    """Cluster nearby structural levels for explanation-only core zones.
+
+    This is deliberately a price-structure aggregation, not a probability
+    vote.  The distance threshold is expressed in ATR so the same rule works
+    across low- and high-priced names.  Anchor dates and labels are retained
+    so the UI can explain why a zone exists and when it was observed.
+    """
+    valid = [x for x in levels if _finite(x.get("price")) and float(x["price"]) > 0]
+    valid.sort(key=lambda x: (abs(float(x["price"]) - spot), str(x.get("label", ""))))
+    if not valid:
+        return []
+    threshold = max(float(atr) * 0.35, spot * 0.01, 0.01)
+    clusters: list[list[dict[str, Any]]] = []
+    for level in valid:
+        price_value = float(level["price"])
+        placed = False
+        for cluster in clusters:
+            center = float(np.median([float(item["price"]) for item in cluster]))
+            if abs(price_value - center) <= threshold:
+                cluster.append(level)
+                placed = True
+                break
+        if not placed:
+            clusters.append([level])
+    output: list[dict[str, Any]] = []
+    for cluster in clusters:
+        values = sorted(float(item["price"]) for item in cluster)
+        center = float(np.median(values))
+        band = [max(0.01, values[0] - atr * 0.12), values[-1] + atr * 0.12]
+        labels = list(dict.fromkeys(str(item.get("label", "结构水平")) for item in cluster))
+        dates = list(dict.fromkeys(str(item["anchor_date"]) for item in cluster if item.get("anchor_date")))
+        sources = list(dict.fromkeys(str(item.get("source", "structure")) for item in cluster))
+        output.append({
+            "side": side,
+            "band": band,
+            "center": center,
+            "level_count": len(cluster),
+            "confluence_score": round(min(100.0, 25.0 * len(cluster)), 2),
+            "labels": labels,
+            "sources": sources,
+            "anchor_dates": dates,
+            "evidence": [{k: item.get(k) for k in ("label", "price", "source", "anchor_date") if item.get(k) is not None} for item in cluster],
+            "note": "结构共振解释层；不转化为顶底概率。",
+        })
+    output.sort(key=lambda x: (abs(float(x["center"]) - spot), -int(x["level_count"])))
+    return output
+
+
+def _statistical_envelope(spot: float, realized_vol: float | None, horizon: int) -> dict[str, Any]:
+    """Return a realized-volatility statistical envelope, not an option forecast."""
+    if not _finite(realized_vol) or float(realized_vol) <= 0 or spot <= 0:
+        return {"status": "unavailable", "source": "realized_volatility_20", "one_sigma": None, "two_sigma": None,
+                "annualized_volatility": None, "note": "实现波动率不足，不能制造统计包络。"}
+    move = float(realized_vol) * math.sqrt(max(1, horizon) / 252.0)
+    one = [spot * math.exp(-move), spot * math.exp(move)]
+    two = [spot * math.exp(-2.0 * move), spot * math.exp(2.0 * move)]
+    return {"status": "observed", "source": "realized_volatility_20", "annualized_volatility": float(realized_vol),
+            "one_sigma": one, "two_sigma": two,
+            "method": "lognormal realized-volatility envelope; descriptive range only, not an independently calibrated probability"}
+
+
 def _clean_option_frame(frame: pd.DataFrame | None, spot: float) -> pd.DataFrame:
     if frame is None or frame.empty:
         return pd.DataFrame()
@@ -119,8 +181,10 @@ def _option_snapshot(symbol: str, frame: pd.DataFrame, as_of: pd.Timestamp) -> t
                 "call_wing_iv": call_iv,
                 "option_lower_bound": max(0.0, spot - move),
                 "option_upper_bound": spot + move,
+                "option_one_sigma": [max(0.0, spot - move), spot + move],
+                "option_two_sigma": [max(0.0, spot - 2.0 * move), spot + 2.0 * move],
                 "contract_count": int(len(both)),
-                "method": "Options Distribution: ATM IV arithmetic one-standard-deviation market-allowed move; constraint only, not an absolute floor or ceiling and not a real-world probability",
+                "method": "Options Distribution: ATM IV arithmetic one- and two-standard-deviation market-allowed moves; constraint only, not an absolute floor or ceiling and not a real-world probability",
             }
         base_iv = raw.get(5, {}).get("atm_iv")
         rv = _rv20(frame, as_of)
@@ -183,9 +247,15 @@ def _technical_layer(frame: pd.DataFrame, as_of: pd.Timestamp, horizon: int) -> 
     tr = pd.concat([(high - low), (high - prev).abs(), (low - prev).abs()], axis=1).max(axis=1)
     atr = float(tr.rolling(14).mean().iloc[-1]) if _finite(tr.rolling(14).mean().iloc[-1]) else spot * 0.03
     tail = x.tail(252)
+    realized_volatility = _rv20(x, as_of)
     rolling_high, rolling_low = float(tail.high.max()), float(tail.low.min())
-    fib = [(f"Fib {level:.1%}", rolling_low + (rolling_high - rolling_low) * level) for level in (0.236, 0.382, 0.5, 0.618, 0.786)]
-    mas = [(f"SMA{n}", float(close.rolling(n).mean().iloc[-1])) for n in (20, 50, 100, 200) if len(close) >= n and _finite(close.rolling(n).mean().iloc[-1])]
+    as_of_date = pd.Timestamp(as_of).strftime("%Y-%m-%d")
+    fib = [{"label": f"Fib {level:.1%}", "price": rolling_low + (rolling_high - rolling_low) * level,
+            "source": "fibonacci", "anchor_date": as_of_date}
+           for level in (0.236, 0.382, 0.5, 0.618, 0.786)]
+    mas = [{"label": f"SMA{n}", "price": float(close.rolling(n).mean().iloc[-1]),
+            "source": "moving_average", "anchor_date": as_of_date}
+           for n in (20, 50, 100, 200) if len(close) >= n and _finite(close.rolling(n).mean().iloc[-1])]
     # A swing is only used after two later observations exist; this avoids a
     # look-ahead ZigZag endpoint while still exposing an auditable price label.
     lows = low.shift(2).rolling(5).min()
@@ -197,8 +267,17 @@ def _technical_layer(frame: pd.DataFrame, as_of: pd.Timestamp, horizon: int) -> 
     volume_profile = _volume_profile_level(tail)
     avwap_low = _anchored_vwap(x, last_low_pos)
     avwap_high = _anchored_vwap(x, last_high_pos)
-    candidates_low = fib + mas + [("Volume Profile POC", volume_profile), ("AVWAP(前低锚点)", avwap_low)] + [(label, value) for label, value, _ in swing_lows[-12:]]
-    candidates_high = fib + mas + [("Volume Profile POC", volume_profile), ("AVWAP(前高锚点)", avwap_high)] + [(label, value) for label, value, _ in swing_highs[-12:]]
+    candidates_low = fib + mas
+    candidates_high = fib + mas
+    if volume_profile is not None:
+        candidates_low.append({"label": "Volume Profile POC", "price": volume_profile, "source": "volume_profile", "anchor_date": as_of_date})
+        candidates_high.append({"label": "Volume Profile POC", "price": volume_profile, "source": "volume_profile", "anchor_date": as_of_date})
+    if avwap_low is not None:
+        candidates_low.append({"label": "AVWAP(前低锚点)", "price": avwap_low, "source": "anchored_vwap", "anchor_date": pd.Timestamp(x.index[last_low_pos]).strftime("%Y-%m-%d")})
+    if avwap_high is not None:
+        candidates_high.append({"label": "AVWAP(前高锚点)", "price": avwap_high, "source": "anchored_vwap", "anchor_date": pd.Timestamp(x.index[last_high_pos]).strftime("%Y-%m-%d")})
+    candidates_low += [{"label": label, "price": value, "source": "confirmed_swing", "anchor_date": pd.Timestamp(x.index[pos]).strftime("%Y-%m-%d")} for label, value, pos in swing_lows[-12:]]
+    candidates_high += [{"label": label, "price": value, "source": "confirmed_swing", "anchor_date": pd.Timestamp(x.index[pos]).strftime("%Y-%m-%d")} for label, value, pos in swing_highs[-12:]]
     previous_close = pd.to_numeric(x["close"], errors="coerce").shift(1)
     opens = pd.to_numeric(x["open"], errors="coerce")
     gaps = []
@@ -208,26 +287,30 @@ def _technical_layer(frame: pd.DataFrame, as_of: pd.Timestamp, horizon: int) -> 
         gap_pct = float(opens.iloc[i] / previous_close.iloc[i] - 1)
         if abs(gap_pct) >= 0.02:
             level = float((opens.iloc[i] + previous_close.iloc[i]) / 2)
-            gaps.append(("Gap上方/下方密集区", level, gap_pct))
-    candidates_low += [(f"{label} {gap_pct:+.1%}", level) for label, level, gap_pct in gaps if level <= spot]
-    candidates_high += [(f"{label} {gap_pct:+.1%}", level) for label, level, gap_pct in gaps if level >= spot]
-    candidates_low = [(label, value) for label, value in candidates_low if _finite(value)]
-    candidates_high = [(label, value) for label, value in candidates_high if _finite(value)]
-    below = [(label, value) for label, value in candidates_low if 0 < value <= spot]
-    above = [(label, value) for label, value in candidates_high if value >= spot]
-    below.sort(key=lambda item: abs(item[1] - spot)); above.sort(key=lambda item: abs(item[1] - spot))
-    support = below[:3] or [("ATR参考支撑", max(0.0, spot - atr))]
-    resistance = above[:3] or [("ATR参考阻力", spot + atr)]
-    support_values = [v for _, v in support]
-    resistance_values = [v for _, v in resistance]
-    sma20 = next((value for label, value in mas if label == "SMA20"), None)
-    sma50 = next((value for label, value in mas if label == "SMA50"), None)
+            gaps.append(("Gap上方/下方密集区", level, gap_pct, pd.Timestamp(x.index[i]).strftime("%Y-%m-%d")))
+    candidates_low += [{"label": f"{label} {gap_pct:+.1%}", "price": level, "source": "gap", "anchor_date": date} for label, level, gap_pct, date in gaps if level <= spot]
+    candidates_high += [{"label": f"{label} {gap_pct:+.1%}", "price": level, "source": "gap", "anchor_date": date} for label, level, gap_pct, date in gaps if level >= spot]
+    candidates_low = [item for item in candidates_low if _finite(item.get("price"))]
+    candidates_high = [item for item in candidates_high if _finite(item.get("price"))]
+    below = [item for item in candidates_low if 0 < float(item["price"]) <= spot]
+    above = [item for item in candidates_high if float(item["price"]) >= spot]
+    below.sort(key=lambda item: abs(float(item["price"]) - spot)); above.sort(key=lambda item: abs(float(item["price"]) - spot))
+    support = below[:3] or [{"label": "ATR参考支撑", "price": max(0.0, spot - atr), "source": "atr_fallback", "anchor_date": as_of_date}]
+    resistance = above[:3] or [{"label": "ATR参考阻力", "price": spot + atr, "source": "atr_fallback", "anchor_date": as_of_date}]
+    support_values = [float(item["price"]) for item in support]
+    resistance_values = [float(item["price"]) for item in resistance]
+    sma20 = next((item["price"] for item in mas if item["label"] == "SMA20"), None)
+    sma50 = next((item["price"] for item in mas if item["label"] == "SMA50"), None)
     trend = "上行结构" if sma20 is not None and sma50 is not None and sma20 >= sma50 and close.iloc[-1] >= sma20 else "下行/修复结构" if sma20 is not None and sma50 is not None and sma20 < sma50 else "趋势数据不足"
     support_band = [max(0.0, min(support_values) - atr * 0.12), max(support_values) + atr * 0.12]
     resistance_band = [max(0.0, min(resistance_values) - atr * 0.12), max(resistance_values) + atr * 0.12]
     volatility_scale = math.sqrt(max(horizon, 1) / 5.0)
     volatility_support_band = [max(0.01, spot - 1.25 * atr * volatility_scale), max(0.01, spot - 0.75 * atr * volatility_scale)]
     volatility_resistance_band = [spot + 0.75 * atr * volatility_scale, spot + 1.25 * atr * volatility_scale]
+    bottom_clusters = _cluster_levels(below, spot, atr, "bottom")
+    top_clusters = _cluster_levels(above, spot, atr, "top")
+    core_bottom = bottom_clusters[0] if bottom_clusters else None
+    core_top = top_clusters[0] if top_clusters else None
     return {
         "status": "observed",
         "support_band": support_band,
@@ -235,8 +318,16 @@ def _technical_layer(frame: pd.DataFrame, as_of: pd.Timestamp, horizon: int) -> 
         "volatility_support_band": volatility_support_band,
         "volatility_resistance_band": volatility_resistance_band,
         "volatility_band_method": "ATR14 x sqrt(horizon/5), inner 0.75 ATR and outer 1.25 ATR; fallback display, not structural confirmation",
-        "support_levels": [{"label": label, "price": value} for label, value in support],
-        "resistance_levels": [{"label": label, "price": value} for label, value in resistance],
+        "support_levels": support,
+        "resistance_levels": resistance,
+        "support_clusters": bottom_clusters[:5],
+        "resistance_clusters": top_clusters[:5],
+        "core_bottom_zone": core_bottom,
+        "core_top_zone": core_top,
+        "structure_evidence": {"bottom": (core_bottom or {}).get("evidence", []), "top": (core_top or {}).get("evidence", [])},
+        "realized_volatility_20": realized_volatility,
+        "statistical_envelope": _statistical_envelope(spot, realized_volatility, horizon),
+        "structure_horizon_note": "结构核心区按相邻结构水平聚类；锚点日期、价格、来源与失效条件可审计；不转化为顶底概率。",
         "front_swing_low": _num(swing_lows[-1][1]) if swing_lows else None,
         "front_swing_high": _num(swing_highs[-1][1]) if swing_highs else None,
         "volume_profile_poc": volume_profile,
@@ -246,7 +337,7 @@ def _technical_layer(frame: pd.DataFrame, as_of: pd.Timestamp, horizon: int) -> 
         "trend_structure": trend,
         "atr14": atr,
         "lookback_sessions": int(len(tail)),
-        "method": "Price Structure: prior high/low + Volume Profile POC + AVWAP + gap levels + SMA20/50/100/200 + rolling 252-session Fib + trend structure; candidates are generated before options are applied",
+        "method": "Price Structure: prior high/low + Volume Profile POC + AVWAP + gap levels + SMA20/50/100/200 + rolling 252-session Fib + trend structure; candidates are generated before options are applied; nearby levels are clustered for explanation only",
         "bottom_confirmation_condition": f"候选底部仅在收盘重新站上支撑候选上沿 {support_band[1]:.2f} 并连续保持时确认；跳空/事件冲击可使其失效。",
         "top_confirmation_condition": f"候选顶部仅在收盘跌回阻力候选下沿 {resistance_band[0]:.2f} 并连续保持时确认；跳空/事件冲击可使其失效。",
     }
@@ -290,7 +381,8 @@ def build_potential_ranges(frames: dict[str, pd.DataFrame], symbols: list[str], 
             layer3 = {k: option.get(k) for k in ("rv20", "atm_iv", "rv_minus_iv", "put_call_skew", "term_structure_vs_1w", "event_note") if k in option}
             layer3["gamma_flip"] = {"status": "unavailable", "value": None, "note": "免费当日期权链不提供可审计的历史dealer GEX/Gamma Flip；不编造。"}
             layer3["probability_model_role"] = "display_constraint_only_until_point_in_time_history_gate_passes"
-            layer3["event_catalyst"] = {"status": "unavailable", "items": [], "note": "本次构建未抓取可审计的财报、产品发布或宏观事件正文；不把缺失当作中性，也不制造事件概率。"}
+            layer3["event_state"] = {"status": "not_ingested", "as_of": as_of.strftime("%Y-%m-%d"), "event_in_window": None, "items": [], "note": "本次构建未抓取可审计的财报、产品发布或宏观事件正文；事件状态不是中性假设，也不制造事件概率。"}
+            layer3["event_catalyst"] = {"status": "unavailable", "items": [], "note": "事件资料未接入；不把缺失当作中性，也不制造事件概率。"}
             bottom_candidate = _constrain_candidate(technical, option, "bottom")
             top_candidate = _constrain_candidate(technical, option, "top")
             horizons[str(horizon)] = {
@@ -302,7 +394,30 @@ def build_potential_ranges(frames: dict[str, pd.DataFrame], symbols: list[str], 
                 "layer3_skew_event": layer3,
                 "candidate_bottom": bottom_candidate,
                 "candidate_top": top_candidate,
+                "raw_statistical_envelope": technical.get("statistical_envelope"),
+                "core_bottom_zone": technical.get("core_bottom_zone"),
+                "core_top_zone": technical.get("core_top_zone"),
+                "structure_evidence": technical.get("structure_evidence", {}),
                 "note": "Price Structure先生成候选位；Options Distribution只约束合理波动区间；Skew/Put-Call描述尾部不对称；Event/Catalyst缺失时不补假信息。期权不代表绝对底部或顶部。",
             }
-        results[symbol] = {"status": option_snapshot.get("status", "unavailable"), "horizons": horizons, "retrieved_at": option_snapshot.get("retrieved_at"), "source": option_snapshot.get("source", "Yahoo Finance option_chain via yfinance")}
+        widths = {}
+        for h in HORIZONS:
+            stat = (horizons.get(str(h), {}).get("raw_statistical_envelope") or {})
+            one = stat.get("one_sigma")
+            if isinstance(one, list) and len(one) == 2 and all(_finite(v) for v in one):
+                widths[str(h)] = float(one[1] - one[0])
+        width_values = [widths[str(h)] for h in HORIZONS if str(h) in widths]
+        non_decreasing = all(b >= a - 1e-9 for a, b in zip(width_values, width_values[1:])) if len(width_values) >= 2 else None
+        results[symbol] = {
+            "status": option_snapshot.get("status", "unavailable"),
+            "horizons": horizons,
+            "horizon_consistency": {
+                "one_sigma_width_by_horizon": widths,
+                "one_sigma_non_decreasing": non_decreasing,
+                "status": "pass" if non_decreasing is True else "review" if non_decreasing is False else "insufficient_data",
+                "note": "统计包络随期限通常应扩大；这里只做一致性审计，不强行改写模型概率。",
+            },
+            "retrieved_at": option_snapshot.get("retrieved_at"),
+            "source": option_snapshot.get("source", "Yahoo Finance option_chain via yfinance"),
+        }
     return results, {"status": "observed" if option_results else "unavailable", "requested_symbols": len(symbols), "observed_symbols": sum(1 for x in option_results.values() if x.get("status") == "observed"), "errors": errors, "retrieved_at": datetime.now(timezone.utc).isoformat(), "note": "期权链为构建时快照；只约束Price Structure候选区间，不代表绝对顶/底；未取得的标的明确显示缺失，不用模型价带补假IV。"}
