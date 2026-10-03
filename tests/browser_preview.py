@@ -23,7 +23,7 @@ with sync_playwright() as p:
     assert '自动调池：BLOCKED' in page.locator('#weeklyPoolText').inner_text()
     checks.append('100 unchanged seeds, explicit 0 valid forecasts and visible weekly-pool audit status')
     page.screenshot(path=str(ROOT/'tests/preview-desktop.png'),full_page=False)
-    for field,label in [('reference_price','参考价'),('risk_value','风险分'),('bottom_probability','方向性阶段底'),('top_probability','方向性阶段顶'),('opportunity_value','机会分')]:
+    for field,label in [('reference_price','参考价'),('risk_value','尾部风险排序'),('bottom_probability','方向性阶段底'),('top_probability','方向性阶段顶'),('opportunity_value','收益机会排序')]:
         button=page.locator(f"[data-field='{field}']")
         button.click()
         assert f'{label}：从大到小' in page.locator('#sortLabel').inner_text()
@@ -68,7 +68,7 @@ with sync_playwright() as p:
     assert page.locator('#storagePanel').is_hidden()
     checks.append('incompatible theme changes clear the storage research-group selection')
     page.select_option('#bucketFilter','');assert page.locator('#stockRows tr').count()==100
-    assert '机会分：从小到大' in page.locator('#sortLabel').inner_text()
+    assert '收益机会排序：从小到大' in page.locator('#sortLabel').inner_text()
     assert '5个交易日' in page.locator('#horizonLabel').inner_text()
     checks.append('returning dropdowns to all preserves sort and horizon')
     page.select_option('#bucketFilter','科技与成长主题');page.select_option('#groupFilter','存储与内存');page.locator('[data-horizon="10"]').click()
