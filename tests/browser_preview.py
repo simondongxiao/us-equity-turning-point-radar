@@ -21,6 +21,19 @@ with sync_playwright() as p:
     assert '完整人气分 1367' in page.locator('#weeklyPoolText').inner_text()
     assert 'BRK-B / GOOGL' in page.locator('#weeklyPoolText').inner_text()
     assert '自动调池：BLOCKED' in page.locator('#weeklyPoolText').inner_text()
+    page.evaluate("""() => {DATA.decision_board={horizons:{'5':{stage_bottom_candidates:[{side:'stage-bottom',decision_rank:1,symbol:'MU',stage_primary_judgment:'bottom_reversal_candidate',directional_probability:.42,zone:[90,95],distance_to_zone_pct:.03,joint_probability:.31,confidence_score:74}],stage_top_warnings:[{side:'stage-top',decision_rank:1,symbol:'SNDK',stage_primary_judgment:'top_reversal_warning',directional_probability:.47,zone:[105,110],distance_to_zone_pct:.05,joint_probability:.36,confidence_score:71}]},'10':{stage_bottom_candidates:[{side:'stage-bottom',decision_rank:1,symbol:'MU',stage_primary_judgment:'bottom_reversal_candidate',directional_probability:.42,zone:[90,95],distance_to_zone_pct:.03,joint_probability:.31,confidence_score:74}],stage_top_warnings:[{side:'stage-top',decision_rank:1,symbol:'SNDK',stage_primary_judgment:'top_reversal_warning',directional_probability:.47,zone:[105,110],distance_to_zone_pct:.05,joint_probability:.36,confidence_score:71}]},'21':{stage_bottom_candidates:[],stage_top_warnings:[]}}};renderDecisionBoard();}""")
+    assert page.locator('#decisionPanel').count()==1
+    assert page.locator('[data-decision-side]').count()==2
+    assert page.locator('[data-decision-side="bottom"]').get_attribute('aria-pressed')=='true'
+    assert page.locator('#decisionRows tr').count()==1
+    assert '阶段底候选' in page.locator('#decisionRows').inner_text()
+    page.locator('[data-decision-side="top"]').click()
+    assert page.locator('[data-decision-side="top"]').get_attribute('aria-pressed')=='true'
+    assert page.locator('#decisionRows tr').count()==1
+    assert '阶段顶部候选' in page.locator('#decisionRows').inner_text()
+    page.locator('[data-decision-side="bottom"]').click()
+    assert '阶段底候选' in page.locator('#decisionRows').inner_text()
+    assert page.locator('#decisionPanel').bounding_box()['y'] > page.locator('.stock-table').bounding_box()['y']
     checks.append('100 unchanged seeds, explicit 0 valid forecasts and visible weekly-pool audit status')
     page.screenshot(path=str(ROOT/'tests/preview-desktop.png'),full_page=False)
     for field,label in [('reference_price','参考价'),('risk_value','尾部风险排序'),('bottom_probability','方向性阶段底'),('top_probability','方向性阶段顶'),('opportunity_value','收益机会排序')]:

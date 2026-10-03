@@ -15,7 +15,7 @@ description: 构建、运行并发布美股阶段顶底概率雷达。以每周�
 
 1. `收益机会排序`：收益/风险统计横截面排序，不是底部概率、买入胜率或未来上涨概率；显示分数必须标注 `/100`。
 2. `尾部风险排序`：尾部风险横截面排序，不是未来必跌概率；风险单位异常时保留原始值，但不得进入风险榜。
-3. `决策榜`：阶段底候选与阶段顶警告分开排序，主键是方向校准概率、相对基线优势、候选区距离、触达后反转联合概率、信度和数据质量，不以机会分优先，两个方向榜不强制互斥。
+3. `决策榜`：放在主页常态100股表格之后，并提供“阶段底候选 / 阶段顶部候选”选项栏；两侧分开排序，主键是方向校准概率、相对基线优势、候选区距离、触达后反转联合概率、信度和数据质量，不以机会分优先，两个方向榜不强制互斥。切换只改变可见榜单，不改变模型分数。
 
 每个 symbol/horizon 输出有限枚举 `stage_primary_judgment`：`bottom_reversal_candidate`、`top_reversal_warning`、`two_way_high_volatility_wash`、`trend_continuation_up`、`trend_continuation_down`、`direction_unclear`、`data_model_pending_review`。它只能来自方向模型、候选区、证据质量和数据质量，不能用机会分减风险分生成。增加 `decision_eligible` 与 `decision_block_reason`；原始概率和原始分数必须保留。阻塞原因使用机器可读键：`insufficient_effective_samples`、`poor_calibration`、`regime_drift`、`data_quality_failure`、`symbol_history_issue`、`metric_unit_anomaly`、`stale_data`、`horizon_mismatch`、`low_directional_separation`。
 
