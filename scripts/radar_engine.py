@@ -1150,14 +1150,18 @@ def build_scenario_metric(symbol: str, current: pd.Series, historical: pd.DataFr
         target = max(float(model_p.get(cls, 1 / 3)), 0.01)
         weight = math.exp(-float(row["_distance"])) * min(4.0, target / prior)
         scale_ratio = atr / max(float(row["atr"]), 1e-6)
-        terminal = ref * (1 + float(row["terminal_return"]) * min(2.0, max(0.5, scale_ratio)))
-        min_price = ref - (ref - float(row["min_price"])) * min(2.0, max(0.5, scale_ratio))
-        max_price = ref + (float(row["max_price"]) - float(row["adj_close"])) * min(2.0, max(0.5, scale_ratio))
+        scale = min(2.0, max(0.5, scale_ratio))
+        origin = max(float(row["adj_close"]), 1e-9)
+        # Positive-price assets need multiplicative path scaling. The former
+        # linear distance extrapolation could turn a valid historical low into
+        # a negative modeled price when current ATR was much larger.
+        terminal = ref * max(float(row["terminal"]) / origin, 1e-9) ** scale if "terminal" in row else ref * max(1.0 + float(row["terminal_return"]), 1e-9) ** scale
+        min_price = ref * max(float(row["min_price"]) / origin, 1e-9) ** scale
+        max_price = ref * max(float(row["max_price"]) / origin, 1e-9) ** scale
         if relative_atr:
-            origin = float(row['adj_close'])
-            terminal = ref + origin * float(row['terminal_return']) * scale_ratio
-            min_price = ref + (float(row['min_price']) - origin) * scale_ratio
-            max_price = ref + (float(row['max_price']) - origin) * scale_ratio
+            terminal = ref * max(1.0 + float(row['terminal_return']), 1e-9) ** scale
+            min_price = ref * max(float(row['min_price']) / origin, 1e-9) ** scale
+            max_price = ref * max(float(row['max_price']) / origin, 1e-9) ** scale
             if min_price <= 0 or not min_price <= terminal <= max_price:
                 continue
         dd = max(0.0, 1 - min_price / ref)
