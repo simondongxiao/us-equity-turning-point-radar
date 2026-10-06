@@ -9,6 +9,7 @@
 @media(max-width:780px){.wrap{padding:18px 12px 30px}.mast{align-items:flex-start}h1{font-size:24px}.overview{grid-template-columns:1fr}.stat{min-height:70px;padding:13px 17px}.stat+.stat{border-left:0;border-top:1px solid var(--line)}.stat-value{font-size:20px}.toolbar{padding:14px}.controls{gap:12px}.input-row{gap:7px}.ticker-input{min-width:170px}.detail-grid{grid-template-columns:1fr}.board-head{padding:14px}.rotation{padding:13px 17px}.wide{grid-column:auto}.dialog-body{padding:14px}.detail-table{font-size:11px}.detail-table td{font-size:11px}}
 .fan-chart{width:100%;height:auto;min-height:230px}.attribution-row{display:grid;grid-template-columns:105px 1fr 120px;gap:8px;align-items:center;margin:7px 0}.attribution-track{height:8px;background:#e7edf3;border-radius:5px;position:relative}.attribution-fill{height:8px;border-radius:5px;position:absolute;top:0}.attribution-fill.pos{left:50%;background:#196c60}.attribution-fill.neg{right:50%;background:#b35c49}.shadow-note{border-left:4px solid #d29a32;padding-left:12px}.stock-table{min-width:1420px}.confidence-badge{display:inline-block;padding:3px 7px;border-radius:999px;font-size:11px;font-weight:750;white-space:nowrap}.confidence-badge.high{background:#dcefe8;color:#126153}.confidence-badge.medium{background:#fff0c9;color:#765006}.confidence-badge.low{background:#edf0f4;color:#586778}.calibration-wrap{display:grid;grid-template-columns:minmax(420px,1fr) minmax(360px,.9fr);gap:18px;align-items:start}.calibration-chart{width:100%;height:auto;min-height:300px}.calibration-table{min-width:620px}.calibration-legend{display:flex;gap:15px;flex-wrap:wrap;margin:6px 0 12px}.legend-dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px}@media(max-width:900px){.calibration-wrap{grid-template-columns:1fr}}
 </style>
+<style>.filter-row{margin-top:12px}</style>
 </head>
 <body>
 <main class="wrap">
@@ -26,9 +27,10 @@
 <div class="control-group"><span class="control-label">尾部风险排序</span><button class="toggle sort-toggle" data-field="risk_value" aria-pressed="false" aria-label="尾部风险排序：从大到小" title="横截面尾部风险分，不是未来必跌概率；异常风险不入榜">↓ 大到小</button></div>
 <div class="control-group"><span class="control-label">方向性阶段底</span><button class="toggle sort-toggle" data-field="bottom_probability" aria-pressed="false" aria-label="方向性阶段底概率排序：从大到小" title="先触及下边界并在同窗完成反弹确认；点击切换方向">↓ 大到小</button></div>
 <div class="control-group"><span class="control-label">方向性阶段顶</span><button class="toggle sort-toggle" data-field="top_probability" aria-pressed="false" aria-label="方向性阶段顶概率排序：从大到小" title="先触及上边界并在同窗完成回落确认；点击切换方向">↓ 大到小</button></div>
+ </div>
+<div class="controls filter-row">
 <select id="bucketFilter" class="filter" aria-label="研究覆盖分类"><option value="">全部研究主题</option><option>科技与成长主题</option><option>非科技主题</option></select>
 <select id="groupFilter" class="filter" aria-label="研究组"><option value="">全部研究组</option></select>
-<select id="businessTagFilter" class="filter" aria-label="业务标签"><option value="">全部业务标签</option></select>
 <select id="stageFilter" class="filter" aria-label="阶段"><option value="">全部阶段</option></select>
 <label class="small"><input type="checkbox" id="edgeOnly"> 只看正优势</label>
 </div><p class="small" style="margin-top:12px">“收益机会排序”是收益/风险统计榜，不是底部概率或买入胜率；“尾部风险排序”是尾部损失统计榜，不是未来必跌概率。页面显示的0–100均为横截面分数 `/100`。方向性阶段底 / 阶段顶 / 无有效拐点互斥且合计100%；双向洗盘另列为波动诊断。机会与风险仍可同时偏高。未知/过期/单位异常结果在相应榜单剔除；筛选不改变全池评分。</p>
@@ -96,7 +98,7 @@ function renderDecisionBoard(){
  rows.slice(0,30).forEach(x=>{const tr=node('tr');[decisionBoardSide==='top'?'阶段顶部候选':'阶段底候选',`#${x.decision_rank}`,x.symbol, x.stage_primary_judgment||'—',pct(x.directional_probability),`${band(x.zone)}${finite(x.distance_to_zone_pct)?` · ${pct(x.distance_to_zone_pct)}`:''}`,pct(x.joint_probability),`${finite(x.confidence_score)?x.confidence_score.toFixed(0)+'/100':'—'} · 可用`].forEach(v=>tr.append(node('td',v)));body.append(tr);});
 }
 function refreshFacetOptions(){
- const oldGroup=$('groupFilter').value,oldTag=$('businessTagFilter').value,oldStage=$('stageFilter').value,bucket=$('bucketFilter').value;
+ const oldGroup=$('groupFilter').value,oldStage=$('stageFilter').value,bucket=$('bucketFilter').value;
  const source=state.view==='regular'?regular:temporary;
  const scoped=source.filter(r=>!bucket||r.coverage_bucket===bucket);
  const groups=[...new Set(scoped.map(r=>r.research_group).filter(Boolean))].sort();
@@ -104,10 +106,6 @@ function refreshFacetOptions(){
  groups.forEach(g=>{const o=node('option',g);o.value=g;$('groupFilter').append(o);});
  $('groupFilter').value=groups.includes(oldGroup)?oldGroup:'';
  const groupScoped=scoped.filter(r=>!$('groupFilter').value||r.research_group===$('groupFilter').value);
- const tags=[...new Set(groupScoped.flatMap(r=>tagList(r,'business_tags')))].sort();
- $('businessTagFilter').replaceChildren(node('option','全部业务标签'));$('businessTagFilter').firstChild.value='';
- tags.forEach(tag=>{const o=node('option',tag);o.value=tag;$('businessTagFilter').append(o);});
- $('businessTagFilter').value=tags.includes(oldTag)?oldTag:'';
  const stages=[...new Set(groupScoped.map(r=>r.stage).filter(Boolean))].sort();
  $('stageFilter').replaceChildren(node('option','全部阶段'));$('stageFilter').firstChild.value='';
  stages.forEach(stage=>{const o=node('option',stage);o.value=stage;$('stageFilter').append(o);});
@@ -171,8 +169,8 @@ function render(){
  $('regularTab').setAttribute('aria-pressed',state.view==='regular');$('temporaryTab').setAttribute('aria-pressed',state.view==='temporary');
  txt($('temporaryTab'),`临时观察 · ${temporary.length}`);
  const viewRecords=state.view==='regular'?regular:temporary;
- const selectedTag=$('businessTagFilter').value,selectedStage=$('stageFilter').value;
- let records=viewRecords.filter(r=>(!$('bucketFilter').value||r.coverage_bucket===$('bucketFilter').value)&&(!$('groupFilter').value||r.research_group===$('groupFilter').value)&&(!selectedTag||tagList(r,'business_tags').includes(selectedTag))&&(!selectedStage||r.stage===selectedStage)&&(!$('edgeOnly').checked||(ready(selectedMetrics(r))&&selectedMetrics(r).positive_edge===true)));
+ const selectedStage=$('stageFilter').value;
+ let records=viewRecords.filter(r=>(!$('bucketFilter').value||r.coverage_bucket===$('bucketFilter').value)&&(!$('groupFilter').value||r.research_group===$('groupFilter').value)&&(!selectedStage||r.stage===selectedStage)&&(!$('edgeOnly').checked||(ready(selectedMetrics(r))&&selectedMetrics(r).positive_edge===true)));
  txt($('filterCount'),`显示 ${records.length} / ${viewRecords.length} · 全池评分不变`);
  records=RadarUtils.sorted(records,state.field,state.direction,state.horizon);
  $('stockRows').replaceChildren();$('emptyState').hidden=records.length!==0;
@@ -288,7 +286,7 @@ async function runAnalysis(){
     const sameSnapshot=Boolean(DATA.prediction_snapshot_id)&&result.prediction_snapshot_id===DATA.prediction_snapshot_id;
     if(old>=0&&sameSnapshot){regular[old]=result;state.view='regular';}
     else{const j=temporary.findIndex(r=>r.symbol===result.symbol);if(j<0)temporary.push(result);else {const nt=Date.parse(result.as_of||''),ot=Date.parse(temporary[j].as_of||'');if(Number.isFinite(nt)&&(!Number.isFinite(ot)||nt>=ot))temporary[j]=result;}state.view='temporary';}
-    $('bucketFilter').value='';$('groupFilter').value='';$('businessTagFilter').value='';$('stageFilter').value='';$('edgeOnly').checked=false;render();openDetail(result);showStatus(`分析完成：${result.symbol}；数据截至 ${result.as_of||'未提供'}。`);finished=true;break;
+    $('bucketFilter').value='';$('groupFilter').value='';$('stageFilter').value='';$('edgeOnly').checked=false;render();openDetail(result);showStatus(`分析完成：${result.symbol}；数据截至 ${result.as_of||'未提供'}。`);finished=true;break;
    }
    showStatus(`任务 ${job.job_id}：${status.status==='running'?'正在计算':'等待执行'}。`);
   }
@@ -299,7 +297,7 @@ document.querySelectorAll('[data-field]').forEach(b=>b.onclick=()=>{if(state.fie
 document.querySelectorAll('[data-index-sort]').forEach(b=>b.onclick=()=>{if(indexSort.field===b.dataset.indexSort)indexSort.direction=indexSort.direction==='desc'?'asc':'desc';else indexSort={field:b.dataset.indexSort,direction:'desc'};renderIndices();});
 document.querySelectorAll('[data-decision-side]').forEach(b=>b.onclick=()=>{decisionBoardSide=b.dataset.decisionSide;renderDecisionBoard();});
 document.querySelectorAll('[data-horizon]').forEach(b=>b.onclick=()=>{state.horizon=Number(b.dataset.horizon);render();});
-['bucketFilter','groupFilter','businessTagFilter','stageFilter','edgeOnly'].forEach(id=>$(id).onchange=render);
+['bucketFilter','groupFilter','stageFilter','edgeOnly'].forEach(id=>$(id).onchange=render);
 $('regularTab').onclick=()=>{state.view='regular';render();};$('temporaryTab').onclick=()=>{state.view='temporary';render();};$('closeDetail').onclick=()=>$('detailDialog').close();
 $('runBtn').onclick=runAnalysis;$('tickerInput').addEventListener('keydown',e=>{if(e.key==='Enter')runAnalysis();});
 refreshFacetOptions();
