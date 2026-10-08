@@ -345,6 +345,90 @@ def build_group_series(frames: dict[str, pd.DataFrame], seeds: list[dict[str, An
     return pd.concat(normalized, axis=1, sort=False).mean(axis=1, skipna=True).dropna()
 
 
+def _trailing_observed_return(series: pd.Series, as_of: pd.Timestamp, window: int) -> float | None:
+    """Return the last observed window-session return without assuming a holiday calendar."""
+    observed = series.loc[:as_of].dropna()
+    if len(observed) <= window:
+        return None
+    start = clean_num(observed.iloc[-window - 1])
+    end = clean_num(observed.iloc[-1])
+    if start is None or end is None or start <= 0:
+        return None
+    return float(end / start - 1.0)
+
+
+def research_group_rotation(
+    frames: dict[str, pd.DataFrame],
+    seeds: list[dict[str, Any]],
+    as_of: pd.Timestamp,
+    windows: tuple[int, ...] = (5, 20),
+    minimum_members: int = 2,
+) -> dict[str, Any]:
+    """Describe all eligible research groups relative to SPY; never alter model scores."""
+    benchmark = frames.get("SPY", pd.DataFrame()).get("adj_close", pd.Series(dtype=float))
+    benchmark_returns = {str(window): _trailing_observed_return(benchmark, as_of, window) for window in windows}
+    group_names = sorted({str(row.get("research_group") or "").strip() for row in seeds if row.get("research_group")})
+    groups: list[dict[str, Any]] = []
+    for group_name in group_names:
+        symbols = sorted({row["symbol"] for row in seeds if row.get("research_group") == group_name and row.get("symbol") in frames})
+        returns: dict[str, float | None] = {}
+        relative: dict[str, float | None] = {}
+        observed_members: dict[str, int] = {}
+        for window in windows:
+            values = [
+                value
+                for symbol in symbols
+                if (value := _trailing_observed_return(frames[symbol]["adj_close"], as_of, window)) is not None
+            ]
+            observed_members[str(window)] = len(values)
+            group_return = float(np.mean(values)) if len(values) >= minimum_members else None
+            returns[str(window)] = group_return
+            market_return = benchmark_returns[str(window)]
+            relative[str(window)] = float(group_return - market_return) if group_return is not None and market_return is not None else None
+        groups.append(
+            {
+                "research_group": group_name,
+                "members": symbols,
+                "member_count": len(symbols),
+                "minimum_members": minimum_members,
+                "observed_members": observed_members,
+                "equal_weight_return": returns,
+                "relative_to_spy": relative,
+            }
+        )
+
+    rankings: dict[str, dict[str, list[dict[str, Any]]]] = {}
+    summary: list[str] = []
+    for window in windows:
+        eligible = [
+            {"research_group": row["research_group"], "relative_return": row["relative_to_spy"][str(window)]}
+            for row in groups
+            if row["relative_to_spy"][str(window)] is not None
+        ]
+        eligible.sort(key=lambda row: (row["relative_return"], row["research_group"]), reverse=True)
+        strongest = eligible[:2]
+        weakest = sorted(eligible[-2:], key=lambda row: (row["relative_return"], row["research_group"])) if eligible else []
+        rankings[str(window)] = {"strongest": strongest, "weakest": weakest}
+        if eligible:
+            fmt = lambda rows: "、".join(f"{row['research_group']} {row['relative_return'] * 100:+.1f}%" for row in rows)
+            summary.append(f"{window}日相对SPY最强：{fmt(strongest)}；最弱：{fmt(weakest)}")
+    if not summary:
+        summary = ["暂无满足至少2只成分、同一数据时点的研究组轮动数据；不编造强弱结论。"]
+    summary.append("研究组按成员个股等权收益计算，仅作轮动描述；不改写个股顶底概率、机会/风险分或决策榜。")
+    return {
+        "status": "observed" if rankings and any(value["strongest"] for value in rankings.values()) else "unavailable",
+        "as_of": as_of.strftime("%Y-%m-%d"),
+        "benchmark": "SPY",
+        "windows": list(windows),
+        "minimum_members": minimum_members,
+        "groups": groups,
+        "rankings": rankings,
+        "summary": summary,
+        "method": "equal-weight mean of member trailing observed returns minus SPY over the same session window",
+        "note": "全研究组采用同一规则动态排序；存储与内存不享有首页固定席位。",
+    }
+
+
 def build_storage_loo_series(frames: dict[str, pd.DataFrame], seeds: list[dict[str, Any]], target: str, tag: str | None = None) -> tuple[pd.Series, dict[str, Any]]:
     storage = [r for r in seeds if r.get("research_group_id") == "storage-memory" and r["symbol"] in frames]
     if tag:
@@ -1567,6 +1651,8 @@ def build(refresh: bool = False, run_id: str | None = None, extra_symbol: str | 
     run_id = run_id or f"radar-{as_of.strftime('%Y%m%d')}-{uuid.uuid4().hex[:8]}"
     rotation = storage_rotation(model_frames, seeds, as_of)
     print("[radar] storage rotation ready", flush=True)
+    group_rotation = research_group_rotation(model_frames, seeds, as_of)
+    print("[radar] research-group rotation ready", flush=True)
     valid = sum(1 for r in records if any(r["metrics"].get(str(h), {}).get("status") in ("calibrated", "calibrated_low_confidence") for h in HORIZONS))
     weekly_audit: dict[str, Any] | None = None
     weekly_audit_file = ROOT / "data" / "weekly_pool_audit.json"
@@ -1591,7 +1677,7 @@ def build(refresh: bool = False, run_id: str | None = None, extra_symbol: str | 
         "automatic_reselection_status": weekly_audit.get("automatic_reselection_status") if weekly_audit else "BLOCKED",
         "note": "点时资格与人气评分已审计；自动换池仍受独立门槛约束。" if weekly_audit else "母池规模来自旧美股行情项目快照；本项目未把它改写成当前人气排名。",
     }
-    data = {"build_mode": "live", "status_message": "真实日线行情已接入。机会/风险仍由原B3共同路径生成；方向性阶段底、阶段顶与无有效拐点为互斥且独立校准的挑战者，三项严格合计100%。信度按历史路径重合、近期独立测试校准、相对多数类基线增益与真实日期支持分级；信度不改写概率。详情按四层展示实现波动率统计包络、结构核心区、模型路径区和方向概率；结构/统计/期权显示层不反推概率，事件未接入时显式标注。", "generated_at": iso(utc_now()), "as_of": as_of.strftime("%Y-%m-%d"), "as_of_beijing": f"{as_of.strftime('%Y-%m-%d')} 纽约收盘数据；北京时间日期需按交易日换算", "run_id": run_id, "prediction_snapshot_id": run_id, "model_version": MODEL_VERSION, "directional_model_version": DIRECTIONAL_MODEL_VERSION, "confidence_method_version": CONFIDENCE_METHOD_VERSION, "feature_version": FEATURE_VERSION, "potential_range_version": "structure-statistical-model-option-four-layer-v4", "strategy_version": STRATEGY_VERSION, "universe_version": "curated-seed-20260915-v1.1-live-validation", "taxonomy_version": TAXONOMY_VERSION, "source_manifest": source, "records": records, "temporary": temporary, "storage_rotation": rotation, "weekly_pool_audit": weekly_audit, "options_model_gate": option_gate, "rotation_summary": [rotation["summary"], "存储四只为同一主研究组；细分视图允许MU重叠，主表不重复计数。", "存储新因子为shadow/challenger，未套用旧校准器；不要把MU强弱写成SNDK/WDC/STX的固定结论。"], "public_config": {"api_base_url": None}, "backtest": backtest, "coverage": {"regular_pool": len(records), "valid_forecast_records": valid, "usable_price_records": sum(1 for r in records if r.get("reference_price") is not None), "data_cutoff": as_of.strftime("%Y-%m-%d"), "financial_backtest_status": "B3 first-touch and exclusive directional-turn time-split metrics computed; options B4 and storage incremental alpha remain gated"}}
+    data = {"build_mode": "live", "status_message": "真实日线行情已接入。机会/风险仍由原B3共同路径生成；方向性阶段底、阶段顶与无有效拐点为互斥且独立校准的挑战者，三项严格合计100%。信度按历史路径重合、近期独立测试校准、相对多数类基线增益与真实日期支持分级；信度不改写概率。详情按四层展示实现波动率统计包络、结构核心区、模型路径区和方向概率；结构/统计/期权显示层不反推概率，事件未接入时显式标注。", "generated_at": iso(utc_now()), "as_of": as_of.strftime("%Y-%m-%d"), "as_of_beijing": f"{as_of.strftime('%Y-%m-%d')} 纽约收盘数据；北京时间日期需按交易日换算", "run_id": run_id, "prediction_snapshot_id": run_id, "model_version": MODEL_VERSION, "directional_model_version": DIRECTIONAL_MODEL_VERSION, "confidence_method_version": CONFIDENCE_METHOD_VERSION, "feature_version": FEATURE_VERSION, "potential_range_version": "structure-statistical-model-option-four-layer-v4", "strategy_version": STRATEGY_VERSION, "universe_version": "curated-seed-20260915-v1.1-live-validation", "taxonomy_version": TAXONOMY_VERSION, "source_manifest": source, "records": records, "temporary": temporary, "storage_rotation": rotation, "research_group_rotation": group_rotation, "weekly_pool_audit": weekly_audit, "options_model_gate": option_gate, "rotation_summary": group_rotation["summary"], "public_config": {"api_base_url": None}, "backtest": backtest, "coverage": {"regular_pool": len(records), "valid_forecast_records": valid, "usable_price_records": sum(1 for r in records if r.get("reference_price") is not None), "data_cutoff": as_of.strftime("%Y-%m-%d"), "financial_backtest_status": "B3 first-touch and exclusive directional-turn time-split metrics computed; options B4 and storage incremental alpha remain gated"}}
     data["decision_board"] = decision_board
     data["status_message"] = "真实日线行情已接入。统计机会/风险榜与方向决策榜分离；风险单位异常保留原值但不进入风险榜。方向性阶段底、阶段顶与无有效拐点为互斥且独立校准的挑战者，三项严格合计100%。信度、ESS、数据质量和校准门共同决定决策资格，不改写原始概率。详情按统计包络、结构核心区、模型路径区和候选联合事件展示；事件未接入时显式标注。"
     # Context benchmarks cannot move the champion's stock/market cutoff date.

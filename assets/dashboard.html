@@ -18,7 +18,7 @@
 <div class="notice" id="notice">界面预览：未接入真实行情、已校准概率模型与单股任务接口。所有金融数字均留空，不是实时研究结果。</div>
 <section id="boundaryAlertPanel" class="panel boundary-alert" aria-label="价格越界预警"><div class="board-head"><div><h2>价格越界预警</h2><p id="boundaryAlertMeta" class="small">需要最近一个更早交易日的冻结预测，才能判断现价是否越界。</p></div><span id="boundaryAlertCount" class="badge">待核验</span></div><div class="table-scroll"><table class="boundary-table"><thead><tr><th>期限</th><th>现价已跌破冻结下限</th><th>现价已超过冻结上限</th></tr></thead><tbody id="boundaryAlertRows"></tbody></table></div><div id="boundaryAlertNote" class="footnote">边界来自更早交易日冻结价带，不使用当天随现价重算的区间。越界表示旧价带失效或受到突破，不等于立即反转或交易信号。</div></section>
 <section class="panel overview" aria-label="数据状态"><div class="stat"><div class="stat-label">常态观察池 / 有效预测</div><div class="stat-value" id="coverage">100 / 0</div><div class="small">周更名单，日常更新；临时观察不占名额</div></div><div class="stat"><div class="stat-label">数据截至 · 纽约时间</div><div class="stat-value" id="asOf">尚未接入</div><div class="small" id="beijing">北京时间：—</div></div><div class="stat"><div class="stat-label">当前观察周期</div><div class="stat-value" id="horizonLabel">2周 · 10个交易日</div><div class="small">机会分、风险分与价带随周期同步切换</div></div></section>
-<section class="panel rotation"><span class="rotation-title">Rotation Snapshot</span><span id="rotationText">尚未读取同时间口径的市场与轮动状态；不生成主观轮动结论。</span></section>
+<section class="panel rotation"><span class="rotation-title">研究组轮动（相对SPY）</span><span id="rotationText">尚未读取同时间口径的研究组轮动状态；不生成主观强弱结论。</span></section>
 <section class="panel rotation" aria-label="周更股票池审计"><span class="rotation-title">周更股票池</span><span id="weeklyPoolText">尚未完成点时母池资格与人气审计；当前100股保持不变。</span></section>
 <section class="panel toolbar">
 <div class="input-row"><label for="tickerInput" class="control-label">临时个股</label><input id="tickerInput" class="ticker-input" maxlength="100" placeholder="输入美股代码或公司名称，例如 SNDK、MU、JPM" autocomplete="off"><button id="runBtn" class="btn primary">运行完整分析</button></div>
@@ -63,7 +63,7 @@ try{const saved=JSON.parse(localStorage.getItem('radar-ui-v1')||'null');const fi
 let regular=DATA.records||[],temporary=DATA.temporary||[];
 const $=id=>document.getElementById(id), txt=(el,t)=>{el.textContent=t;return el;};
 function node(tag,text,cls){const n=document.createElement(tag);if(text!==undefined)n.textContent=text;if(cls)n.className=cls;return n;}
-function renderWeeklyPool(){const w=DATA.weekly_pool_audit;if(!w)return;const gaps=(w.current_member_source_gaps||[]).map(x=>x.symbol).join(' / ')||'无';const ranks=Object.entries(w.storage_candidate_ranks||{}).map(([s,r])=>`${s} ${r}`).join('、');txt($('weeklyPoolText'),`截至 ${w.as_of}：母池 ${w.mother_pool_observed_count}，完整人气分 ${w.complete_popularity_security_count}；常态池 ${w.regular_pool_count} 保持不变。存储排名 ${ranks||'—'}；精确股份类别缺口 ${gaps}。自动调池：${w.automatic_reselection_status||'BLOCKED'}。`);}
+function renderWeeklyPool(){const w=DATA.weekly_pool_audit;if(!w)return;const gaps=(w.current_member_source_gaps||[]).map(x=>x.symbol).join(' / ')||'无';const mix=finite(w.tech_growth_count)&&finite(w.nontech_count)?`覆盖结构：科技成长 ${w.tech_growth_count} / 非科技 ${w.nontech_count}；`:'';txt($('weeklyPoolText'),`截至 ${w.as_of}：母池 ${w.mother_pool_observed_count}，完整人气分 ${w.complete_popularity_security_count}；常态池 ${w.regular_pool_count} 保持不变。${mix}精确股份类别缺口 ${gaps}。自动调池：${w.automatic_reselection_status||'BLOCKED'}。`);}
 function finite(x){return typeof x==='number'&&Number.isFinite(x);}
 function price(x){return finite(x)?x.toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2}):'—';}
 function pct(x){return finite(x)?`${(x*100).toFixed(1)}%`:'—';}
@@ -325,7 +325,8 @@ $('runBtn').onclick=runAnalysis;$('tickerInput').addEventListener('keydown',e=>{
 refreshFacetOptions();
 if(DATA.as_of){txt($('asOf'),DATA.as_of);txt($('beijing'),`北京时间：${DATA.as_of_beijing||'待转换'}`);}
 if(DATA.model_version)txt($('versionBadge'),DATA.model_version);
-if(Array.isArray(DATA.rotation_summary)&&DATA.rotation_summary.length)txt($('rotationText'),DATA.rotation_summary.slice(0,3).join(' ｜ '));
+const groupRotationSummary=Array.isArray(DATA.research_group_rotation?.summary)?DATA.research_group_rotation.summary:DATA.rotation_summary;
+if(Array.isArray(groupRotationSummary)&&groupRotationSummary.length)txt($('rotationText'),groupRotationSummary.slice(0,3).join(' ｜ '));
 renderWeeklyPool();
 if(DATA.build_mode==='live'){$('notice').hidden=false;txt($('notice'),DATA.status_message||'请结合概率校准状态、数据时间与个股事件使用。预测不保证未来结果。');}
 if(DATA.run_id)txt($('buildNote'),`Run ${DATA.run_id} ｜ 不执行交易`);

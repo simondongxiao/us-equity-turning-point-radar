@@ -27,6 +27,8 @@ class WeeklyReviewTests(unittest.TestCase):
         self.assertGreaterEqual(payload["complete_popularity_security_count"], 300)
         self.assertEqual(payload["automatic_reselection_status"], "BLOCKED")
         self.assertTrue(payload["historical_pool_preserved"])
+        self.assertNotIn("storage_candidate_ranks", payload)
+        self.assertNotIn("storage_members", payload)
 
     def test_next_day_build_directory_is_eligible_for_prior_close(self):
         with tempfile.TemporaryDirectory() as tmp:

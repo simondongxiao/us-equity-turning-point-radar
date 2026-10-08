@@ -28,19 +28,6 @@
       "status": "other_share_class_visible_not_used_as_liquidity_substitute"
     }
   ],
-  "storage_candidate_ranks": {
-    "WDC": 32,
-    "MU": 72,
-    "SNDK": 78,
-    "STX": 80,
-    "NTAP": 236
-  },
-  "storage_members": [
-    "MU",
-    "WDC",
-    "SNDK",
-    "STX"
-  ],
   "pool_action": "retain",
   "automatic_reselection_status": "BLOCKED",
   "automatic_reselection_reason": "正式研究分类映射、拆股量价口径独立认证和GitHub runner母池入口尚未完成；本轮未改动生产100股。",

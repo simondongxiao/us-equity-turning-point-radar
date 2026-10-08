@@ -16,11 +16,17 @@ with sync_playwright() as p:
     assert page.locator('#stockRows tr').count()==100
     assert page.locator('#coverage').inner_text()=='100 / 0'
     assert '当前100股保持不变' in page.locator('#weeklyPoolText').inner_text()
-    page.evaluate("""() => {DATA.weekly_pool_audit={as_of:'2026-09-28',mother_pool_observed_count:5310,complete_popularity_security_count:1367,regular_pool_count:100,current_member_source_gaps:[{symbol:'BRK-B'},{symbol:'GOOGL'}],storage_candidate_ranks:{WDC:32,MU:72,SNDK:78,STX:80,NTAP:236},automatic_reselection_status:'BLOCKED'};renderWeeklyPool();}""")
+    page.evaluate("""() => {DATA.weekly_pool_audit={as_of:'2026-09-28',mother_pool_observed_count:5310,complete_popularity_security_count:1367,regular_pool_count:100,tech_growth_count:60,nontech_count:40,current_member_source_gaps:[{symbol:'BRK-B'},{symbol:'GOOGL'}],automatic_reselection_status:'BLOCKED'};renderWeeklyPool();DATA.research_group_rotation={summary:['5日相对SPY最强：能源与电力 +2.1%、软件与网络安全 +1.4%；最弱：汽车与出行 -1.8%、银行保险 -1.2%','20日相对SPY最强：半导体与设备 +4.3%、工业自动化 +2.2%；最弱：医药与健康 -3.0%、消费与零售 -2.4%','研究组按成员个股等权收益计算，仅作轮动描述；不改写个股顶底概率、机会/风险分或决策榜。']};const summary=DATA.research_group_rotation.summary;document.getElementById('rotationText').textContent=summary.slice(0,3).join(' ｜ ');}""")
     assert '母池 5310' in page.locator('#weeklyPoolText').inner_text()
     assert '完整人气分 1367' in page.locator('#weeklyPoolText').inner_text()
     assert 'BRK-B / GOOGL' in page.locator('#weeklyPoolText').inner_text()
     assert '自动调池：BLOCKED' in page.locator('#weeklyPoolText').inner_text()
+    assert '科技成长 60 / 非科技 40' in page.locator('#weeklyPoolText').inner_text()
+    assert '存储排名' not in page.locator('#weeklyPoolText').inner_text()
+    assert page.locator('.rotation .rotation-title').nth(0).inner_text()=='研究组轮动（相对SPY）'
+    assert '5日相对SPY最强' in page.locator('#rotationText').inner_text()
+    assert '存储四只' not in page.locator('#rotationText').inner_text()
+    checks.append('generic all-research-group rotation replaces fixed storage homepage summary and weekly ranks')
     page.evaluate("""() => {DATA.boundary_breach_alerts={status:'observed',current_as_of:'2026-10-07',basis_as_of:'2026-10-06',basis_run_id:'prior-run',evaluated_symbol_horizons:339,unavailable_symbol_horizons:0,note:'越界不是交易信号。',records:[{symbol:'SNDK',scope:'stock',horizon_sessions:5,side:'below_lower',current_price:89,boundary_value:90,breach_pct:-.0111},{symbol:'SOX',scope:'index_etf',horizon_sessions:10,side:'above_upper',current_price:111,boundary_value:110,breach_pct:.0091}]};renderBoundaryAlerts();}""")
     assert page.locator('#boundaryAlertPanel').bounding_box()['y'] < page.locator('[aria-label="数据状态"]').bounding_box()['y']
     assert page.locator('#boundaryAlertRows tr').count()==3

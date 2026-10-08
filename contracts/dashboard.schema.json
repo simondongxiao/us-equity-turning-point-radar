@@ -81,6 +81,8 @@
         "mother_pool_observed_count": {"type": "integer", "minimum": 0},
         "complete_popularity_security_count": {"type": "integer", "minimum": 0},
         "regular_pool_count": {"type": "integer", "minimum": 0},
+        "tech_growth_count": {"type": "integer", "minimum": 0},
+        "nontech_count": {"type": "integer", "minimum": 0},
         "automatic_reselection_status": {"type": "string"}
       }
     },
@@ -169,6 +171,45 @@
           }
         }
       }
+    },
+    "research_group_rotation": {
+      "type": ["object", "null"],
+      "properties": {
+        "status": {"enum": ["observed", "unavailable"]},
+        "as_of": {"type": "string"},
+        "benchmark": {"const": "SPY"},
+        "windows": {
+          "type": "array",
+          "items": {"type": "integer", "minimum": 1},
+          "minItems": 1,
+          "uniqueItems": true
+        },
+        "minimum_members": {"type": "integer", "minimum": 2},
+        "groups": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["research_group", "member_count", "observed_members", "equal_weight_return", "relative_to_spy"],
+            "properties": {
+              "research_group": {"type": "string"},
+              "members": {"type": "array", "items": {"type": "string"}, "uniqueItems": true},
+              "member_count": {"type": "integer", "minimum": 0},
+              "minimum_members": {"type": "integer", "minimum": 2},
+              "observed_members": {"type": "object"},
+              "equal_weight_return": {"type": "object"},
+              "relative_to_spy": {"type": "object"}
+            }
+          }
+        },
+        "rankings": {"type": "object"},
+        "summary": {"type": "array", "items": {"type": "string"}},
+        "method": {"type": "string"},
+        "note": {"type": "string"}
+      }
+    },
+    "rotation_summary": {
+      "type": "array",
+      "items": {"type": "string"}
     }
   },
   "$defs": {
