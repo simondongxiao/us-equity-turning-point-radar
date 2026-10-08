@@ -93,7 +93,7 @@ class PackageTests(unittest.TestCase):
         jsonschema.Draft202012Validator(schema).validate(d);self.assertEqual(validate_dashboard(d),100)
     def test_no_fabricated_financials(self):
         d=json.loads((ROOT/'assets/preview-data.json').read_text(encoding='utf-8'))
-        self.assertEqual(d['build_mode'],'preview');self.assertIsNone(d['storage_rotation']);self.assertIsNone(d['research_group_rotation'])
+        self.assertEqual(d['build_mode'],'preview');self.assertIsNone(d['storage_rotation']);self.assertIsNone(d.get('research_group_rotation'))
         for r in d['records']:
             self.assertIsNone(r['reference_price'])
             for m in r['metrics'].values():
