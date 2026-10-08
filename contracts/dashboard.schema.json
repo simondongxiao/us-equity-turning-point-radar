@@ -84,6 +84,24 @@
         "automatic_reselection_status": {"type": "string"}
       }
     },
+    "index_forecasts": {
+      "type": ["object", "null"],
+      "properties": {
+        "as_of": {"type": ["string", "null"]},
+        "records": {"type": "array"},
+        "structure_matrix": {
+          "type": "object",
+          "required": ["version", "as_of", "records", "calendar_method", "note"],
+          "properties": {
+            "version": {"type": "string"},
+            "as_of": {"type": "string"},
+            "calendar_method": {"type": "string"},
+            "note": {"type": "string"},
+            "records": {"type": "array", "items": {"$ref": "#/$defs/index_structure_record"}}
+          }
+        }
+      }
+    },
     "storage_rotation": {
       "type": [
         "object",
@@ -133,6 +151,67 @@
     }
   },
   "$defs": {
+    "index_structure_record": {
+      "type": "object",
+      "required": [
+        "symbol", "status", "horizon_sessions", "horizon_end_date", "anchor_as_of",
+        "core_bottom_source", "core_top_source", "price_location_state", "event_status", "semantic_note"
+      ],
+      "properties": {
+        "symbol": {"type": "string"},
+        "name": {"type": ["string", "null"]},
+        "kind": {"type": ["string", "null"]},
+        "status": {"enum": ["observed", "unavailable"]},
+        "horizon_sessions": {"enum": [5, 10, 21]},
+        "horizon_label": {"type": "string"},
+        "horizon_end_date": {"type": "string"},
+        "calendar_method": {"type": "string"},
+        "anchor_price": {"type": ["number", "null"], "exclusiveMinimum": 0},
+        "anchor_as_of": {"type": "string"},
+        "anchor_unit": {"type": ["string", "null"]},
+        "core_bottom_zone": {"$ref": "#/$defs/positive_band"},
+        "core_top_zone": {"$ref": "#/$defs/positive_band"},
+        "pressure_bottom_zone": {"$ref": "#/$defs/positive_band"},
+        "pressure_top_zone": {"$ref": "#/$defs/positive_band"},
+        "core_bottom_source": {"enum": ["turning_point_conditional_path", "atr_volatility_fallback", "unavailable"]},
+        "core_top_source": {"enum": ["turning_point_conditional_path", "atr_volatility_fallback", "unavailable"]},
+        "pressure_definition": {"type": "string"},
+        "core_bottom_relative_to_anchor_pct": {"$ref": "#/$defs/nullable_number_band"},
+        "core_top_relative_to_anchor_pct": {"$ref": "#/$defs/nullable_number_band"},
+        "pressure_bottom_relative_to_anchor_pct": {"$ref": "#/$defs/nullable_number_band"},
+        "pressure_top_relative_to_anchor_pct": {"$ref": "#/$defs/nullable_number_band"},
+        "distance_to_core_bottom_pct": {"type": ["number", "null"], "minimum": 0},
+        "distance_to_core_top_pct": {"type": ["number", "null"], "minimum": 0},
+        "price_location_state": {"enum": ["in_core_bottom", "near_core_bottom", "between_core_zones", "near_core_top", "in_core_top", "in_lower_pressure", "in_upper_pressure", "below_lower_pressure", "above_upper_pressure", "core_zones_overlap", "unavailable"]},
+        "price_location_label": {"type": "string"},
+        "dominant_direction": {"type": ["string", "null"]},
+        "dominant_probability": {"type": ["number", "null"], "minimum": 0, "maximum": 1},
+        "confidence_level": {"type": ["string", "null"]},
+        "confidence_label": {"type": "string"},
+        "range_width_pct": {"type": ["number", "null"], "minimum": 0},
+        "wide_range_flag": {"type": "boolean"},
+        "trigger_condition": {"type": "string"},
+        "invalidation_condition": {"type": "string"},
+        "main_judgment": {"type": "string"},
+        "event_status": {"type": "string"},
+        "event_source": {"type": ["string", "null"]},
+        "event_observed_at": {"type": ["string", "null"]},
+        "event_note": {"type": "string"},
+        "semantic_note": {"type": "string"}
+      }
+    },
+    "positive_band": {
+      "type": ["array", "null"],
+      "items": {"type": "number", "exclusiveMinimum": 0},
+      "minItems": 2,
+      "maxItems": 2
+    },
+    "nullable_number_band": {
+      "type": ["array", "null"],
+      "items": {"type": "number"},
+      "minItems": 2,
+      "maxItems": 2
+    },
     "metric": {
       "type": "object",
       "required": [

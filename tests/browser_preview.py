@@ -35,6 +35,13 @@ with sync_playwright() as p:
     assert '阶段底候选' in page.locator('#decisionRows').inner_text()
     assert page.locator('#decisionPanel').bounding_box()['y'] > page.locator('.stock-table').bounding_box()['y']
     checks.append('100 unchanged seeds, explicit 0 valid forecasts and visible weekly-pool audit status')
+    page.evaluate("""() => {DATA.as_of='2026-10-07';DATA.index_context={as_of:'2026-10-07',rows:[{symbol:'SPY',name:'SPY · 标普500 ETF',kind:'etf_proxy',as_of:'2026-10-07',level:100,returns:{'1':.01,'10':.02}}]};DATA.index_forecasts={as_of:'2026-10-07',records:[{symbol:'SPY',name:'SPY · 标普500 ETF',kind:'etf_proxy',as_of:'2026-10-07',level:100,metrics:{'10':{status:'calibrated',p_bottom_rebound_first:.55,p_top_reversal_first:.2,p_no_directional_turn:.25,p_two_way_wash:.1,bottom_band:[92,95],top_band:[106,109],confidence_level:'medium',confidence_label:'中确信'}}}],structure_matrix:{as_of:'2026-10-07',note:'结构价位与压力区不是概率。',records:[{symbol:'SPY',name:'SPY · 标普500 ETF',status:'observed',horizon_sessions:10,horizon_label:'2周',horizon_end_date:'2026-10-21',anchor_price:100,anchor_as_of:'2026-10-07',core_bottom_zone:[92,95],core_top_zone:[106,109],core_bottom_source:'turning_point_conditional_path',core_top_source:'turning_point_conditional_path',core_bottom_relative_to_anchor_pct:[-.08,-.05],core_top_relative_to_anchor_pct:[.06,.09],pressure_bottom_zone:[88,92],pressure_top_zone:[109,115],pressure_bottom_relative_to_anchor_pct:[-.12,-.08],pressure_top_relative_to_anchor_pct:[.09,.15],price_location_label:'位于核心底顶区之间',main_judgment:'方向模型偏阶段底 55.0%；中确信。',trigger_condition:'触及底区后确认',invalidation_condition:'下破88或上破115后重算',event_status:'not_ingested',wide_range_flag:true}]}};renderIndices();}""")
+    assert page.locator('#indexStructureRows tr').count()==1
+    matrix_text=page.locator('#indexStructureRows').text_content()
+    assert '2026-10-21' in matrix_text,matrix_text
+    assert '不是概率' in page.locator('#indexStructureNote').text_content()
+    assert 'not_ingested' in page.locator('#indexStructureRows').text_content()
+    checks.append('index structure matrix keeps price zones, anchor distances, event state and directional probabilities semantically separate')
     page.screenshot(path=str(ROOT/'tests/preview-desktop.png'),full_page=False)
     for field,label in [('reference_price','参考价'),('risk_value','尾部风险排序'),('bottom_probability','方向性阶段底'),('top_probability','方向性阶段顶'),('opportunity_value','收益机会排序')]:
         button=page.locator(f"[data-field='{field}']")
