@@ -1603,6 +1603,17 @@ def build(refresh: bool = False, run_id: str | None = None, extra_symbol: str | 
     except ModuleNotFoundError:
         from scripts.index_forecasts import build_index_forecasts
     data['index_forecasts'] = build_index_forecasts(sys.modules[__name__], context_frames, data['index_context'], as_of)
+    try:
+        from boundary_alerts import build_boundary_breach_alerts
+    except ModuleNotFoundError:
+        from scripts.boundary_alerts import build_boundary_breach_alerts
+    data['boundary_breach_alerts'] = build_boundary_breach_alerts(
+        records,
+        data['index_forecasts']['records'],
+        data['as_of'],
+        run_id,
+        STATE_DIR / 'frozen' / 'predictions',
+    )
     backtest['index_targets'] = {r['symbol']:r['validation'] for r in data['index_forecasts']['records']}
     source["index_context"] = index_source
     write_json(OUTPUT_DIR / f"dashboard-{run_id}.json", data)

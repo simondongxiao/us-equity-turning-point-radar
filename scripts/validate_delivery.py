@@ -30,6 +30,19 @@ def validate_dashboard(data, production=False):
     if production:
         require(data.get('build_mode')=='live','Preview cannot pass production check')
         require(bool(data.get('as_of')) and bool(data.get('model_version')),'Missing live data/model timestamps')
+        alerts=data.get('boundary_breach_alerts')
+        require(isinstance(alerts,dict) and alerts.get('status')=='observed','Production requires prior-frozen boundary breach evaluation')
+        require(bool(alerts.get('basis_as_of')) and alerts['basis_as_of']<data['as_of'],'Boundary alert basis must be an earlier trading date')
+        require(isinstance(alerts.get('records'),list),'Boundary alert records missing')
+        for alert in alerts['records']:
+            require(alert.get('horizon_sessions') in {5,10,21},'Boundary alert horizon invalid')
+            require(alert.get('side') in {'below_lower','above_upper'},'Boundary alert side invalid')
+            require(all(num(alert.get(key)) and alert[key]>0 for key in ('current_price','frozen_lower_bound','frozen_upper_bound','boundary_value')),'Boundary alert price invalid')
+            require(alert['frozen_lower_bound']<=alert['frozen_upper_bound'],'Boundary alert bounds reversed')
+            if alert['side']=='below_lower':
+                require(alert['current_price']<alert['frozen_lower_bound'] and alert['boundary_value']==alert['frozen_lower_bound'] and num(alert.get('breach_pct')) and alert['breach_pct']<0,'False lower-bound breach alert')
+            else:
+                require(alert['current_price']>alert['frozen_upper_bound'] and alert['boundary_value']==alert['frozen_upper_bound'] and num(alert.get('breach_pct')) and alert['breach_pct']>0,'False upper-bound breach alert')
     rows=data.get('records',[])
     require(len(rows)==100,'Regular board must retain 100 members or be explicitly handled as failed/incomplete before this production interface')
     require(len({r['symbol'] for r in rows})==len(rows),'Duplicate regular symbols')

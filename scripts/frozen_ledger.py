@@ -20,7 +20,8 @@ def archive(data, frames):
               'generated_at':data.get('generated_at'),'model_version':data['model_version'],
               'feature_version':data.get('feature_version'),'universe_version':data.get('universe_version'),
               'source_hashes':source,'records':data['records'],'temporary':data.get('temporary',[]),
-              'indices':data.get('index_forecasts',{}).get('records',[])}
+              'indices':data.get('index_forecasts',{}).get('records',[]),
+              'index_structure_matrix':data.get('index_forecasts',{}).get('structure_matrix')}
     path=root/'predictions'/f'{run_id}.json'
     # Old run IDs already stored are read, never rebuilt from revised price data.
     if path.exists():

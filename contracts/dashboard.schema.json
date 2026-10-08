@@ -84,6 +84,27 @@
         "automatic_reselection_status": {"type": "string"}
       }
     },
+    "boundary_breach_alerts": {
+      "type": ["object", "null"],
+      "required": ["version", "status", "current_as_of", "records", "summary", "boundary_definition", "comparison_rule"],
+      "properties": {
+        "version": {"type": "string"},
+        "status": {"enum": ["observed", "unavailable"]},
+        "current_as_of": {"type": "string"},
+        "current_run_id": {"type": "string"},
+        "basis_run_id": {"type": ["string", "null"]},
+        "basis_as_of": {"type": ["string", "null"]},
+        "reason": {"type": "string"},
+        "boundary_definition": {"type": "string"},
+        "comparison_rule": {"type": "string"},
+        "evaluated_symbol_horizons": {"type": "integer", "minimum": 0},
+        "unavailable_symbol_horizons": {"type": "integer", "minimum": 0},
+        "records": {"type": "array", "items": {"$ref": "#/$defs/boundary_alert_record"}},
+        "summary": {"type": "object"},
+        "note": {"type": "string"},
+        "horizon_labels": {"type": "object"}
+      }
+    },
     "index_forecasts": {
       "type": ["object", "null"],
       "properties": {
@@ -151,6 +172,27 @@
     }
   },
   "$defs": {
+    "boundary_alert_record": {
+      "type": "object",
+      "required": ["symbol", "scope", "horizon_sessions", "side", "current_price", "frozen_lower_bound", "frozen_upper_bound", "boundary_value", "breach_pct", "basis_run_id", "basis_as_of", "current_as_of"],
+      "properties": {
+        "symbol": {"type": "string"},
+        "name": {"type": "string"},
+        "scope": {"enum": ["stock", "index_etf"]},
+        "horizon_sessions": {"enum": [5, 10, 21]},
+        "horizon_label": {"type": "string"},
+        "side": {"enum": ["below_lower", "above_upper"]},
+        "current_price": {"type": "number", "exclusiveMinimum": 0},
+        "frozen_lower_bound": {"type": "number", "exclusiveMinimum": 0},
+        "frozen_upper_bound": {"type": "number", "exclusiveMinimum": 0},
+        "boundary_value": {"type": "number", "exclusiveMinimum": 0},
+        "breach_pct": {"type": "number"},
+        "boundary_source": {"type": "string"},
+        "basis_run_id": {"type": "string"},
+        "basis_as_of": {"type": "string"},
+        "current_as_of": {"type": "string"}
+      }
+    },
     "index_structure_record": {
       "type": "object",
       "required": [
