@@ -262,6 +262,7 @@ def build_index_forecasts(engine, frames, context, as_of):
             results.append(record)
             continue
         frame = prepare_asset_frame(raw.loc[:as_of], row['kind'])
+        record['session_ohlc'] = engine.session_ohlc(frame, as_of)
         market = frames['SPY']['adj_close'].loc[:as_of]
         features = engine.add_features(frame, market, market, None)
         features['qqq_rs_5'] = features['ret_5'] - frames['QQQ']['adj_close'].loc[:as_of].pct_change(5)

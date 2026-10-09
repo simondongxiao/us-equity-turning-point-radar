@@ -103,6 +103,8 @@
         "unavailable_symbol_horizons": {"type": "integer", "minimum": 0},
         "records": {"type": "array", "items": {"$ref": "#/$defs/boundary_alert_record"}},
         "summary": {"type": "object"},
+        "tiered_records": {"type": "array", "items": {"$ref": "#/$defs/tiered_boundary_alert_record"}},
+        "tiered_summary": {"type": "object"},
         "note": {"type": "string"},
         "horizon_labels": {"type": "object"}
       }
@@ -229,6 +231,36 @@
         "boundary_value": {"type": "number", "exclusiveMinimum": 0},
         "breach_pct": {"type": "number"},
         "boundary_source": {"type": "string"},
+        "basis_run_id": {"type": "string"},
+        "basis_as_of": {"type": "string"},
+        "current_as_of": {"type": "string"}
+      }
+    },
+    "tiered_boundary_alert_record": {
+      "type": "object",
+      "required": ["symbol", "scope", "horizon_sessions", "boundary_layer", "side", "trigger_state", "session_high", "session_low", "session_close", "frozen_lower_bound", "frozen_upper_bound", "boundary_value", "breach_pct", "basis_run_id", "basis_as_of", "current_as_of"],
+      "properties": {
+        "symbol": {"type": "string"},
+        "name": {"type": "string"},
+        "scope": {"enum": ["stock", "index_etf"]},
+        "horizon_sessions": {"enum": [5, 10, 21]},
+        "horizon_label": {"type": "string"},
+        "boundary_layer": {"enum": ["structure", "terminal", "extreme_tail"]},
+        "boundary_layer_label": {"type": "string"},
+        "side": {"enum": ["below_lower", "above_upper"]},
+        "trigger_state": {"enum": ["intraday_only", "close_confirmed"]},
+        "intraday_breached": {"type": "boolean"},
+        "close_confirmed": {"type": "boolean"},
+        "session_open": {"type": "number", "exclusiveMinimum": 0},
+        "session_high": {"type": "number", "exclusiveMinimum": 0},
+        "session_low": {"type": "number", "exclusiveMinimum": 0},
+        "session_close": {"type": "number", "exclusiveMinimum": 0},
+        "current_price": {"type": "number", "exclusiveMinimum": 0},
+        "observed_price": {"type": "number", "exclusiveMinimum": 0},
+        "frozen_lower_bound": {"type": "number", "exclusiveMinimum": 0},
+        "frozen_upper_bound": {"type": "number", "exclusiveMinimum": 0},
+        "boundary_value": {"type": "number", "exclusiveMinimum": 0},
+        "breach_pct": {"type": "number"},
         "basis_run_id": {"type": "string"},
         "basis_as_of": {"type": "string"},
         "current_as_of": {"type": "string"}

@@ -34,6 +34,7 @@ def validate_dashboard(data, production=False):
         require(isinstance(alerts,dict) and alerts.get('status')=='observed','Production requires prior-frozen boundary breach evaluation')
         require(bool(alerts.get('basis_as_of')) and alerts['basis_as_of']<data['as_of'],'Boundary alert basis must be an earlier trading date')
         require(isinstance(alerts.get('records'),list),'Boundary alert records missing')
+        require(isinstance(alerts.get('tiered_records'),list),'Tiered boundary alert records missing')
         for alert in alerts['records']:
             require(alert.get('horizon_sessions') in {5,10,21},'Boundary alert horizon invalid')
             require(alert.get('side') in {'below_lower','above_upper'},'Boundary alert side invalid')
@@ -43,9 +44,30 @@ def validate_dashboard(data, production=False):
                 require(alert['current_price']<alert['frozen_lower_bound'] and alert['boundary_value']==alert['frozen_lower_bound'] and num(alert.get('breach_pct')) and alert['breach_pct']<0,'False lower-bound breach alert')
             else:
                 require(alert['current_price']>alert['frozen_upper_bound'] and alert['boundary_value']==alert['frozen_upper_bound'] and num(alert.get('breach_pct')) and alert['breach_pct']>0,'False upper-bound breach alert')
+        for alert in alerts['tiered_records']:
+            require(alert.get('boundary_layer') in {'structure','terminal','extreme_tail'},'Tiered boundary layer invalid')
+            require(alert.get('trigger_state') in {'intraday_only','close_confirmed'},'Tiered boundary trigger invalid')
+            require(alert.get('side') in {'below_lower','above_upper'},'Tiered boundary side invalid')
+            require(all(num(alert.get(key)) and alert[key]>0 for key in ('session_high','session_low','session_close','frozen_lower_bound','frozen_upper_bound','boundary_value','observed_price')),'Tiered boundary price invalid')
+            require(alert['session_low']<=alert['session_high'] and alert['frozen_lower_bound']<=alert['frozen_upper_bound'],'Tiered boundary ranges reversed')
+            if alert['side']=='below_lower':
+                require(alert['session_low']<alert['frozen_lower_bound'] and alert['boundary_value']==alert['frozen_lower_bound'] and alert['breach_pct']<0,'False tiered lower-bound breach')
+                require((alert['session_close']<alert['boundary_value'])==alert['close_confirmed'],'Tiered lower close-confirmation mismatch')
+            else:
+                require(alert['session_high']>alert['frozen_upper_bound'] and alert['boundary_value']==alert['frozen_upper_bound'] and alert['breach_pct']>0,'False tiered upper-bound breach')
+                require((alert['session_close']>alert['boundary_value'])==alert['close_confirmed'],'Tiered upper close-confirmation mismatch')
     rows=data.get('records',[])
     require(len(rows)==100,'Regular board must retain 100 members or be explicitly handled as failed/incomplete before this production interface')
     require(len({r['symbol'] for r in rows})==len(rows),'Duplicate regular symbols')
+    if production:
+        intraday=((data.get('source_manifest') or {}).get('intraday_regular_session_validation') or {})
+        require(intraday.get('status')=='observed','Production requires regular-session 5-minute validation')
+        symbol_audit=intraday.get('symbols') or {}
+        for r in rows:
+            require((symbol_audit.get(r['symbol']) or {}).get('status') in {'matched','corrected'},f"{r['symbol']}: regular-session intraday validation unavailable")
+            ohlc=r.get('session_ohlc') or {}
+            require(all(num(ohlc.get(key)) and ohlc[key]>0 for key in ('open','high','low','close')),f"{r['symbol']}: session OHLC missing")
+            require(ohlc['low']<=min(ohlc['open'],ohlc['close'])<=max(ohlc['open'],ohlc['close'])<=ohlc['high'],f"{r['symbol']}: session OHLC inconsistent")
     for r in rows+data.get('temporary',[]):
         for h in ['5','10','21']:
             m=r.get('metrics',{}).get(h)

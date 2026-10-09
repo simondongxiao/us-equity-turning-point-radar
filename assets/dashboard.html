@@ -16,7 +16,7 @@
 <main class="wrap">
 <header class="mast"><div><div class="eyebrow">US EQUITY · TURNING POINT RADAR</div><h1>美股阶段顶底雷达</h1><p class="small tagline">情绪修复 × 板块轮动 × 个股独立强弱。分开看机会与风险，不把人气当成买入理由。</p></div><span class="badge" id="versionBadge">v1.1 · 待接入模型</span></header>
 <div class="notice" id="notice">界面预览：未接入真实行情、已校准概率模型与单股任务接口。所有金融数字均留空，不是实时研究结果。</div>
-<section id="boundaryAlertPanel" class="panel boundary-alert" aria-label="价格越界预警"><div class="board-head"><div><h2>价格越界预警</h2><p id="boundaryAlertMeta" class="small">需要最近一个更早交易日的冻结预测，才能判断现价是否越界。</p></div><span id="boundaryAlertCount" class="badge">待核验</span></div><div class="table-scroll"><table class="boundary-table"><thead><tr><th>期限</th><th>现价已跌破冻结下限</th><th>现价已超过冻结上限</th></tr></thead><tbody id="boundaryAlertRows"></tbody></table></div><div id="boundaryAlertNote" class="footnote">边界来自更早交易日冻结价带，不使用当天随现价重算的区间。越界表示旧价带失效或受到突破，不等于立即反转或交易信号。</div></section>
+<section id="boundaryAlertPanel" class="panel boundary-alert" aria-label="价格越界预警"><div class="board-head"><div><h2>价格越界预警</h2><p id="boundaryAlertMeta" class="small">需要最近一个更早交易日的冻结预测，才能判断盘中或收盘是否越界。</p></div><span id="boundaryAlertCount" class="badge">待核验</span></div><div class="table-scroll"><table class="boundary-table"><thead><tr><th>期限</th><th>冻结临界层</th><th>跌破下限</th><th>突破上限</th></tr></thead><tbody id="boundaryAlertRows"></tbody></table></div><div id="boundaryAlertNote" class="footnote">边界来自更早交易日冻结价带，不使用当天随现价重算的区间；盘中越界与收盘确认分开显示。越界不等于立即反转或交易信号。</div></section>
 <section class="panel overview" aria-label="数据状态"><div class="stat"><div class="stat-label">常态观察池 / 有效预测</div><div class="stat-value" id="coverage">100 / 0</div><div class="small">周更名单，日常更新；临时观察不占名额</div></div><div class="stat"><div class="stat-label">数据截至 · 纽约时间</div><div class="stat-value" id="asOf">尚未接入</div><div class="small" id="beijing">北京时间：—</div></div><div class="stat"><div class="stat-label">当前观察周期</div><div class="stat-value" id="horizonLabel">2周 · 10个交易日</div><div class="small">机会分、风险分与价带随周期同步切换</div></div></section>
 <section class="panel rotation"><span class="rotation-title">研究组轮动（相对SPY）</span><span id="rotationText">尚未读取同时间口径的研究组轮动状态；不生成主观强弱结论。</span></section>
 <section class="panel rotation" aria-label="周更股票池审计"><span class="rotation-title">周更股票池</span><span id="weeklyPoolText">尚未完成点时母池资格与人气审计；当前100股保持不变。</span></section>
@@ -91,13 +91,15 @@ function decisionStatus(m){if(!ready(m))return statusText[m?.status]||'待分析
 function renderBoundaryAlerts(){
  const alert=DATA.boundary_breach_alerts||{},body=$('boundaryAlertRows');body.replaceChildren();
  const horizons=[5,10,21],labels={5:'5日',10:'10日',21:'21日（约20日 / 1个月）'};
- const rows=Array.isArray(alert.records)?alert.records:[];
- const itemText=x=>`${x.scope==='index_etf'?'指数/ETF':'股票'} · ${x.symbol} ${price(x.current_price)} ${x.side==='below_lower'?'<':'>'} ${price(x.boundary_value)}（${x.side==='below_lower'?'低于下限':'高于上限'} ${pct(Math.abs(x.breach_pct))}）`;
- horizons.forEach(h=>{const tr=node('tr');tr.append(node('td',labels[h],'num'));for(const side of ['below_lower','above_upper']){const td=node('td'),items=rows.filter(x=>x.horizon_sessions===h&&x.side===side);if(items.length){items.forEach(x=>td.append(node('span',itemText(x),`breach-item ${side==='below_lower'?'below':'above'}`)));}else td.append(node('span',alert.status==='observed'?'无':'待核验','breach-none'));tr.append(td);}body.append(tr);});
+ const legacy=Array.isArray(alert.records)?alert.records:[];
+ const rows=Array.isArray(alert.tiered_records)?alert.tiered_records:legacy.map(x=>({...x,boundary_layer:'extreme_tail',boundary_layer_label:'极端尾部外沿',trigger_state:'close_confirmed',session_high:x.current_price,session_low:x.current_price,session_close:x.current_price,observed_price:x.current_price}));
+ const layers=[['structure','结构核心带'],['terminal','期限末 P10/P90'],['extreme_tail','极端尾部外沿']];
+ const itemText=x=>{const state=x.trigger_state==='close_confirmed'?'收盘确认':'仅盘中',extreme=x.side==='below_lower'?`最低 ${price(x.session_low)}`:`最高 ${price(x.session_high)}`;return`${state} · ${x.scope==='index_etf'?'指数/ETF':'股票'} ${x.symbol} · ${extreme} / 收 ${price(x.session_close)} · 边界 ${price(x.boundary_value)}（越界 ${pct(Math.abs(x.breach_pct))}）`;};
+ horizons.forEach(h=>layers.forEach(([layer,layerLabel],i)=>{const tr=node('tr');tr.append(node('td',i===0?labels[h]:'','num'),node('td',layerLabel,'small'));for(const side of ['below_lower','above_upper']){const td=node('td'),items=rows.filter(x=>x.horizon_sessions===h&&x.boundary_layer===layer&&x.side===side);if(items.length){items.forEach(x=>td.append(node('span',itemText(x),`breach-item ${side==='below_lower'?'below':'above'} ${x.trigger_state==='close_confirmed'?'confirmed':'intraday'}`)));}else td.append(node('span',alert.status==='observed'?'无':'待核验','breach-none'));tr.append(td);}body.append(tr);}));
  if(alert.status==='observed'){
   txt($('boundaryAlertMeta'),`现价截至 ${alert.current_as_of||DATA.as_of||'—'}；比较基准 ${alert.basis_as_of||'—'} 冻结批次 ${alert.basis_run_id||'—'}。边界不随今天现价移动。`);
   txt($('boundaryAlertCount'),`越界 ${rows.length} 项`);
-  txt($('boundaryAlertNote'),`${alert.note||''} 已核验 ${alert.evaluated_symbol_horizons??'—'} 个“标的×期限”，缺失 ${alert.unavailable_symbol_horizons??0} 个。21日对应模型实际期限，约等于用户常说的20日/月度窗口。`);
+  txt($('boundaryAlertNote'),`${alert.note||''} “仅盘中”表示当日高低价穿越后收盘已回到边界内；“收盘确认”表示收盘仍在边界外。已核验 ${alert.evaluated_symbol_horizons??'—'} 个“标的×期限”，缺失 ${alert.unavailable_symbol_horizons??0} 个。21日对应模型实际期限，约等于用户常说的20日/月度窗口。`);
  }else{
   txt($('boundaryAlertMeta'),`暂无更早交易日冻结预测，无法可靠判断越界：${alert.reason||'预览或历史状态未接入'}。`);
   txt($('boundaryAlertCount'),'待核验');
@@ -177,7 +179,7 @@ function render(){
  document.querySelectorAll('.sort-toggle').forEach(b=>{
   const active=b.dataset.field===state.field, direction=active?state.direction:'desc';
   const name=SORT_NAMES[b.dataset.field];
-  b.setAttribute('aria-pressed',active);b.textContent=direction==='desc'?'↓ 大到小':'↑ 小到大';b.setAttribute('aria-label',`${name}排序：${direction==='desc'?'从大到小':'从小到大'}`);
+  b.setAttribute('aria-pressed',active);b.textContent=direction==='desc'?'↓ 大到小':'↑ 小到大';b.setAttribute('aria-label',`${name}${name.endsWith('排序')?'':'排序'}：${direction==='desc'?'从大到小':'从小到大'}`);
  });
  txt($('horizonLabel'),`${period} · ${state.horizon}个交易日`);
  txt($('touchHorizonHead'),`先上冲 / 先下探 / 未触达 · ${state.horizon}日`);txt($('bottomHorizonHead'),`方向性阶段底 · ${state.horizon}日`);txt($('topHorizonHead'),`方向性阶段顶 · ${state.horizon}日`);txt($('noneHorizonHead'),`无有效拐点 · ${state.horizon}日`);

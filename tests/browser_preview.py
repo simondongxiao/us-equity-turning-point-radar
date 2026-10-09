@@ -29,12 +29,14 @@ with sync_playwright() as p:
     checks.append('generic all-research-group rotation replaces fixed storage homepage summary and weekly ranks')
     page.evaluate("""() => {DATA.boundary_breach_alerts={status:'observed',current_as_of:'2026-10-07',basis_as_of:'2026-10-06',basis_run_id:'prior-run',evaluated_symbol_horizons:339,unavailable_symbol_horizons:0,note:'越界不是交易信号。',records:[{symbol:'SNDK',scope:'stock',horizon_sessions:5,side:'below_lower',current_price:89,boundary_value:90,breach_pct:-.0111},{symbol:'SOX',scope:'index_etf',horizon_sessions:10,side:'above_upper',current_price:111,boundary_value:110,breach_pct:.0091}]};renderBoundaryAlerts();}""")
     assert page.locator('#boundaryAlertPanel').bounding_box()['y'] < page.locator('[aria-label="数据状态"]').bounding_box()['y']
-    assert page.locator('#boundaryAlertRows tr').count()==3
+    assert page.locator('#boundaryAlertRows tr').count()==9
     assert 'SNDK' in page.locator('#boundaryAlertRows').inner_text()
     assert 'SOX' in page.locator('#boundaryAlertRows').inner_text()
     assert '2026-10-06' in page.locator('#boundaryAlertMeta').inner_text()
     assert '越界 2 项' in page.locator('#boundaryAlertCount').inner_text()
-    checks.append('top-of-home prior-frozen 5/10/21-day lower/upper boundary breach alerts')
+    assert '极端尾部外沿' in page.locator('#boundaryAlertRows').inner_text()
+    assert '收盘确认' in page.locator('#boundaryAlertRows').inner_text()
+    checks.append('top-of-home prior-frozen structure/terminal/tail alerts separate intraday from close confirmation')
     page.evaluate("""() => {DATA.decision_board={horizons:{'5':{stage_bottom_candidates:[{side:'stage-bottom',decision_rank:1,symbol:'MU',stage_primary_judgment:'bottom_reversal_candidate',directional_probability:.42,zone:[90,95],distance_to_zone_pct:.03,joint_probability:.31,confidence_score:74}],stage_top_warnings:[{side:'stage-top',decision_rank:1,symbol:'SNDK',stage_primary_judgment:'top_reversal_warning',directional_probability:.47,zone:[105,110],distance_to_zone_pct:.05,joint_probability:.36,confidence_score:71}]},'10':{stage_bottom_candidates:[{side:'stage-bottom',decision_rank:1,symbol:'MU',stage_primary_judgment:'bottom_reversal_candidate',directional_probability:.42,zone:[90,95],distance_to_zone_pct:.03,joint_probability:.31,confidence_score:74}],stage_top_warnings:[{side:'stage-top',decision_rank:1,symbol:'SNDK',stage_primary_judgment:'top_reversal_warning',directional_probability:.47,zone:[105,110],distance_to_zone_pct:.05,joint_probability:.36,confidence_score:71}]},'21':{stage_bottom_candidates:[],stage_top_warnings:[]}}};renderDecisionBoard();}""")
     assert page.locator('#decisionPanel').count()==1
     assert page.locator('[data-decision-side]').count()==2

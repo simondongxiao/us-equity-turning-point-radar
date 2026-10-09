@@ -10,6 +10,7 @@ time taxonomy has enough out-of-sample history to be calibrated.
 from __future__ import annotations
 
 import argparse
+from concurrent.futures import ThreadPoolExecutor, as_completed
 import csv
 import hashlib
 import json
@@ -17,6 +18,7 @@ import math
 import os
 import sqlite3
 import sys
+import time as time_module
 import uuid
 from dataclasses import dataclass
 from datetime import datetime, time, timedelta, timezone
@@ -55,7 +57,7 @@ DIRECTIONAL_MODEL_VERSION = "challenger-exclusive-directional-turn-v1.3.0"
 CONFIDENCE_METHOD_VERSION = "path-validation-confidence-v1.3.0"
 STRATEGY_VERSION = "next-open-atr-1x-cost-15bp-decision-audit-v1.3.0"
 DECISION_AUDIT_VERSION = "decision-consistency-and-risk-audit-v1.3.0"
-SOURCE_NAME = "Yahoo Finance chart OHLCV via yfinance; SEC company_tickers.json for issuer identity"
+SOURCE_NAME = "Yahoo Finance daily OHLCV via yfinance, reconciled against regular-session 5-minute chart bars; SEC company_tickers.json for issuer identity"
 HORIZONS = (5, 10, 21)
 MARKET_SYMBOLS = ("SPY", "QQQ")
 COMPARISON_GROUPS = {
@@ -208,6 +210,226 @@ def flatten_download(raw: pd.DataFrame, symbol: str) -> pd.DataFrame:
     return frame
 
 
+def aggregate_regular_session_chart(payload: dict[str, Any], cutoff_date) -> dict[str, Any] | None:
+    """Aggregate the latest complete Yahoo 5-minute regular session.
+
+    Yahoo's daily endpoint can expose an unsettled or partial daily bar after
+    16:00 New York time.  This adapter uses the regular-session intraday tape
+    as a completion check and deliberately rejects sessions without both the
+    opening and closing portions of a normal trading day.
+    """
+    try:
+        result = payload["chart"]["result"][0]
+        timestamps = result.get("timestamp") or []
+        quote = result["indicators"]["quote"][0]
+    except (KeyError, IndexError, TypeError):
+        return None
+    if not timestamps:
+        return None
+    cutoff = pd.Timestamp(cutoff_date).date()
+    fields = {name: quote.get(name) or [] for name in ("open", "high", "low", "close", "volume")}
+    sessions: dict[Any, list[dict[str, Any]]] = {}
+    for i, stamp in enumerate(timestamps):
+        try:
+            observed_at = datetime.fromtimestamp(int(stamp), timezone.utc).astimezone(ZoneInfo("America/New_York"))
+        except (TypeError, ValueError, OSError):
+            continue
+        if observed_at.date() > cutoff or not (time(9, 30) <= observed_at.time() <= time(16, 0)):
+            continue
+        bar = {name: (values[i] if i < len(values) else None) for name, values in fields.items()}
+        if not all(clean_num(bar.get(name)) is not None for name in ("open", "high", "low", "close")):
+            continue
+        sessions.setdefault(observed_at.date(), []).append({"at": observed_at, **bar})
+    for session_date in sorted(sessions, reverse=True):
+        bars = sorted(sessions[session_date], key=lambda row: row["at"])
+        # A normal US session has 78 five-minute bars from 09:30 through
+        # 15:55.  Permit a few missing vendor bars, but never bless an opening-
+        # only or midday snapshot as a complete daily observation.
+        if len(bars) < 70 or bars[0]["at"].time() > time(9, 35) or bars[-1]["at"].time() < time(15, 55):
+            continue
+        volumes = [clean_num(row.get("volume")) for row in bars]
+        valid_volumes = [value for value in volumes if value is not None and value >= 0]
+        meta = result.get("meta") or {}
+        meta_time = meta.get("regularMarketTime")
+        meta_date = None
+        if meta_time:
+            try:
+                meta_date = datetime.fromtimestamp(int(meta_time), timezone.utc).astimezone(ZoneInfo("America/New_York")).date()
+            except (TypeError, ValueError, OSError):
+                meta_date = None
+        official_close = clean_num(meta.get("regularMarketPrice")) if meta_date == session_date else None
+        official_volume = clean_num(meta.get("regularMarketVolume")) if meta_date == session_date else None
+        official_high = clean_num(meta.get("regularMarketDayHigh")) if meta_date == session_date else None
+        official_low = clean_num(meta.get("regularMarketDayLow")) if meta_date == session_date else None
+        return {
+            "date": session_date.isoformat(),
+            "open": float(bars[0]["open"]),
+            "high": max([float(row["high"]) for row in bars] + ([official_high] if official_high else [])),
+            "low": min([float(row["low"]) for row in bars] + ([official_low] if official_low else [])),
+            "close": official_close if official_close and official_close > 0 else float(bars[-1]["close"]),
+            "volume": official_volume if official_volume is not None and official_volume >= 0 else (float(sum(valid_volumes)) if valid_volumes else None),
+            "bar_count": len(bars),
+            "first_bar_ny": bars[0]["at"].isoformat(),
+            "last_bar_ny": bars[-1]["at"].isoformat(),
+            "official_close_used": bool(official_close and official_close > 0),
+            "official_volume_used": bool(official_volume is not None and official_volume >= 0),
+        }
+    return None
+
+
+def daily_chart_session(payload: dict[str, Any], session_date) -> dict[str, float] | None:
+    """Read one settled Yahoo daily row without treating missing close as final."""
+    try:
+        result = payload["chart"]["result"][0]
+        timestamps = result.get("timestamp") or []
+        quote = result["indicators"]["quote"][0]
+    except (KeyError, IndexError, TypeError):
+        return None
+    target = pd.Timestamp(session_date).date()
+    for i, stamp in enumerate(timestamps):
+        try:
+            observed_date = datetime.fromtimestamp(int(stamp), timezone.utc).astimezone(ZoneInfo("America/New_York")).date()
+        except (TypeError, ValueError, OSError):
+            continue
+        if observed_date != target:
+            continue
+        row = {name: clean_num((quote.get(name) or [])[i]) if i < len(quote.get(name) or []) else None for name in ("open", "high", "low", "close", "volume")}
+        if not all(row.get(name) is not None and row[name] > 0 for name in ("open", "high", "low", "close")):
+            return None
+        return row
+    return None
+
+
+def _get_yahoo_chart(symbol: str, params: dict[str, str], attempts: int = 3) -> dict[str, Any]:
+    last_error: Exception | None = None
+    for attempt in range(attempts):
+        try:
+            response = requests.get(
+                f"https://query1.finance.yahoo.com/v8/finance/chart/{symbol}",
+                params=params,
+                headers={"User-Agent": "Mozilla/5.0 us-equity-turning-point-radar/1.6"},
+                timeout=25,
+            )
+            response.raise_for_status()
+            return response.json()
+        except Exception as exc:
+            last_error = exc
+            if attempt + 1 < attempts:
+                time_module.sleep(1.25 * (attempt + 1))
+    raise RuntimeError(f"Yahoo chart failed after {attempts} attempts: {last_error}")
+
+
+def fetch_intraday_regular_session(symbol: str, cutoff_date) -> dict[str, Any]:
+    """Fetch one symbol's latest complete regular session from Yahoo chart."""
+    try:
+        aggregate = aggregate_regular_session_chart(_get_yahoo_chart(symbol, {
+            "range": "5d", "interval": "5m", "includePrePost": "false", "events": "div,splits"
+        }), cutoff_date)
+        if aggregate is None:
+            return {"symbol": symbol, "status": "unavailable", "reason": "no_complete_regular_session"}
+        daily = daily_chart_session(_get_yahoo_chart(symbol, {
+            "range": "1mo", "interval": "1d", "includePrePost": "false", "events": "div,splits"
+        }), aggregate["date"])
+        if daily is not None:
+            # Five-minute bars are the completeness gate and intraday-extreme
+            # source.  A settled daily row contributes the official auction
+            # close and total volume only when its close agrees with the final
+            # intraday bar; stale partial daily rows therefore cannot win.
+            aggregate["high"] = max(float(aggregate["high"]), float(daily["high"]))
+            aggregate["low"] = min(float(aggregate["low"]), float(daily["low"]))
+            if abs(float(daily["close"]) / float(aggregate["close"]) - 1) <= 0.005:
+                aggregate["close"] = float(daily["close"])
+                aggregate["settled_daily_close_used"] = True
+            if daily.get("volume") is not None:
+                aggregate["volume"] = max(float(aggregate.get("volume") or 0), float(daily["volume"]))
+                aggregate["settled_daily_volume_used"] = True
+        return {"symbol": symbol, "status": "observed", **aggregate}
+    except Exception as exc:
+        return {"symbol": symbol, "status": "unavailable", "reason": f"{type(exc).__name__}: {exc}"}
+
+
+def reconcile_intraday_sessions(
+    frames: dict[str, pd.DataFrame], cutoff_date, max_workers: int = 4
+) -> tuple[dict[str, pd.DataFrame], dict[str, Any]]:
+    """Replace the latest daily row with a complete 5-minute aggregation."""
+    results: dict[str, dict[str, Any]] = {}
+    with ThreadPoolExecutor(max_workers=max_workers) as pool:
+        futures = {pool.submit(fetch_intraday_regular_session, symbol, cutoff_date): symbol for symbol in frames}
+        for future in as_completed(futures):
+            symbol = futures[future]
+            try:
+                results[symbol] = future.result()
+            except Exception as exc:  # defensive: fetcher already fails closed
+                results[symbol] = {"symbol": symbol, "status": "unavailable", "reason": f"{type(exc).__name__}: {exc}"}
+
+    audit: dict[str, Any] = {"method": "yahoo_5m_regular_session_aggregate_v1", "symbols": {}, "observed": 0, "corrected": 0, "unavailable": 0}
+    for symbol in sorted(frames):
+        result = results.get(symbol) or {"symbol": symbol, "status": "unavailable", "reason": "fetch_result_missing"}
+        if result.get("status") != "observed":
+            audit["unavailable"] += 1
+            audit["symbols"][symbol] = result
+            continue
+        frame = frames[symbol].copy()
+        session = pd.Timestamp(result["date"])
+        prior = frame.loc[session] if session in frame.index else None
+        factor = 1.0
+        if prior is not None:
+            old_close = clean_num(prior.get("close"))
+            old_adjusted = clean_num(prior.get("adj_close"))
+            if old_close and old_adjusted and old_close > 0:
+                factor = old_adjusted / old_close
+        old = {name: clean_num(prior.get(name)) if prior is not None else None for name in ("open", "high", "low", "close", "volume")}
+        replacement = {
+            "open": float(result["open"]), "high": float(result["high"]),
+            "low": float(result["low"]), "close": float(result["close"]),
+            "adj_close": float(result["close"]) * factor,
+            "volume": clean_num(result.get("volume")) if clean_num(result.get("volume")) is not None else old.get("volume"),
+        }
+        for name, value in replacement.items():
+            frame.loc[session, name] = value
+        frame = frame[~frame.index.duplicated(keep="last")].sort_index()
+        frame.index.name = "date"
+        frames[symbol] = frame
+        price_changed = prior is None or any(
+            old.get(name) is None or abs(float(replacement[name]) / float(old[name]) - 1) > 1e-6
+            for name in ("open", "high", "low", "close") if replacement.get(name) is not None
+        )
+        old_volume, new_volume = old.get("volume"), replacement.get("volume")
+        volume_changed = old_volume is None or new_volume is None or abs(float(new_volume) - float(old_volume)) > max(100.0, abs(float(old_volume)) * 0.01)
+        corrected = bool(price_changed or volume_changed)
+        audit["observed"] += 1
+        audit["corrected"] += int(corrected)
+        audit["symbols"][symbol] = {
+            "symbol": symbol, "status": "corrected" if corrected else "matched",
+            "date": result["date"], "bar_count": result["bar_count"],
+            "first_bar_ny": result["first_bar_ny"], "last_bar_ny": result["last_bar_ny"],
+            "daily_before": old, "regular_session_aggregate": replacement,
+        }
+    return frames, audit
+
+
+def session_ohlc(frame: pd.DataFrame, as_of: pd.Timestamp) -> dict[str, Any] | None:
+    """Return split-adjusted session OHLC on the same scale as reference_price."""
+    if frame is None or frame.empty:
+        return None
+    row = frame.loc[as_of] if as_of in frame.index else frame.iloc[-1]
+    raw_close = clean_num(row.get("close"))
+    adjusted_close = clean_num(row.get("adj_close")) or raw_close
+    if raw_close is None or adjusted_close is None or raw_close <= 0:
+        return None
+    factor = adjusted_close / raw_close
+    values = {name: clean_num(row.get(name)) for name in ("open", "high", "low", "close")}
+    if not all(value is not None and value > 0 for value in values.values()):
+        return None
+    return {
+        "date": pd.Timestamp(row.name).strftime("%Y-%m-%d"),
+        "open": values["open"] * factor, "high": values["high"] * factor,
+        "low": values["low"] * factor, "close": adjusted_close,
+        "volume": clean_num(row.get("volume")),
+        "price_scale": "adjusted_close_scale",
+    }
+
+
 def download_prices(symbols: list[str], refresh: bool = False) -> tuple[dict[str, pd.DataFrame], dict[str, Any]]:
     RAW_DIR.mkdir(parents=True, exist_ok=True)
     frames: dict[str, pd.DataFrame] = {}
@@ -216,6 +438,8 @@ def download_prices(symbols: list[str], refresh: bool = False) -> tuple[dict[str
     utc_date = pd.Timestamp.now(tz="UTC")
     start = (utc_date - pd.DateOffset(years=5)).strftime("%Y-%m-%d")
     end = (utc_date + pd.Timedelta(days=1)).strftime("%Y-%m-%d")
+    now_ny = datetime.now(ZoneInfo("America/New_York"))
+    cutoff_date = now_ny.date() if now_ny.time() >= time(16, 15) else now_ny.date() - timedelta(days=1)
     missing = []
     for symbol in symbols:
         cache = RAW_DIR / f"{symbol}.csv"
@@ -227,6 +451,11 @@ def download_prices(symbols: list[str], refresh: bool = False) -> tuple[dict[str
             except Exception:
                 cached_frame = pd.DataFrame()
         if not refresh:
+            frame = cached_frame
+        elif not cached_frame.empty and pd.Timestamp(cached_frame.index.max()).date() >= cutoff_date:
+            # The 5-minute regular-session reconciliation below is the source
+            # of truth for the latest day.  Re-downloading an already present
+            # daily row adds rate-limit exposure without improving finality.
             frame = cached_frame
         if frame.empty or len(frame) < 80:
             try:
@@ -266,12 +495,16 @@ def download_prices(symbols: list[str], refresh: bool = False) -> tuple[dict[str
         else:
             frame.index = pd.to_datetime(frame.index).tz_localize(None)
             frames[symbol] = frame.sort_index()
-    dates = sorted(set.intersection(*(set(f.index) for f in frames.values()))) if frames else []
     # Yahoo can expose a partial bar for the current New York date before the
     # regular session closes.  Never promote that partial bar to a daily radar
     # snapshot; the scheduled runner runs after the close and may include it.
-    now_ny = datetime.now(ZoneInfo("America/New_York"))
-    cutoff_date = now_ny.date() if now_ny.time() >= time(16, 15) else now_ny.date() - timedelta(days=1)
+    intraday_audit: dict[str, Any] = {"method": "yahoo_5m_regular_session_aggregate_v1", "status": "not_requested"}
+    if refresh and frames:
+        frames, intraday_audit = reconcile_intraday_sessions(frames, cutoff_date)
+        intraday_audit["status"] = "observed" if intraday_audit.get("observed") else "unavailable"
+        for symbol, frame in frames.items():
+            frame.to_csv(RAW_DIR / f"{symbol}.csv", date_format="%Y-%m-%d")
+    dates = sorted(set.intersection(*(set(f.index) for f in frames.values()))) if frames else []
     complete_dates = [d for d in dates if d.date() <= cutoff_date]
     latest = max(complete_dates).strftime("%Y-%m-%d") if complete_dates else None
     return frames, {
@@ -281,6 +514,7 @@ def download_prices(symbols: list[str], refresh: bool = False) -> tuple[dict[str
         "missing_symbols": missing,
         "errors": source_errors,
         "refresh_regressions": refresh_regressions,
+        "intraday_regular_session_validation": intraday_audit,
         "common_latest_date": latest,
         "latest_complete_date_by_symbol": {
             symbol: max(d for d in frame.index if d.date() <= cutoff_date).strftime("%Y-%m-%d")
@@ -1496,7 +1730,7 @@ def enrich_record(row: dict[str, Any], frame: pd.DataFrame, metric_by_h: dict[in
             metric["joint_event_definition"] = "方向性模型直接输出的先触达且同窗反转联合事件；条件概率仅在该联合事件为触达事件子集时展示。"
             metric.update(_decision_fields(metric, current, metric.get("probability_margin_threshold_backtest")))
             metric["candidate_zone_status"] = {"bottom": "当前已进入候选底部区" if metric["current_in_bottom_zone"] else "候选底部区尚未进入", "top": "当前已进入候选顶部区" if metric["current_in_top_zone"] else "候选顶部区尚未进入"}
-    return {**row, "as_of": as_of.strftime("%Y-%m-%d"), "reference_price": clean_num(current["adj_close"]), "metrics": safe_json(metrics), "stage": stage, "issuer_id": identity.get("issuer_id"), "issuer_identity_source": identity.get("source"), "peer_context": safe_json({**peers, "note": peer_note, "issuer_id": identity.get("issuer_id"), "subgroup_context": peers.get("subgroup_context", {})}), "potential_ranges": safe_json(potential_payload), "rotation_explanation": "真实日线数据已接入；市场、研究组与个股残差分别计算，允许不同步。" + (" 存储细分与LOO为影子候选，未进入正式校准分数。" if storage else ""), "trigger_summary": "确认：先由Price Structure形成候选位；只有先触边界且同窗满足反转条件才计入互斥方向性阶段顶/底。失效：跳空、事件冲击或重新突破结构。到达概率、方向性拐点、双向洗盘诊断和交易成功不可混同。结构共振只用于解释核心区，不进入概率。", "event_summary": "本次生产构建未抓取并公开长文本财报、产品发布或宏观事件正文；事件特征为缺失，不把标题或业务分类当作催化概率。", "risk_summary": "风险值来自共同历史路径的最差5%不利幅度均值；风险指标另有合法性审计，异常原值保留但不进入风险榜。", "data_note": f"数据源：{SOURCE_NAME}；截止{as_of.strftime('%Y-%m-%d')}。统计机会/风险榜与方向决策榜分离；方向性阶段底、阶段顶、无有效拐点由独立时间校准的三分类挑战者生成并严格归一。重叠顶底事件仅作双向洗盘诊断。统计/结构/模型路径层不互相伪造概率；期权历史不足，尚未进入概率模型。"}
+    return {**row, "as_of": as_of.strftime("%Y-%m-%d"), "reference_price": clean_num(current["adj_close"]), "session_ohlc": safe_json(session_ohlc(frame, as_of)), "metrics": safe_json(metrics), "stage": stage, "issuer_id": identity.get("issuer_id"), "issuer_identity_source": identity.get("source"), "peer_context": safe_json({**peers, "note": peer_note, "issuer_id": identity.get("issuer_id"), "subgroup_context": peers.get("subgroup_context", {})}), "potential_ranges": safe_json(potential_payload), "rotation_explanation": "真实日线数据已接入；市场、研究组与个股残差分别计算，允许不同步。" + (" 存储细分与LOO为影子候选，未进入正式校准分数。" if storage else ""), "trigger_summary": "确认：先由Price Structure形成候选位；只有先触边界且同窗满足反转条件才计入互斥方向性阶段顶/底。失效：跳空、事件冲击或重新突破结构。到达概率、方向性拐点、双向洗盘诊断和交易成功不可混同。结构共振只用于解释核心区，不进入概率。", "event_summary": "本次生产构建未抓取并公开长文本财报、产品发布或宏观事件正文；事件特征为缺失，不把标题或业务分类当作催化概率。", "risk_summary": "风险值来自共同历史路径的最差5%不利幅度均值；风险指标另有合法性审计，异常原值保留但不进入风险榜。", "data_note": f"数据源：{SOURCE_NAME}；截止{as_of.strftime('%Y-%m-%d')}。统计机会/风险榜与方向决策榜分离；方向性阶段底、阶段顶、无有效拐点由独立时间校准的三分类挑战者生成并严格归一。重叠顶底事件仅作双向洗盘诊断。统计/结构/模型路径层不互相伪造概率；期权历史不足，尚未进入概率模型。"}
 
 
 def ensure_ledger() -> sqlite3.Connection:

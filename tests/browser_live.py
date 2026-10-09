@@ -25,6 +25,10 @@ def run() -> None:
             assert "母池 5310" in weekly_text
             assert "完整人气分 1367" in weekly_text
             assert "自动调池：BLOCKED" in weekly_text
+            assert page.locator('#boundaryAlertRows tr').count() == 9
+            boundary_text = page.locator('#boundaryAlertRows').inner_text()
+            assert '结构核心带' in boundary_text and '期限末 P10/P90' in boundary_text and '极端尾部外沿' in boundary_text
+            assert 'SNDK' in boundary_text and '仅盘中' in boundary_text and '收盘确认' in boundary_text
             assert page.locator('[aria-label="指数顶底概率"] h2').inner_text() == '指数方向性拐点'
             assert page.locator('#indexRows tr').count() == 13
             assert page.locator('#indexForecastRows tr').count() == 13
@@ -60,18 +64,17 @@ def run() -> None:
             assert '复利衰减' in leveraged_text
             page.locator('#closeDetail').click()
             assert page.locator("#storageQuick, #storageSubFilter, #clearFilters").count() == 0
-            assert page.locator("[aria-label='机会分排序：从大到小']").get_attribute("aria-pressed") == "true"
-            page.locator("[aria-label='机会分排序：从大到小']").click()
-            assert page.locator("[aria-label='机会分排序：从小到大']").get_attribute("aria-pressed") == "true"
-            assert page.locator("#sortLabel").inner_text().startswith("机会分：从小到大")
-            page.locator("[aria-label='机会分排序：从小到大']").click()
+            assert page.locator("#businessTagFilter").count() == 0
+            assert page.locator("[aria-label='收益机会排序：从大到小']").get_attribute("aria-pressed") == "true"
+            page.locator("[aria-label='收益机会排序：从大到小']").click()
+            assert page.locator("[aria-label='收益机会排序：从小到大']").get_attribute("aria-pressed") == "true"
+            assert page.locator("#sortLabel").inner_text().startswith("收益机会排序：从小到大")
+            page.locator("[aria-label='收益机会排序：从小到大']").click()
             page.select_option("#bucketFilter", "科技与成长主题")
             page.select_option("#groupFilter", "存储与内存")
             assert page.locator("#stockRows tr").count() == 4
             assert page.locator("#storagePanel").is_visible()
-            page.select_option("#businessTagFilter", "NAND")
-            assert set(page.locator("#stockRows button.symbol-button").all_text_contents()) == {"MU", "SNDK"}
-            page.select_option("#businessTagFilter", "")
+            assert set(page.locator("#stockRows button.symbol-button").all_text_contents()) == {"MU", "SNDK", "STX", "WDC"}
             stage = page.locator("#stageFilter option").nth(1).get_attribute("value")
             assert stage
             page.select_option("#stageFilter", stage)
