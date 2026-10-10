@@ -17,6 +17,32 @@ ROOT=Path(__file__).resolve().parents[1]
 REPO='simondongxiao/us-equity-turning-point-radar'
 TAG='radar-encrypted-state'
 
+
+def archive_paths():
+    """Return private state required to reproduce and audit the radar over time."""
+    paths = list((ROOT/'state/frozen').rglob('*.json'))
+    paths += list((ROOT/'data/raw_prices').glob('*.csv'))
+    paths += list((ROOT/'state').glob('weekly-review-*.json'))
+    weekly_audit = ROOT/'data/weekly_pool_audit.json'
+    if weekly_audit.exists():
+        paths.append(weekly_audit)
+    latest=sorted((ROOT/'state/audit').glob('*/report.json'),key=lambda p:p.stat().st_mtime)
+    if latest:
+        paths += list(latest[-1].parent.glob('*.json'))
+    for name in ('model_card.json','radar.sqlite3'):
+        path=ROOT/'state'/name
+        if path.exists():
+            paths.append(path)
+    return sorted(set(paths), key=lambda path: path.relative_to(ROOT).as_posix())
+
+
+def is_allowed_archive_member(name):
+    return (
+        name.startswith('state/')
+        or name.startswith('data/raw_prices/')
+        or name == 'data/weekly_pool_audit.json'
+    )
+
 def gh(*args, input=None):
     return subprocess.check_output(['gh',*args],input=input)
 
@@ -47,12 +73,7 @@ def pack(paths):
     return buffer.getvalue()
 
 def save():
-    paths=list((ROOT/'state/frozen').rglob('*.json'))+list((ROOT/'data/raw_prices').glob('*.csv'))
-    latest=sorted((ROOT/'state/audit').glob('*/report.json'),key=lambda p:p.stat().st_mtime)
-    if latest:paths+=list(latest[-1].parent.glob('*.json'))
-    for name in ('model_card.json','radar.sqlite3'):
-        path=ROOT/'state'/name
-        if path.exists():paths.append(path)
+    paths=archive_paths()
     if not paths:raise ValueError('no state to archive')
     plain=pack(paths);cipher=Fernet(key()).encrypt(plain)
     run=os.environ.get('GITHUB_RUN_ID','local')+'-'+os.environ.get('GITHUB_RUN_ATTEMPT','1')
@@ -74,7 +95,7 @@ def restore():
             relative=Path(member.name)
             if not member.isfile() or relative.is_absolute() or '..' in relative.parts:
                 raise ValueError('unsafe archive entry')
-            if not (member.name.startswith('state/') or member.name.startswith('data/raw_prices/')):
+            if not is_allowed_archive_member(member.name):
                 raise ValueError('unexpected archive namespace')
             target=ROOT/relative
             if not target.resolve().is_relative_to(ROOT.resolve()):raise ValueError('archive escaped root')

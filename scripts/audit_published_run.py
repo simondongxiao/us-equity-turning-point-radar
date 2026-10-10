@@ -15,13 +15,19 @@ import requests
 
 ROOT = Path(__file__).resolve().parents[1]
 URL = "https://simondongxiao.github.io/us-equity-turning-point-radar/"
+STATE_RELEASE_API = "https://api.github.com/repos/simondongxiao/us-equity-turning-point-radar/releases/tags/radar-encrypted-state"
 
 
 def _runtime_check(status: bool, item: str, evidence: str) -> dict[str, str]:
     return {"status": "PASS" if status else "FAIL", "item": item, "evidence": evidence}
 
 
-def daily_runtime_checks(data: dict, expected_run: str | None = None, html: str | None = None) -> list[dict[str, str]]:
+def daily_runtime_checks(
+    data: dict,
+    expected_run: str | None = None,
+    html: str | None = None,
+    state_asset_names: list[str] | None = None,
+) -> list[dict[str, str]]:
     """Evaluate only the observable invariants required for one daily publish.
 
     Long-horizon research and infrastructure gates remain separate.  This prevents
@@ -72,6 +78,13 @@ def daily_runtime_checks(data: dict, expected_run: str | None = None, html: str 
         and isinstance((decision_horizons.get(str(h)) or {}).get("stage_top_warnings"), list)
         for h in (5, 10, 21)
     )
+    workflow_run_id = str(data.get("workflow_run_id") or "")
+    workflow_run_attempt = str(data.get("workflow_run_attempt") or "1")
+    expected_state_prefix = f"state-{workflow_run_id}-{workflow_run_attempt}-" if workflow_run_id else ""
+    matching_state_assets = [
+        name for name in (state_asset_names or [])
+        if expected_state_prefix and name.startswith(expected_state_prefix) and name.endswith(".fernet")
+    ]
     checks = [
         _runtime_check(
             not expected_run or run_id == expected_run,
@@ -117,6 +130,11 @@ def daily_runtime_checks(data: dict, expected_run: str | None = None, html: str 
             "GitHub Pages HTML为本批次且包含越界预警和决策榜",
             f"html_checked={html is not None}; run_id={run_id}",
         ),
+        _runtime_check(
+            len(matching_state_assets) == 1,
+            "本批次预测、模型、来源与周度审计已生成匹配的加密状态包",
+            f"workflow_run_id={workflow_run_id or 'missing'}; attempt={workflow_run_attempt}; matching_assets={matching_state_assets}",
+        ),
     ]
     return checks
 
@@ -132,6 +150,13 @@ def main():
     html_response = requests.get(URL, params={"audit": audit_stamp}, timeout=60)
     html_response.raise_for_status()
     html = html_response.text
+    release_response = requests.get(STATE_RELEASE_API, params={"audit": audit_stamp}, timeout=60)
+    release_response.raise_for_status()
+    state_asset_names = [
+        asset.get("name", "")
+        for asset in release_response.json().get("assets", [])
+        if asset.get("state") == "uploaded"
+    ]
     run_id = data["run_id"]
     if args.expected_run and run_id != args.expected_run:
         raise ValueError(f"Live run {run_id} differs from deployed artifact {args.expected_run}")
@@ -154,7 +179,7 @@ def main():
     records = data["records"]
     regular = len(records)
     valid = {str(h): sum(r.get("metrics", {}).get(str(h), {}).get("status") in {"calibrated", "calibrated_low_confidence"} for r in records) for h in (5, 10, 21)}
-    runtime_checks = daily_runtime_checks(data, args.expected_run, html)
+    runtime_checks = daily_runtime_checks(data, args.expected_run, html, state_asset_names)
     daily_status = "PASS" if all(item["status"] == "PASS" for item in runtime_checks) else "FAIL"
     weekly_status = (data.get("weekly_pool_audit") or {}).get("automatic_reselection_status") or "BLOCKED"
     gateway_status = "READY" if (data.get("public_config") or {}).get("api_base_url") else "BLOCKED"
@@ -169,8 +194,9 @@ def main():
         f"- 模型：{data.get('model_version')}；存储因子：shadow / BLOCKED",
         f"- 归档SHA256：{hashlib.sha256(canonical).hexdigest()}",
         f"- 拖后共同日期的成员：{json.dumps(lagging, ensure_ascii=False)}",
-        f"- 单股网关：{gateway_status}；每周动态调池：{weekly_status}；期权B4：{option_status}；云端完整持久台账：BLOCKED。",
-        "- 本次新增云端派生结果留档90天，本地归档不自动过期；不等于完整模型/任务持久化。",
+        f"- 单股网关：{gateway_status}；每周动态调池：{weekly_status}；期权B4：{option_status}。",
+        f"- 加密预测/模型/来源/周度审计归档：{'PASS' if any(item['item'].startswith('本批次预测') and item['status'] == 'PASS' for item in runtime_checks) else 'FAIL'}；外部网关任务状态持久化：{gateway_status}。",
+        "- 加密Release资产为追加式长期归档；本次公开派生构建产物另留档90天。",
         "- 当前股池条件回测有选择/幸存者偏差；分类准确率不等于净交易胜率。",
         "", "## 本次日更运行证据", "",
     ]
@@ -210,7 +236,7 @@ def main():
             lines.append(f"- **{status}** — {item}")
     lines += ["", "## 继续推进顺序", "",
         "1. 排查共同日期滞后，补齐按交易所日历判断的时效门槛。",
-        "2. 持久化完整台账/模型并逐日结算冻结预测；按净交易胜率、极值误差分别验收。",
+        "2. 继续逐日结算冻结预测；按净交易胜率、极值误差分别验收。",
         "3. 核验母池60日成交额/持续性历史，接入点时周更与存储候选覆盖。",
         "4. 在成熟样本上验证存储LOO增量与独立顶/底校准；未过门槛不晋级。",
         "5. 配置HTTPS鉴权网关与持久任务服务，完成真实池外股链路。", ""]

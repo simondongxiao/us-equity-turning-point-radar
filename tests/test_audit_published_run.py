@@ -26,6 +26,8 @@ class PublishedRunAuditTests(unittest.TestCase):
             }
         return {
             "run_id": "radar-20261009-test",
+            "workflow_run_id": "123456",
+            "workflow_run_attempt": "1",
             "as_of": "2026-10-09",
             "records": records,
             "source_manifest": {
@@ -66,7 +68,7 @@ class PublishedRunAuditTests(unittest.TestCase):
     def test_complete_daily_run_passes_all_runtime_checks(self):
         payload = self._payload()
         html = "radar-20261009-test 价格越界预警 决策榜"
-        checks = daily_runtime_checks(payload, payload["run_id"], html)
+        checks = daily_runtime_checks(payload, payload["run_id"], html, ["state-123456-1-abcdef123456.fernet"])
         self.assertTrue(checks)
         self.assertTrue(all(check["status"] == "PASS" for check in checks))
 
@@ -75,9 +77,16 @@ class PublishedRunAuditTests(unittest.TestCase):
         payload["boundary_breach_alerts"]["basis_as_of"] = payload["as_of"]
         payload["boundary_breach_alerts"]["tiered_records"][0]["observed_price"] = 99.0
         html = "radar-20261009-test 价格越界预警 决策榜"
-        checks = daily_runtime_checks(payload, payload["run_id"], html)
+        checks = daily_runtime_checks(payload, payload["run_id"], html, ["state-123456-1-abcdef123456.fernet"])
         boundary = next(check for check in checks if "冻结边界" in check["item"])
         self.assertEqual(boundary["status"], "FAIL")
+
+    def test_missing_matching_encrypted_state_asset_fails(self):
+        payload = self._payload()
+        html = "radar-20261009-test 价格越界预警 决策榜"
+        checks = daily_runtime_checks(payload, payload["run_id"], html, ["state-999999-1-abcdef123456.fernet"])
+        archive = next(check for check in checks if check["item"].startswith("本批次预测"))
+        self.assertEqual(archive["status"], "FAIL")
 
 
 if __name__ == "__main__":
