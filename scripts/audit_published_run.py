@@ -17,13 +17,121 @@ ROOT = Path(__file__).resolve().parents[1]
 URL = "https://simondongxiao.github.io/us-equity-turning-point-radar/"
 
 
+def _runtime_check(status: bool, item: str, evidence: str) -> dict[str, str]:
+    return {"status": "PASS" if status else "FAIL", "item": item, "evidence": evidence}
+
+
+def daily_runtime_checks(data: dict, expected_run: str | None = None, html: str | None = None) -> list[dict[str, str]]:
+    """Evaluate only the observable invariants required for one daily publish.
+
+    Long-horizon research and infrastructure gates remain separate.  This prevents
+    an honest BLOCKED roadmap item from making a completed daily refresh look
+    like a failed publish.
+    """
+    records = data.get("records") or []
+    as_of = str(data.get("as_of") or "")
+    run_id = str(data.get("run_id") or "")
+    calibrated = {"calibrated", "calibrated_low_confidence"}
+    valid = {
+        str(h): sum((record.get("metrics") or {}).get(str(h), {}).get("status") in calibrated for record in records)
+        for h in (5, 10, 21)
+    }
+    source = data.get("source_manifest") or {}
+    intraday = source.get("intraday_regular_session_validation") or {}
+    intraday_symbols = intraday.get("symbols") or {}
+    regular_symbols = {str(record.get("symbol")) for record in records if record.get("symbol")}
+    complete_regular = {
+        symbol
+        for symbol, row in intraday_symbols.items()
+        if symbol in regular_symbols
+        and row.get("status") in {"matched", "corrected"}
+        and row.get("date") == as_of
+        and int(row.get("bar_count") or 0) >= 78
+        and isinstance(row.get("regular_session_aggregate"), dict)
+    }
+    alerts = data.get("boundary_breach_alerts") or {}
+    tiered = alerts.get("tiered_records") or []
+    legacy = alerts.get("records") or []
+    relation_ok = True
+    for row in [*tiered, *legacy]:
+        side = row.get("side")
+        observed = row.get("observed_price", row.get("current_price"))
+        boundary = row.get("boundary_value")
+        try:
+            relation_ok = relation_ok and (
+                (side == "below_lower" and float(observed) < float(boundary))
+                or (side == "above_upper" and float(observed) > float(boundary))
+            )
+        except (TypeError, ValueError):
+            relation_ok = False
+    basis_as_of = str(alerts.get("basis_as_of") or "")
+    index_records = ((data.get("index_forecasts") or {}).get("records") or [])
+    decision_horizons = ((data.get("decision_board") or {}).get("horizons") or {})
+    decisions_ok = all(
+        isinstance((decision_horizons.get(str(h)) or {}).get("stage_bottom_candidates"), list)
+        and isinstance((decision_horizons.get(str(h)) or {}).get("stage_top_warnings"), list)
+        for h in (5, 10, 21)
+    )
+    checks = [
+        _runtime_check(
+            not expected_run or run_id == expected_run,
+            "线上批次与预期批次一致",
+            f"live={run_id}; expected={expected_run or 'not supplied'}",
+        ),
+        _runtime_check(
+            len(records) == 100 and all(value == 100 for value in valid.values()),
+            "常态100股及5/10/21日有效预测完整",
+            f"records={len(records)}; valid={valid}",
+        ),
+        _runtime_check(
+            source.get("complete_session_cutoff_ny") == as_of and source.get("common_latest_date") == as_of,
+            "统一使用最近完整纽约交易日",
+            f"as_of={as_of}; cutoff={source.get('complete_session_cutoff_ny')}; common={source.get('common_latest_date')}",
+        ),
+        _runtime_check(
+            complete_regular == regular_symbols and int(intraday.get("unavailable") or 0) == 0,
+            "100股5分钟常规时段聚合校验完整",
+            f"regular={len(regular_symbols)}; verified={len(complete_regular)}; unavailable={intraday.get('unavailable')}",
+        ),
+        _runtime_check(
+            alerts.get("status") == "observed"
+            and alerts.get("version") == "prior-frozen-tiered-boundary-breach-v1.6.1"
+            and bool(basis_as_of)
+            and basis_as_of < as_of
+            and relation_ok,
+            "冻结边界早于当前日并按v1.6.1分层严格比较",
+            f"basis={basis_as_of}; current={as_of}; version={alerts.get('version')}; evaluated={alerts.get('evaluated_symbol_horizons')}; unavailable={alerts.get('unavailable_symbol_horizons')}",
+        ),
+        _runtime_check(
+            len(index_records) == 13,
+            "指数与ETF方向性拐点覆盖13项",
+            f"index_records={len(index_records)}",
+        ),
+        _runtime_check(
+            decisions_ok,
+            "决策榜同时提供阶段底与阶段顶候选",
+            f"horizons={sorted(decision_horizons)}",
+        ),
+        _runtime_check(
+            html is not None and run_id in html and "价格越界预警" in html and "决策榜" in html,
+            "GitHub Pages HTML为本批次且包含越界预警和决策榜",
+            f"html_checked={html is not None}; run_id={run_id}",
+        ),
+    ]
+    return checks
+
+
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--expected-run")
     args = parser.parse_args()
-    response = requests.get(URL + "data.json", params={"audit": datetime.now(timezone.utc).isoformat()}, timeout=60)
+    audit_stamp = datetime.now(timezone.utc).isoformat()
+    response = requests.get(URL + "data.json", params={"audit": audit_stamp}, timeout=60)
     response.raise_for_status()
     data = response.json()
+    html_response = requests.get(URL, params={"audit": audit_stamp}, timeout=60)
+    html_response.raise_for_status()
+    html = html_response.text
     run_id = data["run_id"]
     if args.expected_run and run_id != args.expected_run:
         raise ValueError(f"Live run {run_id} differs from deployed artifact {args.expected_run}")
@@ -46,8 +154,14 @@ def main():
     records = data["records"]
     regular = len(records)
     valid = {str(h): sum(r.get("metrics", {}).get(str(h), {}).get("status") in {"calibrated", "calibrated_low_confidence"} for r in records) for h in (5, 10, 21)}
+    runtime_checks = daily_runtime_checks(data, args.expected_run, html)
+    daily_status = "PASS" if all(item["status"] == "PASS" for item in runtime_checks) else "FAIL"
+    weekly_status = (data.get("weekly_pool_audit") or {}).get("automatic_reselection_status") or "BLOCKED"
+    gateway_status = "READY" if (data.get("public_config") or {}).get("api_base_url") else "BLOCKED"
+    option_status = (data.get("options_model_gate") or {}).get("status") or "BLOCKED"
     lines = [
         f"# 日更验收：{run_id}", "",
+        f"- **本次日更核心验收：{daily_status}**",
         f"- 在线地址：{URL}",
         f"- 构建时间：{data.get('generated_at')}；模型基准日：{data['as_of']}",
         f"- 来源完整日线截止：{source.get('complete_session_cutoff_ny')}；最新单股日期：{latest}",
@@ -55,9 +169,16 @@ def main():
         f"- 模型：{data.get('model_version')}；存储因子：shadow / BLOCKED",
         f"- 归档SHA256：{hashlib.sha256(canonical).hexdigest()}",
         f"- 拖后共同日期的成员：{json.dumps(lagging, ensure_ascii=False)}",
-        "- 单股网关：BLOCKED；每周动态调池：BLOCKED；云端完整持久台账：BLOCKED。",
+        f"- 单股网关：{gateway_status}；每周动态调池：{weekly_status}；期权B4：{option_status}；云端完整持久台账：BLOCKED。",
         "- 本次新增云端派生结果留档90天，本地归档不自动过期；不等于完整模型/任务持久化。",
         "- 当前股池条件回测有选择/幸存者偏差；分类准确率不等于净交易胜率。",
+        "", "## 本次日更运行证据", "",
+    ]
+    for item in runtime_checks:
+        lines.append(f"- **{item['status']}** — {item['item']}；{item['evidence']}")
+    lines += [
+        "",
+        "以下长期能力清单与本次日更是两层验收：路线项保留BLOCKED不会把已通过的当日数据更新改判为失败。",
         "", "## 近一年成熟历史评估", "",
     ]
     horizons = data.get("backtest", {}).get("one_year_walk_forward", {}).get("horizons", {})
