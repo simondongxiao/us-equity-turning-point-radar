@@ -6,10 +6,12 @@ import math
 from pathlib import Path
 from typing import Any
 
-VERSION = "prior-frozen-tiered-boundary-breach-v1.6.1"
+VERSION = "prior-frozen-extreme-atr-breach-v1.7.0"
 HORIZONS = (5, 10, 21)
 HORIZON_LABELS = {5: "5日", 10: "10日", 21: "21日（约20日/1个月）"}
 CALIBRATED = {"calibrated", "calibrated_low_confidence"}
+EXTREME_ATR_MULTIPLIER = 2.0
+VOLATILITY_BAND_OUTER_ATR_MULTIPLIER = 1.25
 
 
 def _finite(value: Any) -> bool:
@@ -49,44 +51,33 @@ def _session_ohlc(record: dict[str, Any]) -> dict[str, float] | None:
     return values
 
 
-def _structure_bounds(record: dict[str, Any], horizon: int) -> tuple[float | None, float | None, str]:
+def _extreme_atr_bounds(
+    record: dict[str, Any], metric: dict[str, Any], horizon: int,
+) -> tuple[float | None, float | None, float | None, str]:
+    anchor = _record_price(record)
+    if anchor is None:
+        return None, None, None, "unavailable"
     horizon_payload = (((record.get("potential_ranges") or {}).get("horizons") or {}).get(str(horizon)) or {})
     structure = horizon_payload.get("layer1_price_structure") or {}
-    core_bottom = structure.get("core_bottom_zone") or {}
-    core_top = structure.get("core_top_zone") or {}
-    bottom = _band(core_bottom.get("band")) or _band(structure.get("support_band"))
-    top = _band(core_top.get("band")) or _band(structure.get("resistance_band"))
-    if bottom is None or top is None:
-        return None, None, "unavailable"
-    return bottom[0], top[1], "prior_frozen_price_structure_outer_edges"
-
-
-def _terminal_bounds(metric: dict[str, Any]) -> tuple[float | None, float | None, str]:
-    terminal = None
-    if _finite(metric.get("terminal_p10")) and _finite(metric.get("terminal_p90")):
-        terminal = _band([metric["terminal_p10"], metric["terminal_p90"]])
-    if terminal is None:
-        terminal = _band(metric.get("terminal_band"))
-    if terminal is None:
-        return None, None, "unavailable"
-    return terminal[0], terminal[1], "prior_frozen_terminal_p10_p90"
-
-
-def _pressure_bounds(record: dict[str, Any], metric: dict[str, Any]) -> tuple[float | None, float | None, str]:
-    anchor = _record_price(record)
-    bottom = _band(metric.get("bottom_zone")) or _band(metric.get("bottom_band")) or _band(metric.get("volatility_bottom_band"))
-    top = _band(metric.get("top_zone")) or _band(metric.get("top_band")) or _band(metric.get("volatility_top_band"))
-    if anchor is None or bottom is None or top is None:
-        return None, None, "unavailable"
-    lower_candidates = [bottom[0]]
-    upper_candidates = [top[1]]
-    for value in (metric.get("terminal_p10"), anchor * (1 + float(metric["expected_return_p05"])) if _finite(metric.get("expected_return_p05")) else None):
-        if _finite(value) and float(value) > 0:
-            lower_candidates.append(float(value))
-    for value in (metric.get("terminal_p90"), anchor * (1 + float(metric["expected_return_p95"])) if _finite(metric.get("expected_return_p95")) else None):
-        if _finite(value) and float(value) > 0:
-            upper_candidates.append(float(value))
-    return min(lower_candidates), max(upper_candidates), "conditional_path_extended_by_terminal_p10_p90_and_net_return_p05_p95"
+    atr = structure.get("atr14")
+    source = "prior_frozen_structure_atr14"
+    scale = math.sqrt(horizon / 5.0)
+    if not _finite(atr) or float(atr) <= 0:
+        inferred: list[float] = []
+        bottom = _band(metric.get("volatility_bottom_band"))
+        top = _band(metric.get("volatility_top_band"))
+        if bottom is not None and bottom[0] < anchor:
+            inferred.append((anchor - bottom[0]) / (VOLATILITY_BAND_OUTER_ATR_MULTIPLIER * scale))
+        if top is not None and top[1] > anchor:
+            inferred.append((top[1] - anchor) / (VOLATILITY_BAND_OUTER_ATR_MULTIPLIER * scale))
+        inferred = [value for value in inferred if _finite(value) and value > 0]
+        if not inferred:
+            return None, None, None, "unavailable"
+        atr = sum(inferred) / len(inferred)
+        source = "prior_frozen_atr14_inferred_from_volatility_outer_band"
+    atr = float(atr)
+    distance = EXTREME_ATR_MULTIPLIER * atr * scale
+    return max(0.01, anchor - distance), anchor + distance, atr, source
 
 
 def _latest_earlier_snapshot(predictions_dir: Path, current_as_of: str) -> dict[str, Any] | None:
@@ -108,7 +99,8 @@ def _latest_earlier_snapshot(predictions_dir: Path, current_as_of: str) -> dict[
 def _tiered_breaches(
     current: dict[str, Any], frozen: dict[str, Any], metric: dict[str, Any],
     scope: str, horizon: int, layer: str, layer_label: str,
-    lower: float | None, upper: float | None, prior: dict[str, Any], current_as_of: str,
+    lower: float | None, upper: float | None, atr14: float | None,
+    prior: dict[str, Any], current_as_of: str, boundary_source: str,
 ) -> list[dict[str, Any]]:
     ohlc = _session_ohlc(current)
     if ohlc is None or lower is None or upper is None:
@@ -134,6 +126,11 @@ def _tiered_breaches(
             "current_price": ohlc["close"], "observed_price": observed,
             "frozen_lower_bound": lower, "frozen_upper_bound": upper,
             "boundary_value": boundary, "breach_pct": observed / boundary - 1,
+            "boundary_source": boundary_source,
+            "frozen_anchor_price": _record_price(frozen),
+            "frozen_atr14": atr14,
+            "extreme_atr_multiplier": EXTREME_ATR_MULTIPLIER,
+            "horizon_atr_scale": math.sqrt(horizon / 5.0),
             "basis_run_id": prior.get("run_id"), "basis_as_of": prior.get("as_of"),
             "current_as_of": current_as_of,
         })
@@ -153,8 +150,9 @@ def build_boundary_breach_alerts(
         "current_as_of": current_as_of,
         "current_run_id": current_run_id,
         "horizon_labels": {str(h): HORIZON_LABELS[h] for h in HORIZONS},
-        "boundary_definition": "分三层比较最近一个更早交易日冻结边界：结构核心带外沿、期限末P10/P90、极端尾部扩展；不是当天重算区间，也不是概率。",
-        "comparison_rule": "盘中层使用当日low/high严格跌破/突破；收盘确认使用close严格跌破/突破；等于边界不算越界。",
+        "boundary_definition": "只比较最近一个更早交易日冻结的极端ATR边界：冻结参考价 ± 2.0 × ATR14 × sqrt(H/5)；不是结构支撑阻力、期限末分位或概率。",
+        "comparison_rule": "当日low/high严格跌破/突破极端ATR边界才显示；close仍在边界外为收盘确认，否则为仅盘中；等于边界不算越界。",
+        "extreme_atr_multiplier": EXTREME_ATR_MULTIPLIER,
     }
     if prior is None:
         return {**base, "status": "unavailable", "reason": "no_earlier_frozen_prediction", "basis_run_id": None, "basis_as_of": None, "records": [], "summary": {}, "tiered_records": [], "tiered_summary": {}}
@@ -183,51 +181,18 @@ def build_boundary_breach_alerts(
             if metric.get("status") not in CALIBRATED:
                 unavailable += 1
                 continue
-            lower, upper, source = _pressure_bounds(frozen, metric)
+            lower, upper, atr14, source = _extreme_atr_bounds(frozen, metric, horizon)
             if lower is None or upper is None:
                 unavailable += 1
                 continue
             evaluated += 1
-            structure_lower, structure_upper, _ = _structure_bounds(frozen, horizon)
-            terminal_lower, terminal_upper, _ = _terminal_bounds(metric)
-            for layer, label, layer_lower, layer_upper in (
-                ("structure", "结构核心带", structure_lower, structure_upper),
-                ("terminal", "期限末P10/P90", terminal_lower, terminal_upper),
-                ("extreme_tail", "极端尾部外沿", lower, upper),
-            ):
-                tiered_alerts.extend(_tiered_breaches(
-                    current, frozen, metric, scope, horizon, layer, label,
-                    layer_lower, layer_upper, prior, current_as_of,
-                ))
-            side = None
-            boundary = None
-            breach_pct = None
-            if current_price < lower:
-                side, boundary, breach_pct = "below_lower", lower, current_price / lower - 1
-            elif current_price > upper:
-                side, boundary, breach_pct = "above_upper", upper, current_price / upper - 1
-            if side is None:
-                continue
-            alerts.append({
-                "symbol": symbol,
-                "name": current.get("name_zh") or current.get("name") or frozen.get("name_zh") or frozen.get("name") or symbol,
-                "scope": scope,
-                "horizon_sessions": horizon,
-                "horizon_label": HORIZON_LABELS[horizon],
-                "side": side,
-                "current_price": current_price,
-                "frozen_lower_bound": lower,
-                "frozen_upper_bound": upper,
-                "boundary_value": boundary,
-                "breach_pct": breach_pct,
-                "boundary_source": source,
-                "basis_run_id": prior.get("run_id"),
-                "basis_as_of": prior.get("as_of"),
-                "current_as_of": current_as_of,
-            })
+            tiered_alerts.extend(_tiered_breaches(
+                current, frozen, metric, scope, horizon, "extreme_atr", "极端ATR边界",
+                lower, upper, atr14, prior, current_as_of, source,
+            ))
+    alerts = [dict(item) for item in tiered_alerts if item["trigger_state"] == "close_confirmed"]
     alerts.sort(key=lambda item: (item["horizon_sessions"], item["side"], -abs(item["breach_pct"]), item["symbol"]))
-    layer_order = {"structure": 0, "terminal": 1, "extreme_tail": 2}
-    tiered_alerts.sort(key=lambda item: (item["horizon_sessions"], layer_order[item["boundary_layer"]], item["side"], 0 if item["trigger_state"] == "close_confirmed" else 1, -abs(item["breach_pct"]), item["symbol"]))
+    tiered_alerts.sort(key=lambda item: (item["horizon_sessions"], item["side"], 0 if item["trigger_state"] == "close_confirmed" else 1, -abs(item["breach_pct"]), item["symbol"]))
     summary = {
         str(h): {
             "below_lower": sum(item["horizon_sessions"] == h and item["side"] == "below_lower" for item in alerts),
@@ -248,7 +213,7 @@ def build_boundary_breach_alerts(
                 }
                 for side in ("below_lower", "above_upper")
             }
-            for layer in ("structure", "terminal", "extreme_tail")
+            for layer in ("extreme_atr",)
         }
         for h in HORIZONS
     }
@@ -263,6 +228,6 @@ def build_boundary_breach_alerts(
         "summary": summary,
         "tiered_records": tiered_alerts,
         "tiered_summary": tiered_summary,
-        "note": "这里只报告已越界；未出现的标的不代表方向安全。盘中越界与收盘确认分开，结构带、期限末带和极端尾部不可混为同一强度，也都不等于立即反转或交易信号。",
+        "note": "首页只报告突破冻结极端ATR边界的记录，不再显示结构位或期限末分位的普通穿越。未出现的标的不代表方向安全；极端ATR突破也不等于立即反转或交易信号。",
     }
 

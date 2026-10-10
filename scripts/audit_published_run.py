@@ -108,11 +108,13 @@ def daily_runtime_checks(
         ),
         _runtime_check(
             alerts.get("status") == "observed"
-            and alerts.get("version") == "prior-frozen-tiered-boundary-breach-v1.6.1"
+            and alerts.get("version") == "prior-frozen-extreme-atr-breach-v1.7.0"
+            and alerts.get("extreme_atr_multiplier") == 2.0
+            and all(row.get("boundary_layer") == "extreme_atr" for row in tiered)
             and bool(basis_as_of)
             and basis_as_of < as_of
             and relation_ok,
-            "冻结边界早于当前日并按v1.6.1分层严格比较",
+            "冻结边界早于当前日并按v1.7极端ATR口径严格比较",
             f"basis={basis_as_of}; current={as_of}; version={alerts.get('version')}; evaluated={alerts.get('evaluated_symbol_horizons')}; unavailable={alerts.get('unavailable_symbol_horizons')}",
         ),
         _runtime_check(
@@ -126,8 +128,8 @@ def daily_runtime_checks(
             f"horizons={sorted(decision_horizons)}",
         ),
         _runtime_check(
-            html is not None and run_id in html and "价格越界预警" in html and "决策榜" in html,
-            "GitHub Pages HTML为本批次且包含越界预警和决策榜",
+            html is not None and run_id in html and "极端ATR越界预警" in html and "决策榜" in html,
+            "GitHub Pages HTML为本批次且包含极端ATR越界预警和决策榜",
             f"html_checked={html is not None}; run_id={run_id}",
         ),
         _runtime_check(

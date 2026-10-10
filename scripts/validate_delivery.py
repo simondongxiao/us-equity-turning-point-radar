@@ -45,7 +45,9 @@ def validate_dashboard(data, production=False):
             else:
                 require(alert['current_price']>alert['frozen_upper_bound'] and alert['boundary_value']==alert['frozen_upper_bound'] and num(alert.get('breach_pct')) and alert['breach_pct']>0,'False upper-bound breach alert')
         for alert in alerts['tiered_records']:
-            require(alert.get('boundary_layer') in {'structure','terminal','extreme_tail'},'Tiered boundary layer invalid')
+            require(alert.get('boundary_layer')=='extreme_atr','Only extreme ATR alerts may be exposed at the top of the page')
+            require(alert.get('extreme_atr_multiplier')==2.0,'Extreme ATR multiplier mismatch')
+            require(num(alert.get('frozen_atr14')) and alert['frozen_atr14']>0,'Frozen ATR14 missing')
             require(alert.get('trigger_state') in {'intraday_only','close_confirmed'},'Tiered boundary trigger invalid')
             require(alert.get('side') in {'below_lower','above_upper'},'Tiered boundary side invalid')
             require(all(num(alert.get(key)) and alert[key]>0 for key in ('session_high','session_low','session_close','frozen_lower_bound','frozen_upper_bound','boundary_value','observed_price')),'Tiered boundary price invalid')
