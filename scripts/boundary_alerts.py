@@ -6,7 +6,7 @@ import math
 from pathlib import Path
 from typing import Any
 
-VERSION = "prior-frozen-tiered-boundary-breach-v1.6.0"
+VERSION = "prior-frozen-tiered-boundary-breach-v1.6.1"
 HORIZONS = (5, 10, 21)
 HORIZON_LABELS = {5: "5日", 10: "10日", 21: "21日（约20日/1个月）"}
 CALIBRATED = {"calibrated", "calibrated_low_confidence"}
@@ -62,9 +62,11 @@ def _structure_bounds(record: dict[str, Any], horizon: int) -> tuple[float | Non
 
 
 def _terminal_bounds(metric: dict[str, Any]) -> tuple[float | None, float | None, str]:
-    terminal = _band(metric.get("terminal_band"))
-    if terminal is None and _finite(metric.get("terminal_p10")) and _finite(metric.get("terminal_p90")):
+    terminal = None
+    if _finite(metric.get("terminal_p10")) and _finite(metric.get("terminal_p90")):
         terminal = _band([metric["terminal_p10"], metric["terminal_p90"]])
+    if terminal is None:
+        terminal = _band(metric.get("terminal_band"))
     if terminal is None:
         return None, None, "unavailable"
     return terminal[0], terminal[1], "prior_frozen_terminal_p10_p90"

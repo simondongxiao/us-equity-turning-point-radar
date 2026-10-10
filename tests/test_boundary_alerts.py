@@ -29,6 +29,26 @@ def potential(structure_bottom=(92, 95), structure_top=(105, 108)):
 
 
 class BoundaryAlertTests(unittest.TestCase):
+    def test_terminal_layer_prefers_explicit_p10_p90_over_interquartile_band(self):
+        with tempfile.TemporaryDirectory(dir=ROOT / "outputs") as folder:
+            root = Path(folder)
+            narrow = metric()
+            narrow.update(terminal_band=[95, 105], terminal_p10=90, terminal_p90=110)
+            prior = {
+                "run_id": "radar-20261008", "as_of": "2026-10-08", "generated_at": "2026-10-09T01:00:00Z",
+                "records": [{
+                    "symbol": "TEST", "name_zh": "测试", "reference_price": 100,
+                    "potential_ranges": potential((92, 95), (105, 108)),
+                    "metrics": {str(h): dict(narrow) for h in (5, 10, 21)},
+                }], "indices": [],
+            }
+            (root / "prior.json").write_text(json.dumps(prior), encoding="utf-8")
+            current = [{"symbol": "TEST", "name_zh": "测试", "reference_price": 107,
+                        "session_ohlc": {"open": 100, "high": 108, "low": 99, "close": 107}}]
+            result = build_boundary_breach_alerts(current, [], "2026-10-09", "current", root)
+            terminal = [row for row in result["tiered_records"] if row["boundary_layer"] == "terminal"]
+            self.assertEqual(terminal, [])
+
     def test_compares_current_price_with_latest_earlier_frozen_bounds(self):
         with tempfile.TemporaryDirectory(dir=ROOT / "outputs") as folder:
             root = Path(folder)
