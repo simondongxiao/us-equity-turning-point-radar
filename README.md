@@ -1,6 +1,8 @@
 # 美股阶段顶底概率雷达｜Codex Skill交付包
 
-名称：`us-equity-turning-point-radar`；版本：`1.2.0-structure-range-layer`。本包是同一个Skill的完整增量版本，包含100股种子、模型与回测规范、真实计算引擎源码、冻结台账逻辑、HTML前端、GitHub Pages工作流和测试。
+名称：`us-equity-turning-point-radar`；版本：`1.8.0-relative-atr-path-and-confirmed-bottom`。本包是同一个Skill的完整增量版本，包含100股种子、模型与回测规范、真实计算引擎源码、冻结台账逻辑、HTML前端、GitHub Pages工作流和测试。
+
+v1.8把共同历史路径从美元ATR缩放改为价格尺度不变的相对ATR缩放，并把常态期间低/高点、条件反转底/顶与2 ATR极端线分层展示。触及或跌破价带不再显示为已经止跌；方向性底仍要求低点后反弹至少1 ATR。
 
 当前生产网站为 https://simondongxiao.github.io/us-equity-turning-point-radar/ 。打包文件不包含行情缓存、冻结预测、SQLite、密钥或GitHub凭证；安装后必须在实际项目中恢复自己的状态和授权。生产B3保持低可信，影子Challenger未晋级；正式HTTPS单股任务网关和动态周更仍为BLOCKED，不能因网页已部署而宣称完成。
 

@@ -3,7 +3,7 @@ import unittest
 import numpy as np
 import pandas as pd
 
-from scripts.radar_engine import _decision_fields, _risk_and_return_audit
+from scripts.radar_engine import _decision_fields, _path_volatility_scale, _risk_and_return_audit
 
 
 def metric(bottom, top, no_turn, *, zone=True, wash=0.0, valid=True, margin=0.05):
@@ -58,6 +58,17 @@ class DecisionConsistencyTests(unittest.TestCase):
         self.assertFalse(out["risk_metric_valid"])
         self.assertEqual(out["risk_metric_validation_reason"], "negative_modeled_price")
         self.assertGreater(out["risk_value_raw"], 1.0)
+
+    def test_path_scale_is_invariant_to_nominal_price_rescaling(self):
+        base = _path_volatility_scale(8.0, 100.0, 4.0, 50.0)
+        rescaled = _path_volatility_scale(80.0, 1000.0, 40.0, 500.0)
+        self.assertAlmostEqual(base[0], 1.0)
+        self.assertEqual(base, rescaled)
+
+    def test_path_scale_uses_relative_not_dollar_atr(self):
+        scale, raw = _path_volatility_scale(80.0, 1600.0, 4.0, 40.0)
+        self.assertAlmostEqual(raw, 0.5)
+        self.assertAlmostEqual(scale, 0.5)
 
 
 if __name__ == "__main__":

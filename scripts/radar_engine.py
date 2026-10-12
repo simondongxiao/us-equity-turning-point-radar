@@ -52,7 +52,7 @@ SITE_DIR = ROOT / "site"
 TAXONOMY_VERSION = "research-taxonomy-20260915-v1.1"
 FEATURE_VERSION = "b3-point-in-time-v1"
 CHALLENGER_FEATURE_VERSION = "storage-shadow-loo-v1"
-MODEL_VERSION = "champion-b3-calibrated-low-confidence-v1.3.0"
+MODEL_VERSION = "champion-b3-relative-atr-path-v1.4.0"
 DIRECTIONAL_MODEL_VERSION = "challenger-exclusive-directional-turn-v1.3.0"
 CONFIDENCE_METHOD_VERSION = "path-validation-confidence-v1.3.0"
 STRATEGY_VERSION = "next-open-atr-1x-cost-15bp-decision-audit-v1.3.0"
@@ -121,6 +121,22 @@ def quantile_band(values: np.ndarray, weights: np.ndarray) -> list[float] | None
     if not (math.isfinite(lo) and math.isfinite(hi) and lo > 0 and hi >= lo):
         return None
     return [round(lo, 4), round(hi, 4)]
+
+
+def _path_volatility_scale(current_atr: float, current_price: float,
+                           historical_atr: float, historical_price: float) -> tuple[float, float]:
+    """Map a historical positive-price path with a price-scale invariant ATR ratio.
+
+    Dollar ATR is not comparable after a stock has changed price by an order of
+    magnitude.  Comparing ATR as a fraction of price keeps the same path
+    geometry under a pure rescaling such as a split or a long nominal-price
+    trend.  The pre-existing 0.5--2.0 guard remains a modeling support bound;
+    the raw ratio and cap hits are emitted for audit instead of being hidden.
+    """
+    current_relative_atr = float(current_atr) / max(float(current_price), 1e-9)
+    historical_relative_atr = float(historical_atr) / max(float(historical_price), 1e-9)
+    raw_ratio = current_relative_atr / max(historical_relative_atr, 1e-9)
+    return float(np.clip(raw_ratio, 0.5, 2.0)), float(raw_ratio)
 
 
 def safe_json(value: Any) -> Any:
@@ -1467,9 +1483,8 @@ def build_scenario_metric(symbol: str, current: pd.Series, historical: pd.DataFr
         prior = max(float(empirical.get(cls, 0.05)), 0.05)
         target = max(float(model_p.get(cls, 1 / 3)), 0.01)
         weight = math.exp(-float(row["_distance"])) * min(4.0, target / prior)
-        scale_ratio = atr / max(float(row["atr"]), 1e-6)
-        scale = min(2.0, max(0.5, scale_ratio))
         origin = max(float(row["adj_close"]), 1e-9)
+        scale, raw_scale_ratio = _path_volatility_scale(atr, ref, float(row["atr"]), origin)
         # Positive-price assets need multiplicative path scaling. The former
         # linear distance extrapolation could turn a valid historical low into
         # a negative modeled price when current ATR was much larger.
@@ -1483,7 +1498,7 @@ def build_scenario_metric(symbol: str, current: pd.Series, historical: pd.DataFr
             if min_price <= 0 or not min_price <= terminal <= max_price:
                 continue
         dd = max(0.0, 1 - min_price / ref)
-        records.append({"label": cls, "weight": weight, "terminal": terminal, "min_price": min_price, "max_price": max_price, "drawdown": dd, "bottom": bool(row["bottom_event"]), "top": bool(row["top_event"])})
+        records.append({"label": cls, "weight": weight, "terminal": terminal, "min_price": min_price, "max_price": max_price, "drawdown": dd, "bottom": bool(row["bottom_event"]), "top": bool(row["top_event"]), "path_scale": scale, "path_scale_raw_ratio": raw_scale_ratio})
     if not records:
         return {"status": "structural_only"}
     weights = np.array([r["weight"] for r in records], dtype=float); weights /= weights.sum()
@@ -1504,6 +1519,8 @@ def build_scenario_metric(symbol: str, current: pd.Series, historical: pd.DataFr
         if 1 / np.sum(weights ** 2) < 20:
             return {"status":"uncalibrated", "reason":"effective scenario support below 20"}
     terminal = np.array([r["terminal"] for r in records]); mins = np.array([r["min_price"] for r in records]); maxs = np.array([r["max_price"] for r in records]); dds = np.array([r["drawdown"] for r in records])
+    path_scales = np.array([r["path_scale"] for r in records], dtype=float)
+    raw_path_scale_ratios = np.array([r["path_scale_raw_ratio"] for r in records], dtype=float)
     net = terminal / ref - 1 - 0.0015
     expected = float(np.sum(weights * net)); sd = float(np.sqrt(np.sum(weights * (net - expected) ** 2)))
     eff_n = float(1 / np.sum(weights ** 2)); mu_lcb = expected - 1.645 * sd / math.sqrt(max(eff_n, 1))
@@ -1529,6 +1546,7 @@ def build_scenario_metric(symbol: str, current: pd.Series, historical: pd.DataFr
     volatility_scale = math.sqrt(max(horizon, 1) / 5.0)
     volatility_bottom_band = [max(0.01, ref - 1.25 * atr * volatility_scale), max(0.01, ref - 0.75 * atr * volatility_scale)]
     volatility_top_band = [ref + 0.75 * atr * volatility_scale, ref + 1.25 * atr * volatility_scale]
+    extreme_atr_bounds = [max(0.01, ref - 2.0 * atr * volatility_scale), ref + 2.0 * atr * volatility_scale]
     return {
         "status": "calibrated", "opportunity_value": clean_num(opportunity), "risk_value": risk,
         "expected_return": expected, "es95": risk, "mu_lcb": mu_lcb, "effective_scenario_n": eff_n,
@@ -1547,12 +1565,28 @@ def build_scenario_metric(symbol: str, current: pd.Series, historical: pd.DataFr
         "two_way_wash_threshold": 0.40,
         "bottom_band": quantile_band(mins[bottom_mask], weights[bottom_mask]) if bottom_mask.any() else quantile_band(mins, weights),
         "top_band": quantile_band(maxs[top_mask], weights[top_mask]) if top_mask.any() else quantile_band(maxs, weights),
+        "normal_path_low_band": quantile_band(mins, weights),
+        "normal_path_high_band": quantile_band(maxs, weights),
+        "path_low_p10": weighted_quantile(mins, weights, 0.10),
+        "path_low_p50": weighted_quantile(mins, weights, 0.50),
+        "path_low_p90": weighted_quantile(mins, weights, 0.90),
+        "path_high_p10": weighted_quantile(maxs, weights, 0.10),
+        "path_high_p50": weighted_quantile(maxs, weights, 0.50),
+        "path_high_p90": weighted_quantile(maxs, weights, 0.90),
         "volatility_bottom_band": volatility_bottom_band,
         "volatility_top_band": volatility_top_band,
         "volatility_band_method": "ATR14 x sqrt(horizon/5), inner 0.75 ATR and outer 1.25 ATR; display fallback only",
+        "extreme_atr_bounds": extreme_atr_bounds,
+        "extreme_atr_method": "reference price +/- 2.0 ATR14 x sqrt(horizon/5); abnormal expansion line, not a reversal promise",
         "terminal_band": quantile_band(terminal, weights),
         "terminal_p10": weighted_quantile(terminal, weights, 0.1), "terminal_p50": weighted_quantile(terminal, weights, 0.5), "terminal_p90": weighted_quantile(terminal, weights, 0.9),
         "scenario_set": "nearest-point-in-time-history-with-model-class-reweighting",
+        "path_scale_method": "relative_atr_ratio=(ATR/price)_current/(ATR/price)_historical; multiplicative positive-price mapping",
+        "path_scale_p10": weighted_quantile(path_scales, weights, 0.10),
+        "path_scale_p50": weighted_quantile(path_scales, weights, 0.50),
+        "path_scale_p90": weighted_quantile(path_scales, weights, 0.90),
+        "path_scale_lower_cap_weight": float(np.sum(weights[raw_path_scale_ratios <= 0.5])),
+        "path_scale_upper_cap_weight": float(np.sum(weights[raw_path_scale_ratios >= 2.0])),
         "scenario_count": len(records), "cost_assumption": 0.0015,
         "decision_audit_version": DECISION_AUDIT_VERSION,
         "history_source": history_source,
@@ -1688,11 +1722,21 @@ def enrich_record(row: dict[str, Any], frame: pd.DataFrame, metric_by_h: dict[in
         if isinstance(horizon_payload, dict):
             horizon_payload["model_path_band"] = {
                 "terminal_band": metric.get("terminal_band"),
+                "normal_path_low_band": metric.get("normal_path_low_band"),
+                "normal_path_high_band": metric.get("normal_path_high_band"),
+                "path_low_p10": metric.get("path_low_p10"),
+                "path_low_p50": metric.get("path_low_p50"),
+                "path_low_p90": metric.get("path_low_p90"),
+                "path_high_p10": metric.get("path_high_p10"),
+                "path_high_p50": metric.get("path_high_p50"),
+                "path_high_p90": metric.get("path_high_p90"),
                 "bottom_band": metric.get("bottom_band"),
                 "top_band": metric.get("top_band"),
                 "volatility_bottom_band": metric.get("volatility_bottom_band"),
                 "volatility_top_band": metric.get("volatility_top_band"),
-                "note": "模型共同路径条件价带；与原始统计包络、结构核心区分层展示，不替代方向性概率。",
+                "extreme_atr_bounds": metric.get("extreme_atr_bounds"),
+                "path_scale_method": metric.get("path_scale_method"),
+                "note": "常态路径低/高区来自全部共同路径的期间极值P25—P75；条件底/顶只来自发生反转事件的路径。触及任一区间都不等于止跌/止涨；与原始统计包络、结构核心区和方向概率分层展示。",
             }
             horizon_payload["direction_probabilities"] = {
                 "bottom_rebound_first": clean_num(metric.get("p_bottom_rebound_first")),
@@ -1715,6 +1759,8 @@ def enrich_record(row: dict[str, Any], frame: pd.DataFrame, metric_by_h: dict[in
             metric["top_zone_source"] = "turning_point_conditional_path" if _valid_band(metric.get("top_band")) else "price_structure_evidence_fallback"
             metric["bottom_zone_definition"] = "方向性阶段底条件路径区；不是±1σ统计包络，也不是结构共振本身。"
             metric["top_zone_definition"] = "方向性阶段顶条件路径区；不是±1σ统计包络，也不是结构共振本身。"
+            metric["normal_path_low_definition"] = "全部共同路径的期间最低价P25—P75；是常态探底区，不是止跌保证。"
+            metric["normal_path_high_definition"] = "全部共同路径的期间最高价P25—P75；是常态冲高区，不是止涨保证。"
             metric["distance_to_bottom_zone_pct"] = _distance_to_band(clean_num(current.get("adj_close")), bottom_zone)
             metric["distance_to_top_zone_pct"] = _distance_to_band(clean_num(current.get("adj_close")), top_zone)
             metric["current_in_bottom_zone"] = bool(bottom_zone and bottom_zone[0] <= float(current["adj_close"]) <= bottom_zone[1])
@@ -1728,9 +1774,15 @@ def enrich_record(row: dict[str, Any], frame: pd.DataFrame, metric_by_h: dict[in
             metric["p_touch_and_rebound"] = clean_num(metric.get("p_bottom_rebound_first"))
             metric["p_touch_and_reversal"] = clean_num(metric.get("p_top_reversal_first"))
             metric["joint_event_definition"] = "方向性模型直接输出的先触达且同窗反转联合事件；条件概率仅在该联合事件为触达事件子集时展示。"
+            metric["bottom_reversal_confirmation_rule"] = "进入或跌破价格区后仍不算止跌；必须先形成窗口低点，再从低点反弹至少1 ATR，才计入方向性底事件。"
+            metric["top_reversal_confirmation_rule"] = "进入或突破价格区后仍不算见顶；必须先形成窗口高点，再从高点回落至少1 ATR，才计入方向性顶事件。"
             metric.update(_decision_fields(metric, current, metric.get("probability_margin_threshold_backtest")))
-            metric["candidate_zone_status"] = {"bottom": "当前已进入候选底部区" if metric["current_in_bottom_zone"] else "候选底部区尚未进入", "top": "当前已进入候选顶部区" if metric["current_in_top_zone"] else "候选顶部区尚未进入"}
-    return {**row, "as_of": as_of.strftime("%Y-%m-%d"), "reference_price": clean_num(current["adj_close"]), "session_ohlc": safe_json(session_ohlc(frame, as_of)), "metrics": safe_json(metrics), "stage": stage, "issuer_id": identity.get("issuer_id"), "issuer_identity_source": identity.get("source"), "peer_context": safe_json({**peers, "note": peer_note, "issuer_id": identity.get("issuer_id"), "subgroup_context": peers.get("subgroup_context", {})}), "potential_ranges": safe_json(potential_payload), "rotation_explanation": "真实日线数据已接入；市场、研究组与个股残差分别计算，允许不同步。" + (" 存储细分与LOO为影子候选，未进入正式校准分数。" if storage else ""), "trigger_summary": "确认：先由Price Structure形成候选位；只有先触边界且同窗满足反转条件才计入互斥方向性阶段顶/底。失效：跳空、事件冲击或重新突破结构。到达概率、方向性拐点、双向洗盘诊断和交易成功不可混同。结构共振只用于解释核心区，不进入概率。", "event_summary": "本次生产构建未抓取并公开长文本财报、产品发布或宏观事件正文；事件特征为缺失，不把标题或业务分类当作催化概率。", "risk_summary": "风险值来自共同历史路径的最差5%不利幅度均值；风险指标另有合法性审计，异常原值保留但不进入风险榜。", "data_note": f"数据源：{SOURCE_NAME}；截止{as_of.strftime('%Y-%m-%d')}。统计机会/风险榜与方向决策榜分离；方向性阶段底、阶段顶、无有效拐点由独立时间校准的三分类挑战者生成并严格归一。重叠顶底事件仅作双向洗盘诊断。统计/结构/模型路径层不互相伪造概率；期权历史不足，尚未进入概率模型。"}
+            bottom_status = "当前已进入条件反转底区，但尚未确认止跌" if metric["current_in_bottom_zone"] else "条件反转底区尚未进入"
+            top_status = "当前已进入条件反转顶区，但尚未确认见顶" if metric["current_in_top_zone"] else "条件反转顶区尚未进入"
+            metric["bottom_zone_status_note"] = bottom_status + "；触及、跌破或停留在区内均不自动构成反转。"
+            metric["top_zone_status_note"] = top_status + "；触及、突破或停留在区内均不自动构成反转。"
+            metric["candidate_zone_status"] = {"bottom": bottom_status, "top": top_status}
+    return {**row, "as_of": as_of.strftime("%Y-%m-%d"), "reference_price": clean_num(current["adj_close"]), "session_ohlc": safe_json(session_ohlc(frame, as_of)), "metrics": safe_json(metrics), "stage": stage, "issuer_id": identity.get("issuer_id"), "issuer_identity_source": identity.get("source"), "peer_context": safe_json({**peers, "note": peer_note, "issuer_id": identity.get("issuer_id"), "subgroup_context": peers.get("subgroup_context", {})}), "potential_ranges": safe_json(potential_payload), "rotation_explanation": "真实日线数据已接入；市场、研究组与个股残差分别计算，允许不同步。" + (" 存储细分与LOO为影子候选，未进入正式校准分数。" if storage else ""), "trigger_summary": "常态路径低点区、结构候选区和ATR回退带都只是价格可能到达的区域，不是止跌承诺。方向性底必须先形成低点，再在同一窗口从低点反弹至少1 ATR；未完成前统一标记为未确认。跳空、板块同步冲击或收盘持续位于结构区外会使原结构候选失效并在下一完整交易日重算。到达概率、方向性拐点、双向洗盘诊断和交易成功不可混同。", "event_summary": "本次生产构建未抓取并公开长文本财报、产品发布或宏观事件正文；事件特征为缺失，不把标题或业务分类当作催化概率。", "risk_summary": "风险值来自共同历史路径的最差5%不利幅度均值；历史路径按相对ATR映射，保留缩放分布与上下限命中审计。风险指标异常原值保留但不进入风险榜。", "data_note": f"数据源：{SOURCE_NAME}；截止{as_of.strftime('%Y-%m-%d')}。统计机会/风险榜与方向决策榜分离；方向性阶段底、阶段顶、无有效拐点由独立时间校准的三分类挑战者生成并严格归一。重叠顶底事件仅作双向洗盘诊断。统计/结构/模型路径层不互相伪造概率；共同路径使用相对ATR缩放；期权历史不足，尚未进入概率模型。"}
 
 
 def ensure_ledger() -> sqlite3.Connection:
@@ -1911,9 +1963,9 @@ def build(refresh: bool = False, run_id: str | None = None, extra_symbol: str | 
         "automatic_reselection_status": weekly_audit.get("automatic_reselection_status") if weekly_audit else "BLOCKED",
         "note": "点时资格与人气评分已审计；自动换池仍受独立门槛约束。" if weekly_audit else "母池规模来自旧美股行情项目快照；本项目未把它改写成当前人气排名。",
     }
-    data = {"build_mode": "live", "status_message": "真实日线行情已接入。机会/风险仍由原B3共同路径生成；方向性阶段底、阶段顶与无有效拐点为互斥且独立校准的挑战者，三项严格合计100%。信度按历史路径重合、近期独立测试校准、相对多数类基线增益与真实日期支持分级；信度不改写概率。详情按四层展示实现波动率统计包络、结构核心区、模型路径区和方向概率；结构/统计/期权显示层不反推概率，事件未接入时显式标注。", "generated_at": iso(utc_now()), "as_of": as_of.strftime("%Y-%m-%d"), "as_of_beijing": f"{as_of.strftime('%Y-%m-%d')} 纽约收盘数据；北京时间日期需按交易日换算", "run_id": run_id, "workflow_run_id": os.environ.get("GITHUB_RUN_ID"), "workflow_run_attempt": os.environ.get("GITHUB_RUN_ATTEMPT"), "prediction_snapshot_id": run_id, "model_version": MODEL_VERSION, "directional_model_version": DIRECTIONAL_MODEL_VERSION, "confidence_method_version": CONFIDENCE_METHOD_VERSION, "feature_version": FEATURE_VERSION, "potential_range_version": "structure-statistical-model-option-four-layer-v4", "strategy_version": STRATEGY_VERSION, "universe_version": "curated-seed-20260915-v1.1-live-validation", "taxonomy_version": TAXONOMY_VERSION, "source_manifest": source, "records": records, "temporary": temporary, "storage_rotation": rotation, "research_group_rotation": group_rotation, "weekly_pool_audit": weekly_audit, "options_model_gate": option_gate, "rotation_summary": group_rotation["summary"], "public_config": {"api_base_url": None}, "backtest": backtest, "coverage": {"regular_pool": len(records), "valid_forecast_records": valid, "usable_price_records": sum(1 for r in records if r.get("reference_price") is not None), "data_cutoff": as_of.strftime("%Y-%m-%d"), "financial_backtest_status": "B3 first-touch and exclusive directional-turn time-split metrics computed; options B4 and storage incremental alpha remain gated"}}
+    data = {"build_mode": "live", "status_message": "真实日线行情已接入。机会/风险仍由原B3共同路径生成；方向性阶段底、阶段顶与无有效拐点为互斥且独立校准的挑战者，三项严格合计100%。信度按历史路径重合、近期独立测试校准、相对多数类基线增益与真实日期支持分级；信度不改写概率。详情分开展示常态路径低/高区、条件反转底/顶区、结构区、ATR回退和2 ATR极端线；触及价格区不代表反转确认。", "generated_at": iso(utc_now()), "as_of": as_of.strftime("%Y-%m-%d"), "as_of_beijing": f"{as_of.strftime('%Y-%m-%d')} 纽约收盘数据；北京时间日期需按交易日换算", "run_id": run_id, "workflow_run_id": os.environ.get("GITHUB_RUN_ID"), "workflow_run_attempt": os.environ.get("GITHUB_RUN_ATTEMPT"), "prediction_snapshot_id": run_id, "model_version": MODEL_VERSION, "directional_model_version": DIRECTIONAL_MODEL_VERSION, "confidence_method_version": CONFIDENCE_METHOD_VERSION, "feature_version": FEATURE_VERSION, "potential_range_version": "structure-statistical-model-option-four-layer-v5-relative-atr", "strategy_version": STRATEGY_VERSION, "universe_version": "curated-seed-20260915-v1.1-live-validation", "taxonomy_version": TAXONOMY_VERSION, "source_manifest": source, "records": records, "temporary": temporary, "storage_rotation": rotation, "research_group_rotation": group_rotation, "weekly_pool_audit": weekly_audit, "options_model_gate": option_gate, "rotation_summary": group_rotation["summary"], "public_config": {"api_base_url": None}, "backtest": backtest, "coverage": {"regular_pool": len(records), "valid_forecast_records": valid, "usable_price_records": sum(1 for r in records if r.get("reference_price") is not None), "data_cutoff": as_of.strftime("%Y-%m-%d"), "financial_backtest_status": "B3 first-touch and exclusive directional-turn time-split metrics computed; options B4 and storage incremental alpha remain gated"}}
     data["decision_board"] = decision_board
-    data["status_message"] = "真实日线行情已接入。统计机会/风险榜与方向决策榜分离；风险单位异常保留原值但不进入风险榜。方向性阶段底、阶段顶与无有效拐点为互斥且独立校准的挑战者，三项严格合计100%。信度、ESS、数据质量和校准门共同决定决策资格，不改写原始概率。详情按统计包络、结构核心区、模型路径区和候选联合事件展示；事件未接入时显式标注。"
+    data["status_message"] = "真实日线行情已接入。统计机会/风险榜与方向决策榜分离；风险单位异常保留原值但不进入风险榜。方向性阶段底、阶段顶与无有效拐点为互斥且独立校准的挑战者，三项严格合计100%。信度、ESS、数据质量和校准门共同决定决策资格，不改写原始概率。详情分开展示常态路径低/高区、条件反转底/顶区、期限结构、ATR参考和2 ATR极端线；触及或跌破价格区不代表反转确认。"
     # Context benchmarks cannot move the champion's stock/market cutoff date.
     index_frames, index_source = download_prices([s for s in INDEX_SPECS if s not in frames], refresh=refresh)
     context_frames = {**frames, **index_frames}

@@ -88,6 +88,40 @@ def _cluster_levels(levels: list[dict[str, Any]], spot: float, atr: float, side:
     return output
 
 
+def _select_horizon_core(clusters: list[dict[str, Any]], spot: float, atr: float,
+                         horizon: int, side: str) -> dict[str, Any] | None:
+    """Select an auditable structure cluster at a horizon-consistent distance.
+
+    The nearest cluster is often only the first support/resistance test.  A
+    5/10/21-session range should not repeat that same near-spot level and call
+    it a horizon bottom or top.  Selection therefore targets one ATR scaled by
+    sqrt(H/5), with a small deterministic preference for multi-source
+    confluence.  This remains an explanation layer and never changes model
+    probabilities.
+    """
+    if not clusters or not _finite(spot) or not _finite(atr) or float(atr) <= 0:
+        return None
+    target_distance = float(atr) * math.sqrt(max(int(horizon), 1) / 5.0)
+    scored: list[tuple[float, float, int, dict[str, Any]]] = []
+    for cluster in clusters:
+        center = _num(cluster.get("center"))
+        if center is None or (side == "bottom" and center > spot) or (side == "top" and center < spot):
+            continue
+        distance = abs(float(center) - float(spot))
+        confluence = min(int(cluster.get("level_count") or 0), 4)
+        score = abs(distance - target_distance) / max(target_distance, 1e-9) - 0.08 * confluence
+        scored.append((score, distance, -confluence, cluster))
+    if not scored:
+        return None
+    chosen = dict(min(scored, key=lambda item: (item[0], item[1], item[2]))[3])
+    chosen["selection_horizon_sessions"] = int(horizon)
+    chosen["selection_target_distance_atr"] = math.sqrt(max(int(horizon), 1) / 5.0)
+    chosen["actual_distance_atr"] = abs(float(chosen["center"]) - float(spot)) / max(float(atr), 1e-9)
+    chosen["selection_method"] = "cluster closest to 1 ATR x sqrt(horizon/5), with deterministic confluence preference"
+    chosen["note"] = "期限对应结构候选；用于解释和失效观察，不是止跌/止涨保证，也不进入方向概率。"
+    return chosen
+
+
 def _statistical_envelope(spot: float, realized_vol: float | None, horizon: int) -> dict[str, Any]:
     """Return a realized-volatility statistical envelope, not an option forecast."""
     if not _finite(realized_vol) or float(realized_vol) <= 0 or spot <= 0:
@@ -302,19 +336,23 @@ def _technical_layer(frame: pd.DataFrame, as_of: pd.Timestamp, horizon: int) -> 
     sma20 = next((item["price"] for item in mas if item["label"] == "SMA20"), None)
     sma50 = next((item["price"] for item in mas if item["label"] == "SMA50"), None)
     trend = "上行结构" if sma20 is not None and sma50 is not None and sma20 >= sma50 and close.iloc[-1] >= sma20 else "下行/修复结构" if sma20 is not None and sma50 is not None and sma20 < sma50 else "趋势数据不足"
-    support_band = [max(0.0, min(support_values) - atr * 0.12), max(support_values) + atr * 0.12]
-    resistance_band = [max(0.0, min(resistance_values) - atr * 0.12), max(resistance_values) + atr * 0.12]
+    nearby_support_band = [max(0.0, min(support_values) - atr * 0.12), max(support_values) + atr * 0.12]
+    nearby_resistance_band = [max(0.0, min(resistance_values) - atr * 0.12), max(resistance_values) + atr * 0.12]
     volatility_scale = math.sqrt(max(horizon, 1) / 5.0)
     volatility_support_band = [max(0.01, spot - 1.25 * atr * volatility_scale), max(0.01, spot - 0.75 * atr * volatility_scale)]
     volatility_resistance_band = [spot + 0.75 * atr * volatility_scale, spot + 1.25 * atr * volatility_scale]
     bottom_clusters = _cluster_levels(below, spot, atr, "bottom")
     top_clusters = _cluster_levels(above, spot, atr, "top")
-    core_bottom = bottom_clusters[0] if bottom_clusters else None
-    core_top = top_clusters[0] if top_clusters else None
+    core_bottom = _select_horizon_core(bottom_clusters, spot, atr, horizon, "bottom")
+    core_top = _select_horizon_core(top_clusters, spot, atr, horizon, "top")
+    support_band = (core_bottom or {}).get("band") or nearby_support_band
+    resistance_band = (core_top or {}).get("band") or nearby_resistance_band
     return {
         "status": "observed",
         "support_band": support_band,
         "resistance_band": resistance_band,
+        "nearby_support_band": nearby_support_band,
+        "nearby_resistance_band": nearby_resistance_band,
         "volatility_support_band": volatility_support_band,
         "volatility_resistance_band": volatility_resistance_band,
         "volatility_band_method": "ATR14 x sqrt(horizon/5), inner 0.75 ATR and outer 1.25 ATR; fallback display, not structural confirmation",
@@ -327,7 +365,7 @@ def _technical_layer(frame: pd.DataFrame, as_of: pd.Timestamp, horizon: int) -> 
         "structure_evidence": {"bottom": (core_bottom or {}).get("evidence", []), "top": (core_top or {}).get("evidence", [])},
         "realized_volatility_20": realized_volatility,
         "statistical_envelope": _statistical_envelope(spot, realized_volatility, horizon),
-        "structure_horizon_note": "结构核心区按相邻结构水平聚类；锚点日期、价格、来源与失效条件可审计；不转化为顶底概率。",
+        "structure_horizon_note": "结构水平先聚类，再选择最接近1 ATR×sqrt(H/5)距离的期限候选；最近水平另列为第一支撑/阻力测试。锚点日期、价格、来源与失效条件可审计；不转化为顶底概率。",
         "front_swing_low": _num(swing_lows[-1][1]) if swing_lows else None,
         "front_swing_high": _num(swing_highs[-1][1]) if swing_highs else None,
         "volume_profile_poc": volume_profile,
@@ -338,8 +376,8 @@ def _technical_layer(frame: pd.DataFrame, as_of: pd.Timestamp, horizon: int) -> 
         "atr14": atr,
         "lookback_sessions": int(len(tail)),
         "method": "Price Structure: prior high/low + Volume Profile POC + AVWAP + gap levels + SMA20/50/100/200 + rolling 252-session Fib + trend structure; candidates are generated before options are applied; nearby levels are clustered for explanation only",
-        "bottom_confirmation_condition": f"候选底部仅在收盘重新站上支撑候选上沿 {support_band[1]:.2f} 并连续保持时确认；跳空/事件冲击可使其失效。",
-        "top_confirmation_condition": f"候选顶部仅在收盘跌回阻力候选下沿 {resistance_band[0]:.2f} 并连续保持时确认；跳空/事件冲击可使其失效。",
+        "bottom_confirmation_condition": f"触及或跌破该区不代表止跌；只有形成低点后同窗反弹至少1 ATR，且收盘重新站上期限结构候选上沿 {support_band[1]:.2f}，才满足方向性底部确认。跳空/板块冲击可使原区失效。",
+        "top_confirmation_condition": f"触及或突破该区不代表见顶；只有形成高点后同窗回落至少1 ATR，且收盘重新跌回期限结构候选下沿 {resistance_band[0]:.2f}，才满足方向性顶部确认。跳空/板块冲击可使原区失效。",
     }
 
 
