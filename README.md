@@ -1,6 +1,8 @@
 # 美股阶段顶底概率雷达｜Codex Skill交付包
 
-名称：`us-equity-turning-point-radar`；版本：`1.9.0-consensus-valuation-bounds`。本包是同一个Skill的完整增量版本，包含100股种子、模型与回测规范、真实计算引擎源码、冻结台账逻辑、HTML前端、GitHub Pages工作流和测试。
+名称：`us-equity-turning-point-radar`；版本：`1.9.1-full-pool-extreme-atr-columns`。本包是同一个Skill的完整增量版本，包含100股种子、模型与回测规范、真实计算引擎源码、冻结台账逻辑、HTML前端、GitHub Pages工作流和测试。
+
+v1.9.1把所选5/10/21日期限的极端ATR下界和上界改为常态100股主表独立列，并显示全池覆盖数。顶部预警继续只显示实际穿越更早冻结极端线的股票，因此“未置顶”与“未计算”在页面上明确区分。
 
 v1.8把共同历史路径从美元ATR缩放改为价格尺度不变的相对ATR缩放，并把常态期间低/高点、条件反转底/顶与2 ATR极端线分层展示。触及或跌破价带不再显示为已经止跌；方向性底仍要求低点后反弹至少1 ATR。
 

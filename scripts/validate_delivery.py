@@ -117,6 +117,11 @@ def validate_dashboard(data, production=False):
             for key in ['bottom_band','top_band','volatility_bottom_band','volatility_top_band']:
                 a=m.get(key)
                 if a is not None:require(isinstance(a,list) and len(a)==2 and all(num(v) and v>0 for v in a) and a[0]<=a[1],f'{r["symbol"]}: invalid {key}')
+            if production:
+                extreme=m.get('extreme_atr_bounds')
+                require(isinstance(extreme,list) and len(extreme)==2 and all(num(v) and v>0 for v in extreme) and extreme[0]<extreme[1],f'{r["symbol"]}: missing {h} day extreme ATR bounds')
+                reference=r.get('reference_price')
+                require(num(reference) and extreme[0]<reference<extreme[1],f'{r["symbol"]}: {h} day extreme ATR bounds do not contain the frozen reference price')
     for h,result in (data.get('backtest',{}).get('one_year_directional_turn',{}).get('horizons',{}) or {}).items():
         if result.get('status')!='observed':continue
         require(num(result.get('classification_accuracy')) and num(result.get('majority_baseline_accuracy')),f'{h}d: invalid validation accuracy')
