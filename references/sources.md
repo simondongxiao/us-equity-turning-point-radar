@@ -22,3 +22,9 @@
 - STX：Seagate Delivers Industry’s Highest Capacity Hard Drives with Next-Generation Mozaic 4+。https://investors.seagate.com/news/news-details/2026/Seagate-Delivers-Industrys-Highest-Capacity-Hard-Drives-with-Next-Generation-Mozaic-4/default.aspx
 
 本次只使用页面的业务/产品/分拆信息，未将网页业绩数字写入行情或预测。
+
+## v1.9一致预期估值来源
+
+- Nasdaq Analyst Earnings Forecast API：`https://api.nasdaq.com/api/analyst/{symbol}/earnings-forecast`。读取年度EPS一致预期、低值、高值、分析师数量及近四周上调/下调家数。
+
+该接口只提供抓取时点的当前一致预期，不提供本项目可直接回放的完整历史共识。生产每个完整交易日将原始响应冻结到加密状态归档；历史样本积累前只生成当日理论估值展示，不将当前数据回填到过去日期或用于历史概率回测。

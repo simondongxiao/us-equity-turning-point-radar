@@ -38,9 +38,11 @@ from sklearn.isotonic import IsotonicRegression
 try:
     from potential_ranges import build_potential_ranges
     from index_context import INDEX_SPECS, build_index_context
+    from fundamental_valuation import build_valuation_bounds, fetch_consensus_snapshot
 except ModuleNotFoundError:
     from scripts.potential_ranges import build_potential_ranges
     from scripts.index_context import INDEX_SPECS, build_index_context
+    from scripts.fundamental_valuation import build_valuation_bounds, fetch_consensus_snapshot
 
 ROOT = Path(__file__).resolve().parents[1]
 SEED_CSV = ROOT / "assets" / "universe_seed.csv"
@@ -57,6 +59,7 @@ DIRECTIONAL_MODEL_VERSION = "challenger-exclusive-directional-turn-v1.3.0"
 CONFIDENCE_METHOD_VERSION = "path-validation-confidence-v1.3.0"
 STRATEGY_VERSION = "next-open-atr-1x-cost-15bp-decision-audit-v1.3.0"
 DECISION_AUDIT_VERSION = "decision-consistency-and-risk-audit-v1.3.0"
+FUNDAMENTAL_VALUATION_VERSION = "next-fy-consensus-eps-peer-forward-pe-v1.0.0"
 SOURCE_NAME = "Yahoo Finance daily OHLCV via yfinance, reconciled against regular-session 5-minute chart bars; SEC company_tickers.json for issuer identity"
 HORIZONS = (5, 10, 21)
 MARKET_SYMBOLS = ("SPY", "QQQ")
@@ -1909,6 +1912,26 @@ def build(refresh: bool = False, run_id: str | None = None, extra_symbol: str | 
                 peer_transfer_count=len(extra_hist), margin_threshold=decision_margin_thresholds.get(h))
         extra_peers = {"status": "unavailable", "self_excluded": False, "peer_symbols": [], "peer_count": 0, "effective_n": None, "weight_coverage": None, "note": "临时股票未被强行归入存储或其他研究组；结果与常态100池分开保存。"}
         temporary.append(enrich_record(extra_row, raw_extra, extra_metrics, {"issuer_id": sec.get(extra_symbol, {}).get("issuer_id"), "source": sec.get(extra_symbol, {}).get("source", "unverified")}, extra_peers, as_of, potential_ranges.get(extra_symbol)))
+    consensus_symbols = [r["symbol"] for r in records + temporary if clean_num(r.get("reference_price")) is not None]
+    consensus_snapshot = fetch_consensus_snapshot(consensus_symbols, as_of.strftime("%Y-%m-%d"), STATE_DIR, refresh=refresh)
+    fundamental_valuation = build_valuation_bounds(records + temporary, consensus_snapshot)
+    for rec in records + temporary:
+        rec["fundamental_valuation"] = safe_json((fundamental_valuation.get("records") or {}).get(rec["symbol"], {
+            "status": "unavailable", "reason": "fundamental_valuation_missing",
+        }))
+    source["fundamental_valuation"] = {
+        "version": FUNDAMENTAL_VALUATION_VERSION,
+        "status": fundamental_valuation.get("status"),
+        "provider": fundamental_valuation.get("provider"),
+        "as_of": fundamental_valuation.get("as_of"),
+        "retrieved_at": fundamental_valuation.get("retrieved_at"),
+        "requested_symbols": fundamental_valuation.get("requested_symbols"),
+        "observed_symbols": fundamental_valuation.get("observed_symbols"),
+        "method": fundamental_valuation.get("method"),
+        "probability_integration_status": fundamental_valuation.get("probability_integration_status"),
+        "note": "一致预期原始快照按完整交易日加密归档；禁止用当前一致预期回填历史回测。",
+    }
+    print(f"[radar] fundamental valuation ready: {fundamental_valuation.get('observed_symbols', 0)}/{fundamental_valuation.get('requested_symbols', len(consensus_symbols))}", flush=True)
     decision_board: dict[str, Any] = {"version": DECISION_AUDIT_VERSION, "ranking_basis": "directional_calibrated_probability + baseline_edge + candidate_zone_distance + joint_event_probability + confidence/data_quality; opportunity_value is not a primary key", "horizons": {}}
     for h in HORIZONS:
         bottom_items: list[dict[str, Any]] = []; top_items: list[dict[str, Any]] = []
@@ -1922,6 +1945,7 @@ def build(refresh: bool = False, run_id: str | None = None, extra_symbol: str | 
                 "decision_eligible": True, "confidence_score": metric.get("confidence_score"),
                 "probability_margin_top1_top2": metric.get("probability_margin_top1_top2"),
                 "candidate_zone_status": metric.get("candidate_zone_status"),
+                "fundamental_valuation": rec.get("fundamental_valuation"),
             }
             bprob = clean_num(metric.get("p_bottom_rebound_first")); tprob = clean_num(metric.get("p_top_reversal_first"))
             bedge = clean_num((metric.get("directional_edge_vs_baseline") or {}).get("bottom_reversal_candidate")); tedge = clean_num((metric.get("directional_edge_vs_baseline") or {}).get("top_reversal_warning"))
@@ -1963,9 +1987,9 @@ def build(refresh: bool = False, run_id: str | None = None, extra_symbol: str | 
         "automatic_reselection_status": weekly_audit.get("automatic_reselection_status") if weekly_audit else "BLOCKED",
         "note": "点时资格与人气评分已审计；自动换池仍受独立门槛约束。" if weekly_audit else "母池规模来自旧美股行情项目快照；本项目未把它改写成当前人气排名。",
     }
-    data = {"build_mode": "live", "status_message": "真实日线行情已接入。机会/风险仍由原B3共同路径生成；方向性阶段底、阶段顶与无有效拐点为互斥且独立校准的挑战者，三项严格合计100%。信度按历史路径重合、近期独立测试校准、相对多数类基线增益与真实日期支持分级；信度不改写概率。详情分开展示常态路径低/高区、条件反转底/顶区、结构区、ATR回退和2 ATR极端线；触及价格区不代表反转确认。", "generated_at": iso(utc_now()), "as_of": as_of.strftime("%Y-%m-%d"), "as_of_beijing": f"{as_of.strftime('%Y-%m-%d')} 纽约收盘数据；北京时间日期需按交易日换算", "run_id": run_id, "workflow_run_id": os.environ.get("GITHUB_RUN_ID"), "workflow_run_attempt": os.environ.get("GITHUB_RUN_ATTEMPT"), "prediction_snapshot_id": run_id, "model_version": MODEL_VERSION, "directional_model_version": DIRECTIONAL_MODEL_VERSION, "confidence_method_version": CONFIDENCE_METHOD_VERSION, "feature_version": FEATURE_VERSION, "potential_range_version": "structure-statistical-model-option-four-layer-v5-relative-atr", "strategy_version": STRATEGY_VERSION, "universe_version": "curated-seed-20260915-v1.1-live-validation", "taxonomy_version": TAXONOMY_VERSION, "source_manifest": source, "records": records, "temporary": temporary, "storage_rotation": rotation, "research_group_rotation": group_rotation, "weekly_pool_audit": weekly_audit, "options_model_gate": option_gate, "rotation_summary": group_rotation["summary"], "public_config": {"api_base_url": None}, "backtest": backtest, "coverage": {"regular_pool": len(records), "valid_forecast_records": valid, "usable_price_records": sum(1 for r in records if r.get("reference_price") is not None), "data_cutoff": as_of.strftime("%Y-%m-%d"), "financial_backtest_status": "B3 first-touch and exclusive directional-turn time-split metrics computed; options B4 and storage incremental alpha remain gated"}}
+    data = {"build_mode": "live", "status_message": "真实日线行情已接入。机会/风险仍由原B3共同路径生成；方向性阶段底、阶段顶与无有效拐点为互斥且独立校准的挑战者，三项严格合计100%。信度按历史路径重合、近期独立测试校准、相对多数类基线增益与真实日期支持分级；信度不改写概率。详情分开展示常态路径低/高区、条件反转底/顶区、结构区、ATR回退、2 ATR极端区，以及业绩一致预期×同行估值理论上下界；触及价格区不代表反转确认。", "generated_at": iso(utc_now()), "as_of": as_of.strftime("%Y-%m-%d"), "as_of_beijing": f"{as_of.strftime('%Y-%m-%d')} 纽约收盘数据；北京时间日期需按交易日换算", "run_id": run_id, "workflow_run_id": os.environ.get("GITHUB_RUN_ID"), "workflow_run_attempt": os.environ.get("GITHUB_RUN_ATTEMPT"), "prediction_snapshot_id": run_id, "model_version": MODEL_VERSION, "directional_model_version": DIRECTIONAL_MODEL_VERSION, "confidence_method_version": CONFIDENCE_METHOD_VERSION, "fundamental_valuation_version": FUNDAMENTAL_VALUATION_VERSION, "feature_version": FEATURE_VERSION, "potential_range_version": "structure-statistical-fundamental-model-option-five-layer-v6", "strategy_version": STRATEGY_VERSION, "universe_version": "curated-seed-20260915-v1.1-live-validation", "taxonomy_version": TAXONOMY_VERSION, "source_manifest": source, "fundamental_valuation_summary": {key: value for key, value in fundamental_valuation.items() if key != "records"}, "records": records, "temporary": temporary, "storage_rotation": rotation, "research_group_rotation": group_rotation, "weekly_pool_audit": weekly_audit, "options_model_gate": option_gate, "rotation_summary": group_rotation["summary"], "public_config": {"api_base_url": None}, "backtest": backtest, "coverage": {"regular_pool": len(records), "valid_forecast_records": valid, "usable_price_records": sum(1 for r in records if r.get("reference_price") is not None), "fundamental_valuation_records": fundamental_valuation.get("observed_symbols", 0), "data_cutoff": as_of.strftime("%Y-%m-%d"), "financial_backtest_status": "B3 first-touch and exclusive directional-turn time-split metrics computed; fundamental valuation display-only pending archived consensus history; options B4 and storage incremental alpha remain gated"}}
     data["decision_board"] = decision_board
-    data["status_message"] = "真实日线行情已接入。统计机会/风险榜与方向决策榜分离；风险单位异常保留原值但不进入风险榜。方向性阶段底、阶段顶与无有效拐点为互斥且独立校准的挑战者，三项严格合计100%。信度、ESS、数据质量和校准门共同决定决策资格，不改写原始概率。详情分开展示常态路径低/高区、条件反转底/顶区、期限结构、ATR参考和2 ATR极端线；触及或跌破价格区不代表反转确认。"
+    data["status_message"] = "真实日线行情已接入。统计机会/风险榜与方向决策榜分离；风险单位异常保留原值但不进入风险榜。方向性阶段底、阶段顶与无有效拐点为互斥且独立校准的挑战者，三项严格合计100%。业绩一致预期×同行估值理论上下界作为中期基本面锚独立展示；在积累点时历史并完成样本外检验前不改写方向概率。详情分开展示理论估值、常态路径、条件反转、期限结构、ATR参考和2 ATR极端区。"
     # Context benchmarks cannot move the champion's stock/market cutoff date.
     index_frames, index_source = download_prices([s for s in INDEX_SPECS if s not in frames], refresh=refresh)
     context_frames = {**frames, **index_frames}

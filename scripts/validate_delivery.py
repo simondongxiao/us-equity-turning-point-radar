@@ -62,6 +62,9 @@ def validate_dashboard(data, production=False):
     require(len(rows)==100,'Regular board must retain 100 members or be explicitly handled as failed/incomplete before this production interface')
     require(len({r['symbol'] for r in rows})==len(rows),'Duplicate regular symbols')
     if production:
+        fundamental=((data.get('source_manifest') or {}).get('fundamental_valuation') or {})
+        require(fundamental.get('version') and (fundamental.get('requested_symbols') or 0)>=100,'Production must attempt the 100-stock consensus valuation layer')
+        require(fundamental.get('probability_integration_status')=='DISPLAY_ONLY_PENDING_ARCHIVED_CONSENSUS_BACKTEST','Fundamental valuation must not silently alter calibrated probabilities')
         intraday=((data.get('source_manifest') or {}).get('intraday_regular_session_validation') or {})
         require(intraday.get('status')=='observed','Production requires regular-session 5-minute validation')
         symbol_audit=intraday.get('symbols') or {}
@@ -71,6 +74,18 @@ def validate_dashboard(data, production=False):
             require(all(num(ohlc.get(key)) and ohlc[key]>0 for key in ('open','high','low','close')),f"{r['symbol']}: session OHLC missing")
             require(ohlc['low']<=min(ohlc['open'],ohlc['close'])<=max(ohlc['open'],ohlc['close'])<=ohlc['high'],f"{r['symbol']}: session OHLC inconsistent")
     for r in rows+data.get('temporary',[]):
+        valuation=r.get('fundamental_valuation') or {}
+        valuation_contract=bool(data.get('fundamental_valuation_version') or valuation)
+        if valuation_contract:
+            require(valuation.get('status') in {'observed','unavailable'},f'{r["symbol"]}: fundamental valuation status missing')
+        if valuation.get('status')=='observed':
+            require(all(num(valuation.get(key)) and valuation[key]>0 for key in ('theoretical_lower','theoretical_central','theoretical_upper','eps_low','eps_consensus','eps_high','peer_forward_pe_p25','peer_forward_pe_p50','peer_forward_pe_p75','applied_forward_pe_lower','applied_forward_pe_central','applied_forward_pe_upper','own_forward_pe_guard_low','own_forward_pe_guard_high')),f'{r["symbol"]}: invalid fundamental valuation values')
+            require(valuation['theoretical_lower']<=valuation['theoretical_central']<=valuation['theoretical_upper'],f'{r["symbol"]}: theoretical valuation bounds reversed')
+            require(valuation['eps_low']<=valuation['eps_consensus']<=valuation['eps_high'],f'{r["symbol"]}: consensus EPS range reversed')
+            require(valuation['peer_forward_pe_p25']<=valuation['peer_forward_pe_p50']<=valuation['peer_forward_pe_p75'],f'{r["symbol"]}: peer valuation percentiles reversed')
+            require(valuation['applied_forward_pe_lower']<=valuation['applied_forward_pe_central']<=valuation['applied_forward_pe_upper'],f'{r["symbol"]}: applied valuation multiples reversed')
+            require((valuation.get('estimate_count') or 0)>=0 and (valuation.get('peer_sample_count') or 0)>=3,f'{r["symbol"]}: insufficient fundamental valuation support')
+            require(valuation.get('probability_integration_status')=='DISPLAY_ONLY_PENDING_ARCHIVED_CONSENSUS_BACKTEST',f'{r["symbol"]}: unvalidated valuation entered probability model')
         for h in ['5','10','21']:
             m=r.get('metrics',{}).get(h)
             require(isinstance(m,dict),f'{r["symbol"]} missing {h} day result/status')

@@ -10,6 +10,7 @@ site/data.json
 local_gateway.log
 state/audit/
 state/frozen/
+state/fundamentals/
 outputs/upgrade-baseline/
 outputs/restore-prior/
 outputs/*preview.html

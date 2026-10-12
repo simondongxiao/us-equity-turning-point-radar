@@ -591,6 +591,9 @@
           ],
           "exclusiveMinimum": 0
         },
+        "fundamental_valuation": {
+          "$ref": "#/$defs/fundamental_valuation"
+        },
         "metrics": {
           "type": "object",
           "required": [
@@ -690,6 +693,45 @@
             }
           }
         }
+      }
+    },
+    "fundamental_valuation": {
+      "type": "object",
+      "required": ["status"],
+      "properties": {
+        "status": {"enum": ["observed", "unavailable"]},
+        "reason": {"type": "string"},
+        "method": {"type": "string"},
+        "theoretical_lower": {"type": "number", "exclusiveMinimum": 0},
+        "theoretical_central": {"type": "number", "exclusiveMinimum": 0},
+        "theoretical_upper": {"type": "number", "exclusiveMinimum": 0},
+        "forecast_fiscal_end": {"type": "string"},
+        "eps_low": {"type": "number", "exclusiveMinimum": 0},
+        "eps_consensus": {"type": "number", "exclusiveMinimum": 0},
+        "eps_high": {"type": "number", "exclusiveMinimum": 0},
+        "estimate_count": {"type": "integer", "minimum": 0},
+        "implied_forward_pe": {"type": "number", "exclusiveMinimum": 0},
+        "peer_forward_pe_p25": {"type": "number", "exclusiveMinimum": 0},
+        "peer_forward_pe_p50": {"type": "number", "exclusiveMinimum": 0},
+        "peer_forward_pe_p75": {"type": "number", "exclusiveMinimum": 0},
+        "applied_forward_pe_lower": {"type": "number", "exclusiveMinimum": 0},
+        "applied_forward_pe_central": {"type": "number", "exclusiveMinimum": 0},
+        "applied_forward_pe_upper": {"type": "number", "exclusiveMinimum": 0},
+        "own_forward_pe_guard_low": {"type": "number", "exclusiveMinimum": 0},
+        "own_forward_pe_guard_high": {"type": "number", "exclusiveMinimum": 0},
+        "multiple_guard_method": {"type": "string"},
+        "peer_sample_count": {"type": "integer", "minimum": 0},
+        "peer_basis": {"type": "string"},
+        "price_position": {"enum": ["below_theoretical_lower", "inside_theoretical_range", "above_theoretical_upper"]},
+        "distance_to_lower_pct": {"type": "number"},
+        "distance_to_upper_pct": {"type": "number"},
+        "confidence": {"enum": ["high", "medium", "low"]},
+        "source_url": {"type": ["string", "null"]},
+        "source_provider": {"type": ["string", "null"]},
+        "source_retrieved_at": {"type": ["string", "null"]},
+        "point_in_time_as_of": {"type": ["string", "null"]},
+        "probability_integration_status": {"type": "string"},
+        "note": {"type": "string"}
       }
     }
   }

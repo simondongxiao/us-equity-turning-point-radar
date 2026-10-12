@@ -21,6 +21,7 @@ TAG='radar-encrypted-state'
 def archive_paths():
     """Return private state required to reproduce and audit the radar over time."""
     paths = list((ROOT/'state/frozen').rglob('*.json'))
+    paths += list((ROOT/'state/fundamentals').rglob('*.json'))
     paths += list((ROOT/'data/raw_prices').glob('*.csv'))
     paths += list((ROOT/'state').glob('weekly-review-*.json'))
     weekly_audit = ROOT/'data/weekly_pool_audit.json'
@@ -100,7 +101,7 @@ def restore():
             target=ROOT/relative
             if not target.resolve().is_relative_to(ROOT.resolve()):raise ValueError('archive escaped root')
             raw=tar.extractfile(member).read()
-            if target.exists() and member.name.startswith('state/frozen/'):
+            if target.exists() and member.name.startswith(('state/frozen/', 'state/fundamentals/')):
                 if target.read_bytes()!=raw:raise ValueError('frozen restore conflict')
                 continue
             target.parent.mkdir(parents=True,exist_ok=True)
