@@ -1,0 +1,40 @@
+name: radar-ui-redeploy
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: radar-pages-batch
+  cancel-in-progress: false
+
+jobs:
+  redeploy-frozen-data:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Reuse the last complete frozen production payload
+        run: |
+          mkdir -p site
+          curl --fail --silent --show-error --retry 3 \
+            https://simondongxiao.github.io/us-equity-turning-point-radar/data.json \
+            --output site/data.json
+          curl --fail --silent --show-error --retry 3 \
+            https://simondongxiao.github.io/us-equity-turning-point-radar/validation.html \
+            --output site/validation.html
+          sha256sum site/data.json > /tmp/frozen-data.sha256
+      - run: python scripts/render_preview.py --input site/data.json --output site/index.html
+      - run: python scripts/validate_delivery.py --dashboard site/data.json
+      - name: Verify the UI-only build did not change the frozen payload
+        run: sha256sum --check /tmp/frozen-data.sha256
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site
+      - uses: actions/deploy-pages@v4
