@@ -5,7 +5,7 @@ description: 构建、运行并发布美股阶段顶底概率雷达。以每周�
 
 # 美股阶段顶底概率雷达
 
-版本：`1.9.1-full-pool-extreme-atr-columns`。本次为原包增量升级；不得删减原有研究、回测、网页或安全功能。
+版本：`1.10.0-index-intraday-map`（保留`1.9.1-full-pool-extreme-atr-columns`全部能力）。本次为原包增量升级；不得删减原有研究、回测、网页或安全功能。
 
 ## v1.9.1 全池极端ATR区域显式展示
 
@@ -183,3 +183,21 @@ MU、SNDK、WDC、STX在首版名单中的主研究组统一为`storage-memory /
 共用只读轮动快照，但不修改旧复盘Skill；缺少存储细分状态时在新项目适配层补算并记录来源。价格、概率仍由同一完整引擎和校准产生，不额外主观加分。分类及特征版本变化先影子验证，未经批准不得直接套用旧校准器。
 
 用户说“更新存储组”“看SNDK/美光/西部数据/希捷”时调用同一个完整分析入口。网页筛选只是改变可见记录，不能重算全池机会/风险分位，不能取代个股计算。更新/部署前同时执行原验收和v1.1增量验收。
+
+## v1.10 三大指数量价与期权地图（盘中独立上下文层）
+
+本版本在首页置顶新增且只新增三张卡：`纳斯达克｜综指行情＋纳指100交易结构代理`、`标普500`、`道琼斯`。原极端ATR越界预警、原13项指数方向区、常态100股、临时个股和B3/B4治理全部保留并顺延。地图层只做解释，不改变原方向概率、信度、机会分、风险分或排名。
+
+指数点位没有自身可直接成交的逐笔价格量。默认成交代理固定为`QQQ→纳指100`、`SPY→标普500`、`DIA→道指`；QQQ不得机械换算成IXIC。指数点数和ETF美元价位分栏展示；只有同一跟踪目标才可记录明确的价格比例映射，且标为“映射参考”，不能称为指数真实POC。
+
+实现入口为`python scripts/index_intraday.py --refresh --input site/data.json --output site/data.json --html site/index.html`。每次命令只抓取一次可得的5分钟常规时段OHLCV、指数报价和可用期权链，写入独立的`state/index_intraday/snapshot-*.json`与`latest.json`，再原子合并到页面；不跑全池训练、不重算日线成熟预测、不启动后台扫描。省略`--refresh`必须拒绝执行。已接入手动发布链：在已配置Pages权限的仓库运行`gh workflow run index-intraday.yml --ref main`，工作流读取最近一次成功日更derived artifact，只替换三张顶部地图后部署，不重跑100股。
+
+三张卡分别展示：当日形成中、前一完整交易日冻结、最近五个交易时段复合三个窗口的POC/VAL/VAH/VWAP、价值区实际覆盖比例、HVN/LVN、前日高低点、代理现价距离和成交重心迁移。分钟K线没有逐笔时使用固定网格、按OHLC高低区间重叠长度均匀分配成交量的可复现估算；卡片和详情必须写“估算”，不能把它说成现金指数真实成交分布。POC是观察窗口内成交最密集的价格区域；VAL是近期正常震荡区下沿；VAH是上沿；HVN是成交堆得厚的价格带；LVN是成交稀疏、穿越可能更快的价格带。它们都不是必然支撑、阻力或回归目标。
+
+期权按标的独立保存underlying、expiry、strike、call/put、OI、当日成交量、报价时间和OI日期。OI密集行权价、当日成交密集行权价、Put/Call OI与成交量比分开展示；OI通常为前一结算日，盘中成交量不加到OI。没有可验证Greeks时明确显示Gamma/GEX不可用，不编造Gamma Flip。期权层不进入方向概率，完整的历史期权门槛仍为至少252个唯一交易日、核心字段覆盖80%、独立训练校准测试。
+
+每张卡必须给出当前状态、上行情景和下行情景；触发位冻结于快照，默认以连续两根已完成5分钟K线确认，写清第一/第二关注位、失效条件和有效期。状态可为偏强延续、偏弱延续、区间震荡、突破待确认、跌破待确认或证据不足。没有量能数据不得写“放量确认”。
+
+页面显示“盘中地图截至时间”和“原顶底模型截至完整交易日”两个时间。若没有快照或本次抓取失败，页面显示不可用及原因，保留最近成功值与原时间，绝不填0或虚构实时徽章。快照必须包含`run_id、schema_version、algorithm_version、instrument/underlying、price_unit、proxy_mapping、session_date/session_type、window_start/end、bar_interval、bin定义、source/feed_scope、coverage、quote_as_of、profile_as_of、options_quote_as_of、oi_as_of_date、fetched_at、generated_at、daily_model_as_of`等审计字段。
+
+自然语言触发注册：`盘中更新三大指数POC和期权地图`、`现在刷新美股指数关键位`、`只更新HTML顶部三大指数，不跑100股`均等价于一次`INDEX_INTRADAY_REFRESH`。普通浏览器刷新只读取最近发布结果，不启动Codex；没有已验证任务网关时，页面提供可复制的本地更新命令。完成后按既有发布链发布并核验同一`index_intraday.run_id`，不覆盖旧日线run。

@@ -10,10 +10,11 @@
 .fan-chart{width:100%;height:auto;min-height:230px}.attribution-row{display:grid;grid-template-columns:105px 1fr 120px;gap:8px;align-items:center;margin:7px 0}.attribution-track{height:8px;background:#e7edf3;border-radius:5px;position:relative}.attribution-fill{height:8px;border-radius:5px;position:absolute;top:0}.attribution-fill.pos{left:50%;background:#196c60}.attribution-fill.neg{right:50%;background:#b35c49}.shadow-note{border-left:4px solid #d29a32;padding-left:12px}.stock-table{min-width:1420px}.confidence-badge{display:inline-block;padding:3px 7px;border-radius:999px;font-size:11px;font-weight:750;white-space:nowrap}.confidence-badge.high{background:#dcefe8;color:#126153}.confidence-badge.medium{background:#fff0c9;color:#765006}.confidence-badge.low{background:#edf0f4;color:#586778}.calibration-wrap{display:grid;grid-template-columns:minmax(420px,1fr) minmax(360px,.9fr);gap:18px;align-items:start}.calibration-chart{width:100%;height:auto;min-height:300px}.calibration-table{min-width:620px}.calibration-legend{display:flex;gap:15px;flex-wrap:wrap;margin:6px 0 12px}.legend-dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px}@media(max-width:900px){.calibration-wrap{grid-template-columns:1fr}}
 .boundary-alert{border-color:#dfc98f}.boundary-alert .board-head{background:#fffaf0}.boundary-table{min-width:880px}.breach-item{display:block;margin:3px 0;padding:3px 7px;border-radius:4px;background:#f7f9fb}.breach-item.below{color:#9b3f35;background:#fff0ed}.breach-item.above{color:#8a5900;background:#fff5d9}.breach-none{color:var(--muted)}.extreme-zone{min-width:132px;background:#fffdf7}.extreme-threshold{font-weight:750;color:#745018}.extreme-zone.lower .extreme-threshold{color:#9b3f35}.extreme-zone.upper .extreme-threshold{color:#8a5900}.extreme-missing{color:var(--muted)}
 </style>
-<style>.filter-row{margin-top:12px}</style>
+<style>.filter-row{margin-top:12px}@media(max-width:900px){#indexIntradayCards{grid-template-columns:1fr!important}}</style>
 </head>
 <body>
 <main class="wrap">
+<section id="indexIntradayPanel" class="panel" aria-label="三大指数量价与期权地图" style="margin-bottom:18px"><div class="board-head"><div><h2>三大指数量价与期权地图</h2><p id="indexIntradayMeta" class="small">盘中地图独立于原顶底模型；POC/VA/VWAP来自明确标注的ETF成交结构代理。</p></div><span id="indexIntradayBadge" class="badge">待刷新</span></div><div id="indexIntradayCards" style="display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;padding:14px"></div><details style="padding:0 14px 14px"><summary><strong>地图口径与刷新命令</strong></summary><p class="small">指数点位没有自身可直接成交的逐笔价格量。纳斯达克使用QQQ作为“纳指100交易结构代理”，不把QQQ的POC标成纳综真实POC；标普和道指分别使用SPY、DIA。OHLCV成交量按高低区间重叠长度均匀分配，价值区目标为约70%。盘中只使用已完成5分钟bar；OI、IV和Greeks按各自时间戳展示，缺失不填0。</p><code>python scripts/index_intraday.py --refresh --input site/data.json --output site/data.json --html site/index.html</code></details></section>
 <header class="mast"><div><div class="eyebrow">US EQUITY · TURNING POINT RADAR</div><h1>美股阶段顶底雷达</h1><p class="small tagline">情绪修复 × 板块轮动 × 个股独立强弱。分开看机会与风险，不把人气当成买入理由。</p></div><span class="badge" id="versionBadge">v1.1 · 待接入模型</span></header>
 <div class="notice" id="notice">界面预览：未接入真实行情、已校准概率模型与单股任务接口。所有金融数字均留空，不是实时研究结果。</div>
 <section id="boundaryAlertPanel" class="panel boundary-alert" aria-label="极端ATR越界预警"><div class="board-head"><div><h2>极端ATR越界预警</h2><p id="boundaryAlertMeta" class="small">需要最近一个更早交易日的冻结价格与ATR14，才能判断盘中或收盘是否越界。</p></div><span id="boundaryAlertCount" class="badge">待核验</span></div><div class="table-scroll"><table class="boundary-table"><thead><tr><th>期限</th><th>冻结极端边界</th><th>跌破下限</th><th>突破上限</th></tr></thead><tbody id="boundaryAlertRows"></tbody></table></div><div id="boundaryAlertNote" class="footnote">顶部只列真正穿越更早冻结极端边界的标的；未列出表示尚未越界，不表示未计算。全100股的上下极端区见下方主表独立列。越界不等于立即反转或交易信号。</div></section>
@@ -341,6 +342,27 @@ if(Array.isArray(groupRotationSummary)&&groupRotationSummary.length)txt($('rotat
 renderWeeklyPool();
 if(DATA.build_mode==='live'){$('notice').hidden=false;txt($('notice'),DATA.status_message||'请结合概率校准状态、数据时间与个股事件使用。预测不保证未来结果。');}
 if(DATA.run_id)txt($('buildNote'),`Run ${DATA.run_id} ｜ 不执行交易`);
-render();
+ renderIndexIntraday();render();
+function intradayProfileValue(v){return finite(v)?v.toLocaleString('en-US',{maximumFractionDigits:0}):'—';}
+function intradayCard(c){
+ const article=node('article',undefined,'detail-block');article.style.cssText='margin:0;padding:14px;min-width:0';
+ const inst=c.instrument||{};const iq=c.index_quote||{},pq=c.proxy_quote||{},w=c.windows||{},p=w.today||{};const current=c.current||{},opt=c.options||{},j=c.judgment||{};
+ article.append(node('h3',`${inst.index_name||inst.index_symbol||'指数'}｜${inst.proxy_role||inst.proxy_symbol||'成交代理'}`));
+ article.append(node('p',`${inst.index_symbol||'—'} ${price(iq.price)} 点 · ${pct(iq.change_pct)} · 指数时间 ${iq.as_of||'—'}`,'small'));
+ article.append(node('p',`${inst.proxy_symbol||'—'} ${price(pq.price)} USD · ${pct(pq.change_pct)} · 代理时间 ${pq.as_of||'—'}`,'small'));
+ if(c.refresh_status==='failed_using_previous_snapshot'||c.quality_status==='partial_stale'||c.quality_status==='stale')article.append(node('p',`本次刷新失败，沿用旧快照：${c.missing_reason||'来源未返回新数据'}。`,'small'));
+ const key=node('div',undefined,'small');key.style.cssText='display:grid;grid-template-columns:1fr 1fr;gap:4px 10px;margin:8px 0';[['POC',price(p.poc)],['VAL',price(p.val)],['VAH',price(p.vah)],['VWAP',price(p.vwap)]].forEach(x=>key.append(node('span',`${x[0]} ${x[1]}`)));article.append(key);
+ article.append(node('p',`当前位置：${current.relative_to_value_area==='above_vah'?'VAH上方':current.relative_to_value_area==='below_val'?'VAL下方':'价值区内'}；距POC ${pct(current.relative_to_poc)}；距VWAP ${pct(current.relative_to_vwap)}`,'small'));
+ if(p.status==='observed'&&Array.isArray(p.bins)&&p.bins.length){const chart=node('div');chart.setAttribute('aria-label','价格—成交量横向分布');chart.style.cssText='border:1px solid #dbe3ec;padding:5px;margin:8px 0;max-height:190px;overflow:hidden';const step=Math.max(1,Math.ceil(p.bins.length/24));p.bins.filter((_,i)=>i%step===0).forEach(b=>{const row=node('div');row.style.cssText='display:grid;grid-template-columns:62px 1fr;gap:5px;align-items:center;height:7px';row.title=`${price(b.low)}-${price(b.high)} · ${intradayProfileValue(b.volume)}`;row.append(node('span',price((b.low+b.high)/2),'sub'));const bar=node('span');bar.style.cssText=`display:block;height:6px;border-radius:2px;width:${Math.max(2,(b.relative_volume||0)*100)}%;background:${b.is_poc?'#1d5078':b.in_value_area?'#a9c8dc':'#dfe7ee'}`;row.append(bar);chart.append(row)});article.append(chart)}
+ article.append(node('p',j.summary||'证据不足；等待下一次快照。','small'));
+ const scen=node('div',undefined,'small');scen.style.cssText='display:grid;grid-template-columns:1fr 1fr;gap:6px';const up=j.upside||{},down=j.downside||{};scen.append(node('div',`上行：${price(up.reference_price)}确认 → ${price(up.first_attention)}${up.second_attention?` → ${price(up.second_attention)}`:''}`),node('div',`下行：${price(down.reference_price)}确认 → ${price(down.first_attention)}${down.second_attention?` → ${price(down.second_attention)}`:''}`));article.append(scen);
+ const optionLine=opt.status==='observed'?`期权 ${opt.underlying}：Call OI ${price(opt.call_oi_dense?.[0]?.strike)} / Put OI ${price(opt.put_oi_dense?.[0]?.strike)} · OI日期 ${opt.oi_as_of_date||'供应商未提供'}`:`期权：${opt.reason||'不可用'}；不编造Gamma/GEX`;
+ article.append(node('p',optionLine,'small'));article.append(node('p',`失效：${j.invalidation||'下一次快照重算'} · 结构：${j.label||'证据不足'}`,'small'));return article;
+}
+function renderIndexIntraday(){
+ const wrap=$('indexIntradayCards'),snap=DATA.index_intraday;wrap.replaceChildren();
+ if(!snap||!Array.isArray(snap.cards)){txt($('indexIntradayBadge'),'未接入盘中快照');txt($('indexIntradayMeta'),'尚无盘中地图快照；日线模型仍按独立完整交易日运行。');return;}
+ const observed=snap.cards.filter(c=>c.status==='observed').length;txt($('indexIntradayBadge'),`地图 ${observed}/3`);txt($('indexIntradayMeta'),`盘中地图截至 ${snap.generated_at||'—'}（${snap.display_timezone||'Asia/Shanghai'}）；原顶底模型截至 ${snap.daily_model_as_of||DATA.as_of||'—'}。${snap.notes?.[0]||''}`);snap.cards.forEach(c=>wrap.append(intradayCard(c)));
+}
 </script>
 </body></html>

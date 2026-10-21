@@ -24,6 +24,7 @@ def archive_paths():
     paths += list((ROOT/'state/fundamentals').rglob('*.json'))
     paths += list((ROOT/'data/raw_prices').glob('*.csv'))
     paths += list((ROOT/'state').glob('weekly-review-*.json'))
+    paths += list((ROOT/'state/index_intraday').glob('*.json'))
     weekly_audit = ROOT/'data/weekly_pool_audit.json'
     if weekly_audit.exists():
         paths.append(weekly_audit)

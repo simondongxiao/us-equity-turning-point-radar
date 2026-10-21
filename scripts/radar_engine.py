@@ -478,7 +478,15 @@ def download_prices(symbols: list[str], refresh: bool = False) -> tuple[dict[str
             frame = cached_frame
         if frame.empty or len(frame) < 80:
             try:
-                raw = yf.download(symbol, start=start, end=end, auto_adjust=False, progress=False, threads=False)
+                raw = yf.download(
+                    symbol,
+                    start=start,
+                    end=end,
+                    auto_adjust=False,
+                    progress=False,
+                    threads=False,
+                    timeout=15,
+                )
                 downloaded = flatten_download(raw, symbol)
                 if not downloaded.empty:
                     if not cached_frame.empty:
@@ -1805,6 +1813,20 @@ def write_json(path: Path, value: Any) -> None:
     path.write_text(json.dumps(safe_json(value), ensure_ascii=False, indent=2, allow_nan=False), encoding="utf-8")
 
 
+def load_index_intraday_snapshot() -> dict[str, Any] | None:
+    """Load the last independently frozen three-index snapshot, if present."""
+    path = STATE_DIR / "index_intraday" / "latest.json"
+    if not path.exists():
+        return None
+    try:
+        value = json.loads(path.read_text(encoding="utf-8"))
+        if isinstance(value, dict) and value.get("schema_version") == "index-intraday-map-v1":
+            return value
+    except (OSError, json.JSONDecodeError, TypeError):
+        pass
+    return None
+
+
 def build(refresh: bool = False, run_id: str | None = None, extra_symbol: str | None = None) -> dict[str, Any]:
     if run_id and (OUTPUT_DIR / f"dashboard-{run_id}.json").exists():
         raise ValueError("run_id already frozen; use a new run_id for a revision")
@@ -1988,6 +2010,15 @@ def build(refresh: bool = False, run_id: str | None = None, extra_symbol: str | 
         "note": "点时资格与人气评分已审计；自动换池仍受独立门槛约束。" if weekly_audit else "母池规模来自旧美股行情项目快照；本项目未把它改写成当前人气排名。",
     }
     data = {"build_mode": "live", "status_message": "真实日线行情已接入。机会/风险仍由原B3共同路径生成；方向性阶段底、阶段顶与无有效拐点为互斥且独立校准的挑战者，三项严格合计100%。信度按历史路径重合、近期独立测试校准、相对多数类基线增益与真实日期支持分级；信度不改写概率。详情分开展示常态路径低/高区、条件反转底/顶区、结构区、ATR回退、2 ATR极端区，以及业绩一致预期×同行估值理论上下界；触及价格区不代表反转确认。", "generated_at": iso(utc_now()), "as_of": as_of.strftime("%Y-%m-%d"), "as_of_beijing": f"{as_of.strftime('%Y-%m-%d')} 纽约收盘数据；北京时间日期需按交易日换算", "run_id": run_id, "workflow_run_id": os.environ.get("GITHUB_RUN_ID"), "workflow_run_attempt": os.environ.get("GITHUB_RUN_ATTEMPT"), "prediction_snapshot_id": run_id, "model_version": MODEL_VERSION, "directional_model_version": DIRECTIONAL_MODEL_VERSION, "confidence_method_version": CONFIDENCE_METHOD_VERSION, "fundamental_valuation_version": FUNDAMENTAL_VALUATION_VERSION, "feature_version": FEATURE_VERSION, "potential_range_version": "structure-statistical-fundamental-model-option-five-layer-v6", "strategy_version": STRATEGY_VERSION, "universe_version": "curated-seed-20260915-v1.1-live-validation", "taxonomy_version": TAXONOMY_VERSION, "source_manifest": source, "fundamental_valuation_summary": {key: value for key, value in fundamental_valuation.items() if key != "records"}, "records": records, "temporary": temporary, "storage_rotation": rotation, "research_group_rotation": group_rotation, "weekly_pool_audit": weekly_audit, "options_model_gate": option_gate, "rotation_summary": group_rotation["summary"], "public_config": {"api_base_url": None}, "backtest": backtest, "coverage": {"regular_pool": len(records), "valid_forecast_records": valid, "usable_price_records": sum(1 for r in records if r.get("reference_price") is not None), "fundamental_valuation_records": fundamental_valuation.get("observed_symbols", 0), "data_cutoff": as_of.strftime("%Y-%m-%d"), "financial_backtest_status": "B3 first-touch and exclusive directional-turn time-split metrics computed; fundamental valuation display-only pending archived consensus history; options B4 and storage incremental alpha remain gated"}}
+    intraday_snapshot = load_index_intraday_snapshot()
+    if intraday_snapshot:
+        data["index_intraday"] = {
+            **intraday_snapshot,
+            "daily_model_as_of": as_of.strftime("%Y-%m-%d"),
+            "cards": [{**card, "daily_model_as_of": as_of.strftime("%Y-%m-%d")} for card in intraday_snapshot.get("cards", [])],
+        }
+    else:
+        data["index_intraday"] = None
     data["decision_board"] = decision_board
     data["status_message"] = "真实日线行情已接入。统计机会/风险榜与方向决策榜分离；风险单位异常保留原值但不进入风险榜。方向性阶段底、阶段顶与无有效拐点为互斥且独立校准的挑战者，三项严格合计100%。业绩一致预期×同行估值理论上下界作为中期基本面锚独立展示；在积累点时历史并完成样本外检验前不改写方向概率。详情分开展示理论估值、常态路径、条件反转、期限结构、ATR参考和2 ATR极端区。"
     # Context benchmarks cannot move the champion's stock/market cutoff date.

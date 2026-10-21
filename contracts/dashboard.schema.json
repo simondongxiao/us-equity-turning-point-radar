@@ -215,6 +215,35 @@
     }
   },
   "$defs": {
+    "index_intraday_card": {
+      "type": "object",
+      "required": ["schema_version", "algorithm_version", "status", "instrument", "proxy_mapping", "windows", "options", "quality_status", "daily_model_as_of"],
+      "properties": {
+        "schema_version": {"const": "index-intraday-map-v1"},
+        "algorithm_version": {"type": "string"},
+        "status": {"enum": ["observed", "unavailable"]},
+        "instrument": {"type": "object"},
+        "underlying": {"type": ["string", "null"]},
+        "price_unit": {"type": "object"},
+        "proxy_mapping": {"type": "object"},
+        "session_date": {"type": ["string", "null"]},
+        "session_type": {"type": ["string", "null"]},
+        "window_start": {"type": ["string", "null"]},
+        "window_end": {"type": ["string", "null"]},
+        "bar_interval": {"type": ["string", "null"]},
+        "quote_as_of": {"type": "object"},
+        "profile_as_of": {"type": ["string", "null"]},
+        "options_quote_as_of": {"type": ["string", "null"]},
+        "oi_as_of_date": {"type": ["string", "null"]},
+        "delay_seconds": {"type": ["number", "null"]},
+        "quality_status": {"type": "string"},
+        "missing_reason": {"type": ["string", "null"]},
+        "windows": {"type": "object"},
+        "options": {"type": "object"},
+        "coverage": {"type": ["object", "null"]},
+        "daily_model_as_of": {"type": ["string", "null"]}
+      }
+    },
     "boundary_alert_record": {
       "type": "object",
       "required": ["symbol", "scope", "horizon_sessions", "side", "current_price", "frozen_lower_bound", "frozen_upper_bound", "boundary_value", "breach_pct", "basis_run_id", "basis_as_of", "current_as_of"],
@@ -234,6 +263,21 @@
         "basis_run_id": {"type": "string"},
         "basis_as_of": {"type": "string"},
         "current_as_of": {"type": "string"}
+      }
+    },
+    "index_intraday": {
+      "type": ["object", "null"],
+      "required": ["schema_version", "algorithm_version", "run_id", "mode", "cards"],
+      "properties": {
+        "schema_version": {"const": "index-intraday-map-v1"},
+        "algorithm_version": {"type": "string"},
+        "run_id": {"type": "string"},
+        "mode": {"const": "INDEX_INTRADAY_REFRESH"},
+        "generated_at": {"type": "string"},
+        "fetched_at": {"type": "string"},
+        "display_timezone": {"type": "string"},
+        "daily_model_as_of": {"type": ["string", "null"]},
+        "cards": {"type": "array", "minItems": 3, "maxItems": 3, "items": {"$ref": "#/$defs/index_intraday_card"}}
       }
     },
     "tiered_boundary_alert_record": {
