@@ -278,6 +278,8 @@ def build_card(spec: dict[str, Any], refresh: bool = True) -> dict[str, Any]:
             return _unavailable(spec, "代理5分钟OHLCV不可用")
         sessions = _sessions(proxy_frame)
         if not sessions:
+            if previous_card:
+                return _stale_copy(previous_card, "代理本次没有可用常规交易时段数据，沿用最近成功快照")
             return _unavailable(spec, "代理无常规交易时段数据")
         latest, previous = sessions[-1], sessions[-2] if len(sessions) > 1 else sessions[-1]
         today = _profile(proxy_frame, "当日常规时段（盘中形成中/收盘后冻结）", latest, latest)
@@ -312,7 +314,10 @@ def build_card(spec: dict[str, Any], refresh: bool = True) -> dict[str, Any]:
         card["daily_model_as_of"] = None
         return card
     except Exception as exc:
-        return _unavailable(spec, f"抓取或计算失败：{exc}")
+        reason = f"抓取或计算失败：{exc}"
+        if previous_card:
+            return _stale_copy(previous_card, reason)
+        return _unavailable(spec, reason)
 
 
 def build_snapshot(refresh: bool = True) -> dict[str, Any]:

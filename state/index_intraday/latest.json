@@ -1,10 +1,10 @@
 {
   "schema_version": "index-intraday-map-v1",
   "algorithm_version": "volume-profile-uniform-ohlcv-v1.0.0",
-  "run_id": "index-intraday-20261021T135018Z-be2cd1",
+  "run_id": "index-intraday-20261022T234526Z-689b9f",
   "mode": "INDEX_INTRADAY_REFRESH",
-  "generated_at": "2026-10-21T13:50:29.408895+00:00",
-  "fetched_at": "2026-10-21T13:50:29.408895+00:00",
+  "generated_at": "2026-10-22T23:45:28.859467+00:00",
+  "fetched_at": "2026-10-22T23:45:28.859467+00:00",
   "published_at": null,
   "display_timezone": "Asia/Shanghai",
   "cards": [
@@ -2246,17 +2246,18 @@
         "poc_shift": 3.605000000000018
       },
       "quality": {
-        "status": "observed",
+        "status": "stale",
         "volume_coverage": {
           "bar_count": 5,
           "missing_volume_bar_count": 1
         },
         "profile_estimation": "OHLCV分钟K线估算的成交量分布，不是逐笔真实成交价分布",
-        "oi_limitation": "常规OI通常为前一结算日；本快照未将盘中成交量加到OI"
+        "oi_limitation": "常规OI通常为前一结算日；本快照未将盘中成交量加到OI",
+        "missing_reason": "抓取或计算失败：Too Many Requests. Rate limited. Try after a while."
       },
       "fetched_at": "2026-10-21T13:50:24.615944+00:00",
-      "generated_at": "2026-10-21T13:50:24.615944+00:00",
-      "daily_model_as_of": "2026-10-20",
+      "generated_at": "2026-10-22T23:45:27.606450+00:00",
+      "daily_model_as_of": "2026-10-22",
       "underlying": "QQQ",
       "price_unit": {
         "index": "index_points",
@@ -2275,8 +2276,9 @@
         "bar_count": 5,
         "missing_volume_bar_count": 1
       },
-      "quality_status": "observed",
-      "missing_reason": null
+      "quality_status": "stale",
+      "missing_reason": "抓取或计算失败：Too Many Requests. Rate limited. Try after a while.",
+      "refresh_status": "failed_using_previous_snapshot"
     },
     {
       "schema_version": "index-intraday-map-v1",
@@ -4332,17 +4334,18 @@
         "poc_shift": 1.5199999999999818
       },
       "quality": {
-        "status": "observed",
+        "status": "stale",
         "volume_coverage": {
           "bar_count": 5,
           "missing_volume_bar_count": 1
         },
         "profile_estimation": "OHLCV分钟K线估算的成交量分布，不是逐笔真实成交价分布",
-        "oi_limitation": "常规OI通常为前一结算日；本快照未将盘中成交量加到OI"
+        "oi_limitation": "常规OI通常为前一结算日；本快照未将盘中成交量加到OI",
+        "missing_reason": "抓取或计算失败：Too Many Requests. Rate limited. Try after a while."
       },
       "fetched_at": "2026-10-21T13:50:26.894939+00:00",
-      "generated_at": "2026-10-21T13:50:26.894939+00:00",
-      "daily_model_as_of": "2026-10-20",
+      "generated_at": "2026-10-22T23:45:28.540753+00:00",
+      "daily_model_as_of": "2026-10-22",
       "underlying": "SPY",
       "price_unit": {
         "index": "index_points",
@@ -4361,8 +4364,9 @@
         "bar_count": 5,
         "missing_volume_bar_count": 1
       },
-      "quality_status": "observed",
-      "missing_reason": null
+      "quality_status": "stale",
+      "missing_reason": "抓取或计算失败：Too Many Requests. Rate limited. Try after a while.",
+      "refresh_status": "failed_using_previous_snapshot"
     },
     {
       "schema_version": "index-intraday-map-v1",
@@ -6486,17 +6490,18 @@
         "poc_shift": 0.8250000000000455
       },
       "quality": {
-        "status": "observed",
+        "status": "stale",
         "volume_coverage": {
           "bar_count": 5,
           "missing_volume_bar_count": 1
         },
         "profile_estimation": "OHLCV分钟K线估算的成交量分布，不是逐笔真实成交价分布",
-        "oi_limitation": "常规OI通常为前一结算日；本快照未将盘中成交量加到OI"
+        "oi_limitation": "常规OI通常为前一结算日；本快照未将盘中成交量加到OI",
+        "missing_reason": "抓取或计算失败：Too Many Requests. Rate limited. Try after a while."
       },
       "fetched_at": "2026-10-21T13:50:29.408895+00:00",
-      "generated_at": "2026-10-21T13:50:29.408895+00:00",
-      "daily_model_as_of": "2026-10-20",
+      "generated_at": "2026-10-22T23:45:28.859467+00:00",
+      "daily_model_as_of": "2026-10-22",
       "underlying": "DIA",
       "price_unit": {
         "index": "index_points",
@@ -6515,8 +6520,9 @@
         "bar_count": 5,
         "missing_volume_bar_count": 1
       },
-      "quality_status": "observed",
-      "missing_reason": null
+      "quality_status": "stale",
+      "missing_reason": "抓取或计算失败：Too Many Requests. Rate limited. Try after a while.",
+      "refresh_status": "failed_using_previous_snapshot"
     }
   ],
   "notes": [
@@ -6524,5 +6530,5 @@
     "POC是观察窗口内成交最密集的价格区域，不等于仍持有筹码成本或必然回归磁铁。",
     "期权OI、成交量、IV和Greeks按字段分别记录；缺失不填0，不进入原方向概率。"
   ],
-  "daily_model_as_of": "2026-10-20"
+  "daily_model_as_of": "2026-10-22"
 }

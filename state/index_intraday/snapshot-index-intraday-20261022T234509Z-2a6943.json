@@ -1,0 +1,186 @@
+{
+  "schema_version": "index-intraday-map-v1",
+  "algorithm_version": "volume-profile-uniform-ohlcv-v1.0.0",
+  "run_id": "index-intraday-20261022T234509Z-2a6943",
+  "mode": "INDEX_INTRADAY_REFRESH",
+  "generated_at": "2026-10-22T23:45:11.626160+00:00",
+  "fetched_at": "2026-10-22T23:45:11.626160+00:00",
+  "published_at": null,
+  "display_timezone": "Asia/Shanghai",
+  "cards": [
+    {
+      "schema_version": "index-intraday-map-v1",
+      "algorithm_version": "volume-profile-uniform-ohlcv-v1.0.0",
+      "status": "unavailable",
+      "instrument": {
+        "key": "nasdaq",
+        "index_symbol": "^IXIC",
+        "index_name": "纳斯达克综合指数",
+        "proxy_symbol": "QQQ",
+        "proxy_name": "QQQ",
+        "proxy_role": "纳指100交易结构代理"
+      },
+      "underlying": "QQQ",
+      "price_unit": {
+        "index": "index_points",
+        "proxy": "USD",
+        "options": "USD_strike"
+      },
+      "reason": "抓取或计算失败：Too Many Requests. Rate limited. Try after a while.",
+      "index_quote": {
+        "status": "unavailable"
+      },
+      "proxy_quote": {
+        "status": "unavailable"
+      },
+      "quote_as_of": {
+        "index": null,
+        "proxy": null
+      },
+      "profile_as_of": null,
+      "options_quote_as_of": null,
+      "oi_as_of_date": null,
+      "delay_seconds": null,
+      "proxy_mapping": {
+        "method": "QQQ→NDX only; 禁止QQQ→IXIC机械换算",
+        "allowed": false
+      },
+      "windows": {},
+      "options": {
+        "status": "unavailable",
+        "reason": "抓取或计算失败：Too Many Requests. Rate limited. Try after a while."
+      },
+      "judgment": {
+        "state": "evidence_insufficient",
+        "label": "证据不足",
+        "summary": "抓取或计算失败：Too Many Requests. Rate limited. Try after a while."
+      },
+      "quality": {
+        "status": "blocked",
+        "missing_reason": "抓取或计算失败：Too Many Requests. Rate limited. Try after a while."
+      },
+      "quality_status": "blocked",
+      "missing_reason": "抓取或计算失败：Too Many Requests. Rate limited. Try after a while.",
+      "coverage": null,
+      "daily_model_as_of": "2026-10-22"
+    },
+    {
+      "schema_version": "index-intraday-map-v1",
+      "algorithm_version": "volume-profile-uniform-ohlcv-v1.0.0",
+      "status": "unavailable",
+      "instrument": {
+        "key": "sp500",
+        "index_symbol": "^GSPC",
+        "index_name": "标普500指数",
+        "proxy_symbol": "SPY",
+        "proxy_name": "SPY",
+        "proxy_role": "标普500交易结构代理"
+      },
+      "underlying": "SPY",
+      "price_unit": {
+        "index": "index_points",
+        "proxy": "USD",
+        "options": "USD_strike"
+      },
+      "reason": "抓取或计算失败：Too Many Requests. Rate limited. Try after a while.",
+      "index_quote": {
+        "status": "unavailable"
+      },
+      "proxy_quote": {
+        "status": "unavailable"
+      },
+      "quote_as_of": {
+        "index": null,
+        "proxy": null
+      },
+      "profile_as_of": null,
+      "options_quote_as_of": null,
+      "oi_as_of_date": null,
+      "delay_seconds": null,
+      "proxy_mapping": {
+        "method": "SPY→SPX同目标时点映射参考",
+        "allowed": false
+      },
+      "windows": {},
+      "options": {
+        "status": "unavailable",
+        "reason": "抓取或计算失败：Too Many Requests. Rate limited. Try after a while."
+      },
+      "judgment": {
+        "state": "evidence_insufficient",
+        "label": "证据不足",
+        "summary": "抓取或计算失败：Too Many Requests. Rate limited. Try after a while."
+      },
+      "quality": {
+        "status": "blocked",
+        "missing_reason": "抓取或计算失败：Too Many Requests. Rate limited. Try after a while."
+      },
+      "quality_status": "blocked",
+      "missing_reason": "抓取或计算失败：Too Many Requests. Rate limited. Try after a while.",
+      "coverage": null,
+      "daily_model_as_of": "2026-10-22"
+    },
+    {
+      "schema_version": "index-intraday-map-v1",
+      "algorithm_version": "volume-profile-uniform-ohlcv-v1.0.0",
+      "status": "unavailable",
+      "instrument": {
+        "key": "dow",
+        "index_symbol": "^DJI",
+        "index_name": "道琼斯工业平均指数",
+        "proxy_symbol": "DIA",
+        "proxy_name": "DIA",
+        "proxy_role": "道指交易结构代理"
+      },
+      "underlying": "DIA",
+      "price_unit": {
+        "index": "index_points",
+        "proxy": "USD",
+        "options": "USD_strike"
+      },
+      "reason": "抓取或计算失败：Too Many Requests. Rate limited. Try after a while.",
+      "index_quote": {
+        "status": "unavailable"
+      },
+      "proxy_quote": {
+        "status": "unavailable"
+      },
+      "quote_as_of": {
+        "index": null,
+        "proxy": null
+      },
+      "profile_as_of": null,
+      "options_quote_as_of": null,
+      "oi_as_of_date": null,
+      "delay_seconds": null,
+      "proxy_mapping": {
+        "method": "DIA→DJIA同目标时点映射参考",
+        "allowed": false
+      },
+      "windows": {},
+      "options": {
+        "status": "unavailable",
+        "reason": "抓取或计算失败：Too Many Requests. Rate limited. Try after a while."
+      },
+      "judgment": {
+        "state": "evidence_insufficient",
+        "label": "证据不足",
+        "summary": "抓取或计算失败：Too Many Requests. Rate limited. Try after a while."
+      },
+      "quality": {
+        "status": "blocked",
+        "missing_reason": "抓取或计算失败：Too Many Requests. Rate limited. Try after a while."
+      },
+      "quality_status": "blocked",
+      "missing_reason": "抓取或计算失败：Too Many Requests. Rate limited. Try after a while.",
+      "coverage": null,
+      "daily_model_as_of": "2026-10-22"
+    }
+  ],
+  "notes": [
+    "指数点位没有自身可直接成交的逐笔价格量；POC/VA/VWAP来自明确标注的ETF交易结构代理。",
+    "POC是观察窗口内成交最密集的价格区域，不等于仍持有筹码成本或必然回归磁铁。",
+    "期权OI、成交量、IV和Greeks按字段分别记录；缺失不填0，不进入原方向概率。"
+  ],
+  "daily_model_as_of": "2026-10-22"
+}

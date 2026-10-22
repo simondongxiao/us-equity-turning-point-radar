@@ -1,0 +1,6534 @@
+{
+  "schema_version": "index-intraday-map-v1",
+  "algorithm_version": "volume-profile-uniform-ohlcv-v1.0.0",
+  "run_id": "index-intraday-20261022T234526Z-689b9f",
+  "mode": "INDEX_INTRADAY_REFRESH",
+  "generated_at": "2026-10-22T23:45:28.859467+00:00",
+  "fetched_at": "2026-10-22T23:45:28.859467+00:00",
+  "published_at": null,
+  "display_timezone": "Asia/Shanghai",
+  "cards": [
+    {
+      "schema_version": "index-intraday-map-v1",
+      "algorithm_version": "volume-profile-uniform-ohlcv-v1.0.0",
+      "status": "observed",
+      "instrument": {
+        "key": "nasdaq",
+        "index_symbol": "^IXIC",
+        "index_name": "纳斯达克综合指数",
+        "proxy_symbol": "QQQ",
+        "proxy_name": "QQQ",
+        "proxy_role": "纳指100交易结构代理",
+        "index_unit": "index_points",
+        "proxy_unit": "USD"
+      },
+      "session_date": "2026-10-21",
+      "session_type": "regular_session",
+      "window_start": "2026-10-15",
+      "window_end": "2026-10-21",
+      "bar_interval": "5m",
+      "source": {
+        "provider": "Yahoo Finance via yfinance",
+        "feed_scope": "US regular session",
+        "delay_status": "unknown_or_delayed",
+        "note": "供应商未确认实时权限；最新完整5分钟bar与报价时间分开记录"
+      },
+      "index_quote": {
+        "status": "observed",
+        "price": 26614.3359375,
+        "as_of": "2026-10-21T09:50:00-04:00",
+        "change_pct": -0.00020991384727764295
+      },
+      "proxy_quote": {
+        "status": "observed",
+        "price": 722.530029296875,
+        "as_of": "2026-10-21T09:50:00-04:00",
+        "change_pct": -0.0004150184495332887
+      },
+      "proxy_mapping": {
+        "method": "QQQ→NDX only; 禁止QQQ→IXIC机械换算",
+        "allowed": false,
+        "ratio": null,
+        "index_price_as_of": "2026-10-21T09:50:00-04:00",
+        "proxy_price_as_of": "2026-10-21T09:50:00-04:00",
+        "error_sources": "跨源时差、ETF基差、公司行动与指数非成交性质；不把代理POC改写为现金指数真实成交价"
+      },
+      "windows": {
+        "today": {
+          "status": "observed",
+          "window": "当日常规时段（盘中形成中/收盘后冻结）",
+          "window_start": "2026-10-21",
+          "window_end": "2026-10-21",
+          "bar_interval": "5m",
+          "bin_width": 0.05,
+          "bin_origin": 719.7,
+          "volume_unit": "proxy_shares",
+          "volume_allocation": "OHLCV高低区间按重叠长度均匀分配；H=L全部归入该箱",
+          "volume_total": 4810426.0,
+          "value_area_target": 0.7,
+          "value_area_actual": 0.706704,
+          "poc": 721.125,
+          "val": 721.05,
+          "vah": 722.65,
+          "vwap": 721.943912,
+          "hvn": [
+            {
+              "low": 721.1,
+              "high": 721.15,
+              "relative_volume": 1.0
+            },
+            {
+              "low": 721.25,
+              "high": 721.3,
+              "relative_volume": 1.0
+            },
+            {
+              "low": 721.35,
+              "high": 721.4,
+              "relative_volume": 1.0
+            },
+            {
+              "low": 721.5,
+              "high": 721.55,
+              "relative_volume": 1.0
+            },
+            {
+              "low": 721.6,
+              "high": 721.65,
+              "relative_volume": 1.0
+            }
+          ],
+          "lvn": [
+            {
+              "low": 719.8,
+              "high": 719.85,
+              "relative_volume": 0.125781
+            },
+            {
+              "low": 719.9,
+              "high": 719.95,
+              "relative_volume": 0.125781
+            },
+            {
+              "low": 719.95,
+              "high": 720.0,
+              "relative_volume": 0.125781
+            },
+            {
+              "low": 720.05,
+              "high": 720.1,
+              "relative_volume": 0.125781
+            },
+            {
+              "low": 720.15,
+              "high": 720.2,
+              "relative_volume": 0.125781
+            }
+          ],
+          "bins": [
+            {
+              "low": 719.7,
+              "high": 719.75,
+              "volume": 8239.723495,
+              "relative_volume": 0.075542,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 719.75,
+              "high": 719.8,
+              "volume": 13719.474567,
+              "relative_volume": 0.125781,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 719.8,
+              "high": 719.85,
+              "volume": 13719.474567,
+              "relative_volume": 0.125781,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 719.85,
+              "high": 719.9,
+              "volume": 13719.474567,
+              "relative_volume": 0.125781,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 719.9,
+              "high": 719.95,
+              "volume": 13719.474567,
+              "relative_volume": 0.125781,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 719.95,
+              "high": 720.0,
+              "volume": 13719.474567,
+              "relative_volume": 0.125781,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 720.0,
+              "high": 720.05,
+              "volume": 13719.474567,
+              "relative_volume": 0.125781,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 720.05,
+              "high": 720.1,
+              "volume": 13719.474567,
+              "relative_volume": 0.125781,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 720.1,
+              "high": 720.15,
+              "volume": 13719.474567,
+              "relative_volume": 0.125781,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 720.15,
+              "high": 720.2,
+              "volume": 13719.474567,
+              "relative_volume": 0.125781,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 720.2,
+              "high": 720.25,
+              "volume": 13719.474567,
+              "relative_volume": 0.125781,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 720.25,
+              "high": 720.3,
+              "volume": 13719.474567,
+              "relative_volume": 0.125781,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 720.3,
+              "high": 720.35,
+              "volume": 13719.474567,
+              "relative_volume": 0.125781,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 720.35,
+              "high": 720.4,
+              "volume": 13719.474567,
+              "relative_volume": 0.125781,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 720.4,
+              "high": 720.45,
+              "volume": 13719.474567,
+              "relative_volume": 0.125781,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 720.45,
+              "high": 720.5,
+              "volume": 28984.642637,
+              "relative_volume": 0.265732,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 720.5,
+              "high": 720.55,
+              "volume": 32811.422174,
+              "relative_volume": 0.300817,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 720.55,
+              "high": 720.6,
+              "volume": 32811.422174,
+              "relative_volume": 0.300817,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 720.6,
+              "high": 720.65,
+              "volume": 32811.422174,
+              "relative_volume": 0.300817,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 720.65,
+              "high": 720.7,
+              "volume": 32811.422174,
+              "relative_volume": 0.300817,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 720.7,
+              "high": 720.75,
+              "volume": 32811.422174,
+              "relative_volume": 0.300817,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 720.75,
+              "high": 720.8,
+              "volume": 43955.908576,
+              "relative_volume": 0.40299,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 720.8,
+              "high": 720.85,
+              "volume": 46745.432034,
+              "relative_volume": 0.428564,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 720.85,
+              "high": 720.9,
+              "volume": 46745.432034,
+              "relative_volume": 0.428564,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 720.9,
+              "high": 720.95,
+              "volume": 46745.432034,
+              "relative_volume": 0.428564,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 720.95,
+              "high": 721.0,
+              "volume": 46745.432034,
+              "relative_volume": 0.428564,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 721.0,
+              "high": 721.05,
+              "volume": 59238.64283,
+              "relative_volume": 0.543102,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 721.05,
+              "high": 721.1,
+              "volume": 109074.532426,
+              "relative_volume": 1.0,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 721.1,
+              "high": 721.15,
+              "volume": 109074.532426,
+              "relative_volume": 1.0,
+              "is_poc": true,
+              "in_value_area": true
+            },
+            {
+              "low": 721.15,
+              "high": 721.2,
+              "volume": 109074.532426,
+              "relative_volume": 1.0,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 721.2,
+              "high": 721.25,
+              "volume": 109074.532426,
+              "relative_volume": 1.0,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 721.25,
+              "high": 721.3,
+              "volume": 109074.532426,
+              "relative_volume": 1.0,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 721.3,
+              "high": 721.35,
+              "volume": 109074.532426,
+              "relative_volume": 1.0,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 721.35,
+              "high": 721.4,
+              "volume": 109074.532426,
+              "relative_volume": 1.0,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 721.4,
+              "high": 721.45,
+              "volume": 109074.532426,
+              "relative_volume": 1.0,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 721.45,
+              "high": 721.5,
+              "volume": 109074.532426,
+              "relative_volume": 1.0,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 721.5,
+              "high": 721.55,
+              "volume": 109074.532426,
+              "relative_volume": 1.0,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 721.55,
+              "high": 721.6,
+              "volume": 109074.532426,
+              "relative_volume": 1.0,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 721.6,
+              "high": 721.65,
+              "volume": 109074.532426,
+              "relative_volume": 1.0,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 721.65,
+              "high": 721.7,
+              "volume": 109074.532426,
+              "relative_volume": 1.0,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 721.7,
+              "high": 721.75,
+              "volume": 109074.532426,
+              "relative_volume": 1.0,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 721.75,
+              "high": 721.8,
+              "volume": 109074.532426,
+              "relative_volume": 1.0,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 721.8,
+              "high": 721.85,
+              "volume": 109074.532426,
+              "relative_volume": 1.0,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 721.85,
+              "high": 721.9,
+              "volume": 109074.532426,
+              "relative_volume": 1.0,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 721.9,
+              "high": 721.95,
+              "volume": 109074.532426,
+              "relative_volume": 1.0,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 721.95,
+              "high": 722.0,
+              "volume": 109074.532426,
+              "relative_volume": 1.0,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 722.0,
+              "high": 722.05,
+              "volume": 109074.532426,
+              "relative_volume": 1.0,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 722.05,
+              "high": 722.1,
+              "volume": 109074.532426,
+              "relative_volume": 1.0,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 722.1,
+              "high": 722.15,
+              "volume": 109074.532426,
+              "relative_volume": 1.0,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 722.15,
+              "high": 722.2,
+              "volume": 109074.532426,
+              "relative_volume": 1.0,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 722.2,
+              "high": 722.25,
+              "volume": 109074.532426,
+              "relative_volume": 1.0,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 722.25,
+              "high": 722.3,
+              "volume": 109074.532426,
+              "relative_volume": 1.0,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 722.3,
+              "high": 722.35,
+              "volume": 109074.532426,
+              "relative_volume": 1.0,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 722.35,
+              "high": 722.4,
+              "volume": 106334.65689,
+              "relative_volume": 0.974881,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 722.4,
+              "high": 722.45,
+              "volume": 95355.057859,
+              "relative_volume": 0.874219,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 722.45,
+              "high": 722.5,
+              "volume": 95355.057859,
+              "relative_volume": 0.874219,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 722.5,
+              "high": 722.55,
+              "volume": 95355.057859,
+              "relative_volume": 0.874219,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 722.55,
+              "high": 722.6,
+              "volume": 89786.216516,
+              "relative_volume": 0.823164,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 722.6,
+              "high": 722.65,
+              "volume": 81421.048,
+              "relative_volume": 0.746472,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 722.65,
+              "high": 722.7,
+              "volume": 81421.047999,
+              "relative_volume": 0.746472,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 722.7,
+              "high": 722.75,
+              "volume": 81421.047999,
+              "relative_volume": 0.746472,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 722.75,
+              "high": 722.8,
+              "volume": 81421.048,
+              "relative_volume": 0.746472,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 722.8,
+              "high": 722.85,
+              "volume": 81421.047999,
+              "relative_volume": 0.746472,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 722.85,
+              "high": 722.9,
+              "volume": 81421.048,
+              "relative_volume": 0.746472,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 722.9,
+              "high": 722.95,
+              "volume": 81421.047999,
+              "relative_volume": 0.746472,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 722.95,
+              "high": 723.0,
+              "volume": 81421.047999,
+              "relative_volume": 0.746472,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 723.0,
+              "high": 723.05,
+              "volume": 81421.048,
+              "relative_volume": 0.746472,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 723.05,
+              "high": 723.1,
+              "volume": 37793.721138,
+              "relative_volume": 0.346494,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 723.1,
+              "high": 723.15,
+              "volume": 19091.947608,
+              "relative_volume": 0.175036,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 723.15,
+              "high": 723.2,
+              "volume": 19091.947608,
+              "relative_volume": 0.175036,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 723.2,
+              "high": 723.25,
+              "volume": 4.66112,
+              "relative_volume": 4.3e-05,
+              "is_poc": false,
+              "in_value_area": false
+            }
+          ],
+          "included_bar_count": 5,
+          "missing_volume_bar_count": 1
+        },
+        "previous": {
+          "status": "observed",
+          "window": "前一完整交易日常规时段（冻结参考）",
+          "window_start": "2026-10-20",
+          "window_end": "2026-10-20",
+          "bar_interval": "5m",
+          "bin_width": 0.16,
+          "bin_origin": 710.24,
+          "volume_unit": "proxy_shares",
+          "volume_allocation": "OHLCV高低区间按重叠长度均匀分配；H=L全部归入该箱",
+          "volume_total": 26503188.0,
+          "value_area_target": 0.7,
+          "value_area_actual": 0.708226,
+          "poc": 717.52,
+          "val": 713.92,
+          "vah": 720.32,
+          "vwap": 717.758042,
+          "hvn": [
+            {
+              "low": 717.44,
+              "high": 717.6,
+              "relative_volume": 1.0
+            },
+            {
+              "low": 718.24,
+              "high": 718.4,
+              "relative_volume": 0.882893
+            },
+            {
+              "low": 719.36,
+              "high": 719.52,
+              "relative_volume": 0.916243
+            }
+          ],
+          "lvn": [
+            {
+              "low": 710.88,
+              "high": 711.04,
+              "relative_volume": 0.092755
+            },
+            {
+              "low": 711.2,
+              "high": 711.36,
+              "relative_volume": 0.092755
+            },
+            {
+              "low": 711.36,
+              "high": 711.52,
+              "relative_volume": 0.092755
+            },
+            {
+              "low": 711.68,
+              "high": 711.84,
+              "relative_volume": 0.092755
+            },
+            {
+              "low": 711.84,
+              "high": 712.0,
+              "relative_volume": 0.092755
+            }
+          ],
+          "bins": [
+            {
+              "low": 710.24,
+              "high": 710.4,
+              "volume": 2272.811533,
+              "relative_volume": 0.00221,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 710.4,
+              "high": 710.56,
+              "volume": 36418.331699,
+              "relative_volume": 0.035408,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 710.56,
+              "high": 710.72,
+              "volume": 47476.87442,
+              "relative_volume": 0.04616,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 710.72,
+              "high": 710.88,
+              "volume": 95402.026319,
+              "relative_volume": 0.092755,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 710.88,
+              "high": 711.04,
+              "volume": 95402.026319,
+              "relative_volume": 0.092755,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 711.04,
+              "high": 711.2,
+              "volume": 95402.026319,
+              "relative_volume": 0.092755,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 711.2,
+              "high": 711.36,
+              "volume": 95402.026319,
+              "relative_volume": 0.092755,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 711.36,
+              "high": 711.52,
+              "volume": 95402.026319,
+              "relative_volume": 0.092755,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 711.52,
+              "high": 711.68,
+              "volume": 95402.026319,
+              "relative_volume": 0.092755,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 711.68,
+              "high": 711.84,
+              "volume": 95402.026319,
+              "relative_volume": 0.092755,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 711.84,
+              "high": 712.0,
+              "volume": 95402.026319,
+              "relative_volume": 0.092755,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 712.0,
+              "high": 712.16,
+              "volume": 95402.026319,
+              "relative_volume": 0.092755,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 712.16,
+              "high": 712.32,
+              "volume": 95402.026319,
+              "relative_volume": 0.092755,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 712.32,
+              "high": 712.48,
+              "volume": 95402.026319,
+              "relative_volume": 0.092755,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 712.48,
+              "high": 712.64,
+              "volume": 119422.526455,
+              "relative_volume": 0.116109,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 712.64,
+              "high": 712.8,
+              "volume": 150407.704258,
+              "relative_volume": 0.146235,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 712.8,
+              "high": 712.96,
+              "volume": 170310.676846,
+              "relative_volume": 0.165585,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 712.96,
+              "high": 713.12,
+              "volume": 315459.931517,
+              "relative_volume": 0.306708,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 713.12,
+              "high": 713.28,
+              "volume": 313317.186514,
+              "relative_volume": 0.304624,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 713.28,
+              "high": 713.44,
+              "volume": 313317.186514,
+              "relative_volume": 0.304624,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 713.44,
+              "high": 713.6,
+              "volume": 341107.058683,
+              "relative_volume": 0.331643,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 713.6,
+              "high": 713.76,
+              "volume": 343156.410934,
+              "relative_volume": 0.333636,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 713.76,
+              "high": 713.92,
+              "volume": 306740.302034,
+              "relative_volume": 0.29823,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 713.92,
+              "high": 714.08,
+              "volume": 306738.079235,
+              "relative_volume": 0.298228,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 714.08,
+              "high": 714.24,
+              "volume": 306738.079235,
+              "relative_volume": 0.298228,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 714.24,
+              "high": 714.4,
+              "volume": 268914.121772,
+              "relative_volume": 0.261453,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 714.4,
+              "high": 714.56,
+              "volume": 251732.401296,
+              "relative_volume": 0.244748,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 714.56,
+              "high": 714.72,
+              "volume": 211945.882183,
+              "relative_volume": 0.206065,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 714.72,
+              "high": 714.88,
+              "volume": 188077.078885,
+              "relative_volume": 0.182859,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 714.88,
+              "high": 715.04,
+              "volume": 188077.078885,
+              "relative_volume": 0.182859,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 715.04,
+              "high": 715.2,
+              "volume": 188077.078885,
+              "relative_volume": 0.182859,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 715.2,
+              "high": 715.36,
+              "volume": 188077.078885,
+              "relative_volume": 0.182859,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 715.36,
+              "high": 715.52,
+              "volume": 203679.216053,
+              "relative_volume": 0.198028,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 715.52,
+              "high": 715.68,
+              "volume": 113042.860564,
+              "relative_volume": 0.109907,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 715.68,
+              "high": 715.84,
+              "volume": 113023.544419,
+              "relative_volume": 0.109888,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 715.84,
+              "high": 716.0,
+              "volume": 113023.544419,
+              "relative_volume": 0.109888,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 716.0,
+              "high": 716.16,
+              "volume": 113023.544419,
+              "relative_volume": 0.109888,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 716.16,
+              "high": 716.32,
+              "volume": 93283.225581,
+              "relative_volume": 0.090695,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 716.32,
+              "high": 716.48,
+              "volume": 134116.181338,
+              "relative_volume": 0.130395,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 716.48,
+              "high": 716.64,
+              "volume": 134116.181338,
+              "relative_volume": 0.130395,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 716.64,
+              "high": 716.8,
+              "volume": 134116.181338,
+              "relative_volume": 0.130395,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 716.8,
+              "high": 716.96,
+              "volume": 444083.191421,
+              "relative_volume": 0.431762,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 716.96,
+              "high": 717.12,
+              "volume": 655314.442216,
+              "relative_volume": 0.637133,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 717.12,
+              "high": 717.28,
+              "volume": 726109.119643,
+              "relative_volume": 0.705963,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 717.28,
+              "high": 717.44,
+              "volume": 771811.771182,
+              "relative_volume": 0.750398,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 717.44,
+              "high": 717.6,
+              "volume": 1028536.61838,
+              "relative_volume": 1.0,
+              "is_poc": true,
+              "in_value_area": true
+            },
+            {
+              "low": 717.6,
+              "high": 717.76,
+              "volume": 834122.608455,
+              "relative_volume": 0.81098,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 717.76,
+              "high": 717.92,
+              "volume": 734312.801696,
+              "relative_volume": 0.713939,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 717.92,
+              "high": 718.08,
+              "volume": 846647.798082,
+              "relative_volume": 0.823158,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 718.08,
+              "high": 718.24,
+              "volume": 875011.751878,
+              "relative_volume": 0.850735,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 718.24,
+              "high": 718.4,
+              "volume": 908087.422124,
+              "relative_volume": 0.882893,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 718.4,
+              "high": 718.56,
+              "volume": 815263.502928,
+              "relative_volume": 0.792644,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 718.56,
+              "high": 718.72,
+              "volume": 761745.390361,
+              "relative_volume": 0.740611,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 718.72,
+              "high": 718.88,
+              "volume": 685043.516359,
+              "relative_volume": 0.666037,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 718.88,
+              "high": 719.04,
+              "volume": 674333.901649,
+              "relative_volume": 0.655625,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 719.04,
+              "high": 719.2,
+              "volume": 737788.503232,
+              "relative_volume": 0.717319,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 719.2,
+              "high": 719.36,
+              "volume": 877176.6701,
+              "relative_volume": 0.85284,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 719.36,
+              "high": 719.52,
+              "volume": 942389.672104,
+              "relative_volume": 0.916243,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 719.52,
+              "high": 719.68,
+              "volume": 752060.672557,
+              "relative_volume": 0.731195,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 719.68,
+              "high": 719.84,
+              "volume": 560108.46251,
+              "relative_volume": 0.544568,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 719.84,
+              "high": 720.0,
+              "volume": 464953.341352,
+              "relative_volume": 0.452053,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 720.0,
+              "high": 720.16,
+              "volume": 294427.99748,
+              "relative_volume": 0.286259,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 720.16,
+              "high": 720.32,
+              "volume": 131125.95436,
+              "relative_volume": 0.127488,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 720.32,
+              "high": 720.48,
+              "volume": 84907.601975,
+              "relative_volume": 0.082552,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 720.48,
+              "high": 720.64,
+              "volume": 121229.052738,
+              "relative_volume": 0.117866,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 720.64,
+              "high": 720.8,
+              "volume": 185053.279,
+              "relative_volume": 0.179919,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 720.8,
+              "high": 720.96,
+              "volume": 329726.436228,
+              "relative_volume": 0.320578,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 720.96,
+              "high": 721.12,
+              "volume": 403019.965005,
+              "relative_volume": 0.391838,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 721.12,
+              "high": 721.28,
+              "volume": 439144.25766,
+              "relative_volume": 0.42696,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 721.28,
+              "high": 721.44,
+              "volume": 536037.767293,
+              "relative_volume": 0.521165,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 721.44,
+              "high": 721.6,
+              "volume": 505461.22892,
+              "relative_volume": 0.491437,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 721.6,
+              "high": 721.76,
+              "volume": 399745.214433,
+              "relative_volume": 0.388654,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 721.76,
+              "high": 721.92,
+              "volume": 390156.415559,
+              "relative_volume": 0.379332,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 721.92,
+              "high": 722.08,
+              "volume": 304720.931907,
+              "relative_volume": 0.296266,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 722.08,
+              "high": 722.24,
+              "volume": 180656.907533,
+              "relative_volume": 0.175645,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 722.24,
+              "high": 722.4,
+              "volume": 124657.421279,
+              "relative_volume": 0.121199,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 722.4,
+              "high": 722.56,
+              "volume": 121609.875896,
+              "relative_volume": 0.118236,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 722.56,
+              "high": 722.72,
+              "volume": 85740.15576,
+              "relative_volume": 0.083361,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 722.72,
+              "high": 722.88,
+              "volume": 12235.729102,
+              "relative_volume": 0.011896,
+              "is_poc": false,
+              "in_value_area": false
+            }
+          ],
+          "included_bar_count": 78,
+          "missing_volume_bar_count": 0
+        },
+        "composite_5": {
+          "status": "observed",
+          "window": "最近5个交易时段复合",
+          "window_start": "2026-10-15",
+          "window_end": "2026-10-21",
+          "bar_interval": "5m",
+          "bin_width": 0.28,
+          "bin_origin": 707.0,
+          "volume_unit": "proxy_shares",
+          "volume_allocation": "OHLCV高低区间按重叠长度均匀分配；H=L全部归入该箱",
+          "volume_total": 195666150.0,
+          "value_area_target": 0.7,
+          "value_area_actual": 0.703135,
+          "poc": 718.34,
+          "val": 716.8,
+          "vah": 724.92,
+          "vwap": 718.676603,
+          "hvn": [
+            {
+              "low": 718.2,
+              "high": 718.48,
+              "relative_volume": 1.0
+            }
+          ],
+          "lvn": [
+            {
+              "low": 709.8,
+              "high": 710.08,
+              "relative_volume": 0.170264
+            },
+            {
+              "low": 711.2,
+              "high": 711.48,
+              "relative_volume": 0.086863
+            },
+            {
+              "low": 712.04,
+              "high": 712.32,
+              "relative_volume": 0.053619
+            },
+            {
+              "low": 714.56,
+              "high": 714.84,
+              "relative_volume": 0.033543
+            },
+            {
+              "low": 716.52,
+              "high": 716.8,
+              "relative_volume": 0.094358
+            }
+          ],
+          "bins": [
+            {
+              "low": 707.0,
+              "high": 707.28,
+              "volume": 27447.217274,
+              "relative_volume": 0.001952,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 707.28,
+              "high": 707.56,
+              "volume": 153644.399389,
+              "relative_volume": 0.010925,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 707.56,
+              "high": 707.84,
+              "volume": 153644.399389,
+              "relative_volume": 0.010925,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 707.84,
+              "high": 708.12,
+              "volume": 214810.791218,
+              "relative_volume": 0.015275,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 708.12,
+              "high": 708.4,
+              "volume": 666351.536845,
+              "relative_volume": 0.047382,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 708.4,
+              "high": 708.68,
+              "volume": 1010096.684411,
+              "relative_volume": 0.071825,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 708.68,
+              "high": 708.96,
+              "volume": 1512554.238753,
+              "relative_volume": 0.107553,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 708.96,
+              "high": 709.24,
+              "volume": 2007554.516844,
+              "relative_volume": 0.142751,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 709.24,
+              "high": 709.52,
+              "volume": 2500502.786145,
+              "relative_volume": 0.177803,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 709.52,
+              "high": 709.8,
+              "volume": 2596290.367793,
+              "relative_volume": 0.184614,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 709.8,
+              "high": 710.08,
+              "volume": 2394483.45906,
+              "relative_volume": 0.170264,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 710.08,
+              "high": 710.36,
+              "volume": 2692875.295435,
+              "relative_volume": 0.191482,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 710.36,
+              "high": 710.64,
+              "volume": 2741218.52749,
+              "relative_volume": 0.19492,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 710.64,
+              "high": 710.92,
+              "volume": 1762894.551458,
+              "relative_volume": 0.125354,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 710.92,
+              "high": 711.2,
+              "volume": 1363393.25104,
+              "relative_volume": 0.096947,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 711.2,
+              "high": 711.48,
+              "volume": 1221584.930276,
+              "relative_volume": 0.086863,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 711.48,
+              "high": 711.76,
+              "volume": 1489694.211523,
+              "relative_volume": 0.105928,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 711.76,
+              "high": 712.04,
+              "volume": 1014394.868788,
+              "relative_volume": 0.072131,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 712.04,
+              "high": 712.32,
+              "volume": 754060.019274,
+              "relative_volume": 0.053619,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 712.32,
+              "high": 712.6,
+              "volume": 857300.051573,
+              "relative_volume": 0.06096,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 712.6,
+              "high": 712.88,
+              "volume": 1578752.969955,
+              "relative_volume": 0.11226,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 712.88,
+              "high": 713.16,
+              "volume": 1605574.623303,
+              "relative_volume": 0.114168,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 713.16,
+              "high": 713.44,
+              "volume": 1470719.156569,
+              "relative_volume": 0.104578,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 713.44,
+              "high": 713.72,
+              "volume": 1266589.826474,
+              "relative_volume": 0.090063,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 713.72,
+              "high": 714.0,
+              "volume": 920919.550201,
+              "relative_volume": 0.065484,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 714.0,
+              "high": 714.28,
+              "volume": 724476.101001,
+              "relative_volume": 0.051515,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 714.28,
+              "high": 714.56,
+              "volume": 604912.192343,
+              "relative_volume": 0.043013,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 714.56,
+              "high": 714.84,
+              "volume": 471723.686415,
+              "relative_volume": 0.033543,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 714.84,
+              "high": 715.12,
+              "volume": 642100.476251,
+              "relative_volume": 0.045658,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 715.12,
+              "high": 715.4,
+              "volume": 887921.291845,
+              "relative_volume": 0.063137,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 715.4,
+              "high": 715.68,
+              "volume": 1156757.545239,
+              "relative_volume": 0.082254,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 715.68,
+              "high": 715.96,
+              "volume": 1221019.37904,
+              "relative_volume": 0.086823,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 715.96,
+              "high": 716.24,
+              "volume": 1382455.265522,
+              "relative_volume": 0.098302,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 716.24,
+              "high": 716.52,
+              "volume": 1376991.979671,
+              "relative_volume": 0.097914,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 716.52,
+              "high": 716.8,
+              "volume": 1326991.807764,
+              "relative_volume": 0.094358,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 716.8,
+              "high": 717.08,
+              "volume": 2852243.560791,
+              "relative_volume": 0.202814,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 717.08,
+              "high": 717.36,
+              "volume": 4207459.068026,
+              "relative_volume": 0.29918,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 717.36,
+              "high": 717.64,
+              "volume": 4261113.702795,
+              "relative_volume": 0.302995,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 717.64,
+              "high": 717.92,
+              "volume": 4508407.301723,
+              "relative_volume": 0.320579,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 717.92,
+              "high": 718.2,
+              "volume": 9745265.002047,
+              "relative_volume": 0.692956,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 718.2,
+              "high": 718.48,
+              "volume": 14063318.848041,
+              "relative_volume": 1.0,
+              "is_poc": true,
+              "in_value_area": true
+            },
+            {
+              "low": 718.48,
+              "high": 718.76,
+              "volume": 13519792.057292,
+              "relative_volume": 0.961351,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 718.76,
+              "high": 719.04,
+              "volume": 9011931.788141,
+              "relative_volume": 0.640811,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 719.04,
+              "high": 719.32,
+              "volume": 5711354.528928,
+              "relative_volume": 0.406117,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 719.32,
+              "high": 719.6,
+              "volume": 6735413.359791,
+              "relative_volume": 0.478935,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 719.6,
+              "high": 719.88,
+              "volume": 5473902.986339,
+              "relative_volume": 0.389233,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 719.88,
+              "high": 720.16,
+              "volume": 5017341.544033,
+              "relative_volume": 0.356768,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 720.16,
+              "high": 720.44,
+              "volume": 4243586.549209,
+              "relative_volume": 0.301749,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 720.44,
+              "high": 720.72,
+              "volume": 3958575.418235,
+              "relative_volume": 0.281482,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 720.72,
+              "high": 721.0,
+              "volume": 3907457.395708,
+              "relative_volume": 0.277847,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 721.0,
+              "high": 721.28,
+              "volume": 4341897.269211,
+              "relative_volume": 0.308739,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 721.28,
+              "high": 721.56,
+              "volume": 4206634.293136,
+              "relative_volume": 0.299121,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 721.56,
+              "high": 721.84,
+              "volume": 3419895.046564,
+              "relative_volume": 0.243178,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 721.84,
+              "high": 722.12,
+              "volume": 3287297.209053,
+              "relative_volume": 0.23375,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 722.12,
+              "high": 722.4,
+              "volume": 2911978.230651,
+              "relative_volume": 0.207062,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 722.4,
+              "high": 722.68,
+              "volume": 2659998.904326,
+              "relative_volume": 0.189144,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 722.68,
+              "high": 722.96,
+              "volume": 2479932.090376,
+              "relative_volume": 0.17634,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 722.96,
+              "high": 723.24,
+              "volume": 2072797.63286,
+              "relative_volume": 0.14739,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 723.24,
+              "high": 723.52,
+              "volume": 2064122.193823,
+              "relative_volume": 0.146773,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 723.52,
+              "high": 723.8,
+              "volume": 2407979.635087,
+              "relative_volume": 0.171224,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 723.8,
+              "high": 724.08,
+              "volume": 2977071.628651,
+              "relative_volume": 0.211691,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 724.08,
+              "high": 724.36,
+              "volume": 2832308.754306,
+              "relative_volume": 0.201397,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 724.36,
+              "high": 724.64,
+              "volume": 2777716.460138,
+              "relative_volume": 0.197515,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 724.64,
+              "high": 724.92,
+              "volume": 1922869.425266,
+              "relative_volume": 0.136729,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 724.92,
+              "high": 725.2,
+              "volume": 1697762.79573,
+              "relative_volume": 0.120723,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 725.2,
+              "high": 725.48,
+              "volume": 1542369.704199,
+              "relative_volume": 0.109673,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 725.48,
+              "high": 725.76,
+              "volume": 1109515.432981,
+              "relative_volume": 0.078894,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 725.76,
+              "high": 726.04,
+              "volume": 1078125.8261,
+              "relative_volume": 0.076662,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 726.04,
+              "high": 726.32,
+              "volume": 708942.228852,
+              "relative_volume": 0.050411,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 726.32,
+              "high": 726.6,
+              "volume": 559678.638636,
+              "relative_volume": 0.039797,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 726.6,
+              "high": 726.88,
+              "volume": 334070.591196,
+              "relative_volume": 0.023755,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 726.88,
+              "high": 727.16,
+              "volume": 127412.222692,
+              "relative_volume": 0.00906,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 727.16,
+              "high": 727.44,
+              "volume": 40735.940252,
+              "relative_volume": 0.002897,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 727.44,
+              "high": 727.72,
+              "volume": 222868.149312,
+              "relative_volume": 0.015847,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 727.72,
+              "high": 728.0,
+              "volume": 1204720.816433,
+              "relative_volume": 0.085664,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 728.0,
+              "high": 728.28,
+              "volume": 1601860.186076,
+              "relative_volume": 0.113903,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 728.28,
+              "high": 728.56,
+              "volume": 1889249.595627,
+              "relative_volume": 0.134339,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 728.56,
+              "high": 728.84,
+              "volume": 1560875.429423,
+              "relative_volume": 0.110989,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 728.84,
+              "high": 729.12,
+              "volume": 487441.926756,
+              "relative_volume": 0.034661,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 729.12,
+              "high": 729.4,
+              "volume": 133822.094564,
+              "relative_volume": 0.009516,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 729.4,
+              "high": 729.68,
+              "volume": 14334.581052,
+              "relative_volume": 0.001019,
+              "is_poc": false,
+              "in_value_area": false
+            }
+          ],
+          "included_bar_count": 317,
+          "missing_volume_bar_count": 2
+        }
+      },
+      "current": {
+        "proxy_price": 722.530029296875,
+        "index_price": 26614.3359375,
+        "relative_to_poc": 0.001948385227075855,
+        "relative_to_vwap": 0.0008118598787700826,
+        "relative_to_value_area": "inside_value_area"
+      },
+      "options": {
+        "status": "observed",
+        "underlying": "QQQ",
+        "expiry_dates": [
+          "2026-10-21",
+          "2026-10-22",
+          "2026-10-23",
+          "2026-10-26"
+        ],
+        "oi_as_of_date": null,
+        "oi_as_of_note": "Yahoo期权链未提供可验证结算日；OI按供应商链快照展示，不等同盘中新仓",
+        "options_quote_as_of": "2026-10-21T09:50:00-04:00",
+        "call_oi_dense": [
+          {
+            "strike": 735.0,
+            "value": 31592.0
+          },
+          {
+            "strike": 730.0,
+            "value": 23453.0
+          },
+          {
+            "strike": 736.0,
+            "value": 21588.0
+          },
+          {
+            "strike": 733.0,
+            "value": 20791.0
+          },
+          {
+            "strike": 722.0,
+            "value": 18772.0
+          }
+        ],
+        "put_oi_dense": [
+          {
+            "strike": 710.0,
+            "value": 59412.0
+          },
+          {
+            "strike": 711.0,
+            "value": 45076.0
+          },
+          {
+            "strike": 700.0,
+            "value": 33802.0
+          },
+          {
+            "strike": 720.0,
+            "value": 22936.0
+          },
+          {
+            "strike": 690.0,
+            "value": 22666.0
+          }
+        ],
+        "call_volume_dense": [
+          {
+            "strike": 725.0,
+            "value": 17238.0
+          },
+          {
+            "strike": 723.0,
+            "value": 12586.0
+          },
+          {
+            "strike": 722.0,
+            "value": 7370.0
+          },
+          {
+            "strike": 730.0,
+            "value": 6986.0
+          },
+          {
+            "strike": 726.0,
+            "value": 6424.0
+          }
+        ],
+        "put_volume_dense": [
+          {
+            "strike": 540.0,
+            "value": 22190.0
+          },
+          {
+            "strike": 470.0,
+            "value": 9957.0
+          },
+          {
+            "strike": 722.0,
+            "value": 7588.0
+          },
+          {
+            "strike": 712.0,
+            "value": 7040.0
+          },
+          {
+            "strike": 710.0,
+            "value": 6955.0
+          }
+        ],
+        "put_call_oi_ratio": 1.3553870598630355,
+        "put_call_volume_ratio": 1.2728902868313332,
+        "atm_iv": 0.304694453125,
+        "gamma_status": "unavailable_greeks_not_verified",
+        "max_pain_status": "not_computed",
+        "coverage": {
+          "expiry_count": 4,
+          "row_count": 967
+        }
+      },
+      "judgment": {
+        "state": "range",
+        "label": "区间震荡",
+        "summary": "代理现价 722.53；POC 721.12，VWAP 721.94；成交重心相对前一窗口上移。",
+        "upside": {
+          "reference_price": 722.65,
+          "unit": "proxy_usd",
+          "timeframe": "完成的两根5分钟K线",
+          "confirmation": "连续两根已完成5分钟K线收在 722.65上方，并有可用成交量支持",
+          "first_attention": 721.15,
+          "second_attention": 721.3,
+          "invalidation": "重新收回VAH下方并回到价值区",
+          "valid_until": "下一次盘中快照或常规时段收盘"
+        },
+        "downside": {
+          "reference_price": 721.05,
+          "unit": "proxy_usd",
+          "timeframe": "完成的两根5分钟K线",
+          "confirmation": "连续两根已完成5分钟K线收在 721.05下方，并有可用成交量支持",
+          "first_attention": 721.1,
+          "second_attention": 721.25,
+          "invalidation": "重新收回VAL上方并回到价值区",
+          "valid_until": "下一次盘中快照或常规时段收盘"
+        },
+        "invalidation": "两根已完成5分钟K线确认相反方向后失效",
+        "poc_shift": 3.605000000000018
+      },
+      "quality": {
+        "status": "stale",
+        "volume_coverage": {
+          "bar_count": 5,
+          "missing_volume_bar_count": 1
+        },
+        "profile_estimation": "OHLCV分钟K线估算的成交量分布，不是逐笔真实成交价分布",
+        "oi_limitation": "常规OI通常为前一结算日；本快照未将盘中成交量加到OI",
+        "missing_reason": "抓取或计算失败：Too Many Requests. Rate limited. Try after a while."
+      },
+      "fetched_at": "2026-10-21T13:50:24.615944+00:00",
+      "generated_at": "2026-10-22T23:45:27.606450+00:00",
+      "daily_model_as_of": "2026-10-22",
+      "underlying": "QQQ",
+      "price_unit": {
+        "index": "index_points",
+        "proxy": "USD",
+        "options": "USD_strike"
+      },
+      "quote_as_of": {
+        "index": "2026-10-21T09:50:00-04:00",
+        "proxy": "2026-10-21T09:50:00-04:00"
+      },
+      "profile_as_of": "2026-10-21T09:50:00-04:00",
+      "options_quote_as_of": "2026-10-21T09:50:00-04:00",
+      "oi_as_of_date": null,
+      "delay_seconds": null,
+      "coverage": {
+        "bar_count": 5,
+        "missing_volume_bar_count": 1
+      },
+      "quality_status": "stale",
+      "missing_reason": "抓取或计算失败：Too Many Requests. Rate limited. Try after a while.",
+      "refresh_status": "failed_using_previous_snapshot"
+    },
+    {
+      "schema_version": "index-intraday-map-v1",
+      "algorithm_version": "volume-profile-uniform-ohlcv-v1.0.0",
+      "status": "observed",
+      "instrument": {
+        "key": "sp500",
+        "index_symbol": "^GSPC",
+        "index_name": "标普500指数",
+        "proxy_symbol": "SPY",
+        "proxy_name": "SPY",
+        "proxy_role": "标普500交易结构代理",
+        "index_unit": "index_points",
+        "proxy_unit": "USD"
+      },
+      "session_date": "2026-10-21",
+      "session_type": "regular_session",
+      "window_start": "2026-10-15",
+      "window_end": "2026-10-21",
+      "bar_interval": "5m",
+      "source": {
+        "provider": "Yahoo Finance via yfinance",
+        "feed_scope": "US regular session",
+        "delay_status": "unknown_or_delayed",
+        "note": "供应商未确认实时权限；最新完整5分钟bar与报价时间分开记录"
+      },
+      "index_quote": {
+        "status": "observed",
+        "price": 7736.27001953125,
+        "as_of": "2026-10-21T09:50:00-04:00",
+        "change_pct": -0.00018868078120914955
+      },
+      "proxy_quote": {
+        "status": "observed",
+        "price": 771.0850219726562,
+        "as_of": "2026-10-21T09:50:00-04:00",
+        "change_pct": -7.131347710742642e-05
+      },
+      "proxy_mapping": {
+        "method": "SPY→SPX同目标时点映射参考",
+        "allowed": true,
+        "ratio": 10.032966273601913,
+        "index_price_as_of": "2026-10-21T09:50:00-04:00",
+        "proxy_price_as_of": "2026-10-21T09:50:00-04:00",
+        "error_sources": "跨源时差、ETF基差、公司行动与指数非成交性质；不把代理POC改写为现金指数真实成交价"
+      },
+      "windows": {
+        "today": {
+          "status": "observed",
+          "window": "当日常规时段（盘中形成中/收盘后冻结）",
+          "window_start": "2026-10-21",
+          "window_end": "2026-10-21",
+          "bar_interval": "5m",
+          "bin_width": 0.03,
+          "bin_origin": 769.71,
+          "volume_unit": "proxy_shares",
+          "volume_allocation": "OHLCV高低区间按重叠长度均匀分配；H=L全部归入该箱",
+          "volume_total": 2996290.0,
+          "value_area_target": 0.7,
+          "value_area_actual": 0.71386,
+          "poc": 770.145,
+          "val": 770.04,
+          "vah": 771.03,
+          "vwap": 770.459846,
+          "hvn": [
+            {
+              "low": 769.8,
+              "high": 769.83,
+              "relative_volume": 0.747354
+            },
+            {
+              "low": 769.83,
+              "high": 769.86,
+              "relative_volume": 0.747354
+            },
+            {
+              "low": 769.89,
+              "high": 769.92,
+              "relative_volume": 0.747354
+            },
+            {
+              "low": 769.95,
+              "high": 769.98,
+              "relative_volume": 0.747354
+            },
+            {
+              "low": 770.07,
+              "high": 770.1,
+              "relative_volume": 1.0
+            }
+          ],
+          "lvn": [
+            {
+              "low": 771.24,
+              "high": 771.27,
+              "relative_volume": 0.127873
+            }
+          ],
+          "bins": [
+            {
+              "low": 769.71,
+              "high": 769.74,
+              "volume": 12804.546797,
+              "relative_volume": 0.19562,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 769.74,
+              "high": 769.77,
+              "volume": 38338.76,
+              "relative_volume": 0.585716,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 769.77,
+              "high": 769.8,
+              "volume": 48912.131286,
+              "relative_volume": 0.747249,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 769.8,
+              "high": 769.83,
+              "volume": 48919.019476,
+              "relative_volume": 0.747354,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 769.83,
+              "high": 769.86,
+              "volume": 48919.019476,
+              "relative_volume": 0.747354,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 769.86,
+              "high": 769.89,
+              "volume": 48919.019476,
+              "relative_volume": 0.747354,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 769.89,
+              "high": 769.92,
+              "volume": 48919.019476,
+              "relative_volume": 0.747354,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 769.92,
+              "high": 769.95,
+              "volume": 48919.019476,
+              "relative_volume": 0.747354,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 769.95,
+              "high": 769.98,
+              "volume": 48919.019476,
+              "relative_volume": 0.747354,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 769.98,
+              "high": 770.01,
+              "volume": 48919.019476,
+              "relative_volume": 0.747354,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 770.01,
+              "high": 770.04,
+              "volume": 51633.422783,
+              "relative_volume": 0.788823,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 770.04,
+              "high": 770.07,
+              "volume": 58480.495739,
+              "relative_volume": 0.893428,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 770.07,
+              "high": 770.1,
+              "volume": 65456.278635,
+              "relative_volume": 1.0,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 770.1,
+              "high": 770.13,
+              "volume": 65456.278635,
+              "relative_volume": 1.0,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 770.13,
+              "high": 770.16,
+              "volume": 65456.278635,
+              "relative_volume": 1.0,
+              "is_poc": true,
+              "in_value_area": true
+            },
+            {
+              "low": 770.16,
+              "high": 770.19,
+              "volume": 65456.278635,
+              "relative_volume": 1.0,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 770.19,
+              "high": 770.22,
+              "volume": 65456.278635,
+              "relative_volume": 1.0,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 770.22,
+              "high": 770.25,
+              "volume": 65456.278635,
+              "relative_volume": 1.0,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 770.25,
+              "high": 770.28,
+              "volume": 65456.278635,
+              "relative_volume": 1.0,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 770.28,
+              "high": 770.31,
+              "volume": 65456.278635,
+              "relative_volume": 1.0,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 770.31,
+              "high": 770.34,
+              "volume": 65456.278635,
+              "relative_volume": 1.0,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 770.34,
+              "high": 770.37,
+              "volume": 65456.278635,
+              "relative_volume": 1.0,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 770.37,
+              "high": 770.4,
+              "volume": 65456.278635,
+              "relative_volume": 1.0,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 770.4,
+              "high": 770.43,
+              "volume": 65456.278635,
+              "relative_volume": 1.0,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 770.43,
+              "high": 770.46,
+              "volume": 65456.278635,
+              "relative_volume": 1.0,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 770.46,
+              "high": 770.49,
+              "volume": 65456.278635,
+              "relative_volume": 1.0,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 770.49,
+              "high": 770.52,
+              "volume": 65456.278635,
+              "relative_volume": 1.0,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 770.52,
+              "high": 770.55,
+              "volume": 65456.278635,
+              "relative_volume": 1.0,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 770.55,
+              "high": 770.58,
+              "volume": 65456.278635,
+              "relative_volume": 1.0,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 770.58,
+              "high": 770.61,
+              "volume": 65456.278635,
+              "relative_volume": 1.0,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 770.61,
+              "high": 770.64,
+              "volume": 65456.278635,
+              "relative_volume": 1.0,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 770.64,
+              "high": 770.67,
+              "volume": 65456.278635,
+              "relative_volume": 1.0,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 770.67,
+              "high": 770.7,
+              "volume": 65456.278635,
+              "relative_volume": 1.0,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 770.7,
+              "high": 770.73,
+              "volume": 65456.278635,
+              "relative_volume": 1.0,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 770.73,
+              "high": 770.76,
+              "volume": 65456.278635,
+              "relative_volume": 1.0,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 770.76,
+              "high": 770.79,
+              "volume": 65456.278635,
+              "relative_volume": 1.0,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 770.79,
+              "high": 770.82,
+              "volume": 65456.278635,
+              "relative_volume": 1.0,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 770.82,
+              "high": 770.85,
+              "volume": 65456.278635,
+              "relative_volume": 1.0,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 770.85,
+              "high": 770.88,
+              "volume": 65456.278635,
+              "relative_volume": 1.0,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 770.88,
+              "high": 770.91,
+              "volume": 65456.278635,
+              "relative_volume": 1.0,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 770.91,
+              "high": 770.94,
+              "volume": 65456.278635,
+              "relative_volume": 1.0,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 770.94,
+              "high": 770.97,
+              "volume": 65456.278635,
+              "relative_volume": 1.0,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 770.97,
+              "high": 771.0,
+              "volume": 59474.488781,
+              "relative_volume": 0.908614,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 771.0,
+              "high": 771.03,
+              "volume": 57289.141555,
+              "relative_volume": 0.875228,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 771.03,
+              "high": 771.06,
+              "volume": 57289.141555,
+              "relative_volume": 0.875228,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 771.06,
+              "high": 771.09,
+              "volume": 57289.141555,
+              "relative_volume": 0.875228,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 771.09,
+              "high": 771.12,
+              "volume": 46718.35334,
+              "relative_volume": 0.713734,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 771.12,
+              "high": 771.15,
+              "volume": 46708.88208,
+              "relative_volume": 0.713589,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 771.15,
+              "high": 771.18,
+              "volume": 46708.882079,
+              "relative_volume": 0.713589,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 771.18,
+              "high": 771.21,
+              "volume": 46708.882079,
+              "relative_volume": 0.713589,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 771.21,
+              "high": 771.24,
+              "volume": 33904.335283,
+              "relative_volume": 0.517969,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 771.24,
+              "high": 771.27,
+              "volume": 8370.122079,
+              "relative_volume": 0.127873,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 771.27,
+              "high": 771.3,
+              "volume": 8370.122079,
+              "relative_volume": 0.127873,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 771.3,
+              "high": 771.33,
+              "volume": 8370.122079,
+              "relative_volume": 0.127873,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 771.33,
+              "high": 771.36,
+              "volume": 2797.533478,
+              "relative_volume": 0.042739,
+              "is_poc": false,
+              "in_value_area": false
+            }
+          ],
+          "included_bar_count": 5,
+          "missing_volume_bar_count": 1
+        },
+        "previous": {
+          "status": "observed",
+          "window": "前一完整交易日常规时段（冻结参考）",
+          "window_start": "2026-10-20",
+          "window_end": "2026-10-20",
+          "bar_interval": "5m",
+          "bin_width": 0.11,
+          "bin_origin": 764.17,
+          "volume_unit": "proxy_shares",
+          "volume_allocation": "OHLCV高低区间按重叠长度均匀分配；H=L全部归入该箱",
+          "volume_total": 30101006.0,
+          "value_area_target": 0.7,
+          "value_area_actual": 0.709403,
+          "poc": 768.625,
+          "val": 767.69,
+          "vah": 770.99,
+          "vwap": 768.923563,
+          "hvn": [
+            {
+              "low": 768.57,
+              "high": 768.68,
+              "relative_volume": 1.0
+            },
+            {
+              "low": 768.79,
+              "high": 768.9,
+              "relative_volume": 0.875131
+            },
+            {
+              "low": 769.01,
+              "high": 769.12,
+              "relative_volume": 0.861625
+            },
+            {
+              "low": 769.23,
+              "high": 769.34,
+              "relative_volume": 0.719441
+            },
+            {
+              "low": 769.45,
+              "high": 769.56,
+              "relative_volume": 0.746413
+            }
+          ],
+          "lvn": [
+            {
+              "low": 764.61,
+              "high": 764.72,
+              "relative_volume": 0.049708
+            },
+            {
+              "low": 764.83,
+              "high": 764.94,
+              "relative_volume": 0.049708
+            },
+            {
+              "low": 764.94,
+              "high": 765.05,
+              "relative_volume": 0.049708
+            },
+            {
+              "low": 765.49,
+              "high": 765.6,
+              "relative_volume": 0.231616
+            },
+            {
+              "low": 765.93,
+              "high": 766.04,
+              "relative_volume": 0.102288
+            }
+          ],
+          "bins": [
+            {
+              "low": 764.17,
+              "high": 764.28,
+              "volume": 10142.533566,
+              "relative_volume": 0.006664,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 764.28,
+              "high": 764.39,
+              "volume": 61668.188532,
+              "relative_volume": 0.040515,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 764.39,
+              "high": 764.5,
+              "volume": 75660.15597,
+              "relative_volume": 0.049708,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 764.5,
+              "high": 764.61,
+              "volume": 75660.15597,
+              "relative_volume": 0.049708,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 764.61,
+              "high": 764.72,
+              "volume": 75660.15597,
+              "relative_volume": 0.049708,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 764.72,
+              "high": 764.83,
+              "volume": 75660.15597,
+              "relative_volume": 0.049708,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 764.83,
+              "high": 764.94,
+              "volume": 75660.15597,
+              "relative_volume": 0.049708,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 764.94,
+              "high": 765.05,
+              "volume": 75660.15597,
+              "relative_volume": 0.049708,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 765.05,
+              "high": 765.16,
+              "volume": 258151.486775,
+              "relative_volume": 0.169602,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 765.16,
+              "high": 765.27,
+              "volume": 308508.571637,
+              "relative_volume": 0.202686,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 765.27,
+              "high": 765.38,
+              "volume": 352542.434555,
+              "relative_volume": 0.231616,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 765.38,
+              "high": 765.49,
+              "volume": 352542.434555,
+              "relative_volume": 0.231616,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 765.49,
+              "high": 765.6,
+              "volume": 352542.434554,
+              "relative_volume": 0.231616,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 765.6,
+              "high": 765.71,
+              "volume": 352542.434555,
+              "relative_volume": 0.231616,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 765.71,
+              "high": 765.82,
+              "volume": 338563.2748,
+              "relative_volume": 0.222432,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 765.82,
+              "high": 765.93,
+              "volume": 317271.624036,
+              "relative_volume": 0.208443,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 765.93,
+              "high": 766.04,
+              "volume": 155693.378099,
+              "relative_volume": 0.102288,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 766.04,
+              "high": 766.15,
+              "volume": 155693.378099,
+              "relative_volume": 0.102288,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 766.15,
+              "high": 766.26,
+              "volume": 116548.583131,
+              "relative_volume": 0.076571,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 766.26,
+              "high": 766.37,
+              "volume": 78204.173649,
+              "relative_volume": 0.051379,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 766.37,
+              "high": 766.48,
+              "volume": 71902.567919,
+              "relative_volume": 0.047239,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 766.48,
+              "high": 766.59,
+              "volume": 104425.632444,
+              "relative_volume": 0.068606,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 766.59,
+              "high": 766.7,
+              "volume": 104425.632444,
+              "relative_volume": 0.068606,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 766.7,
+              "high": 766.81,
+              "volume": 104425.632444,
+              "relative_volume": 0.068606,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 766.81,
+              "high": 766.92,
+              "volume": 104425.632444,
+              "relative_volume": 0.068606,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 766.92,
+              "high": 767.03,
+              "volume": 57389.230675,
+              "relative_volume": 0.037704,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 767.03,
+              "high": 767.14,
+              "volume": 39740.709876,
+              "relative_volume": 0.026109,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 767.14,
+              "high": 767.25,
+              "volume": 39740.709876,
+              "relative_volume": 0.026109,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 767.25,
+              "high": 767.36,
+              "volume": 39740.709876,
+              "relative_volume": 0.026109,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 767.36,
+              "high": 767.47,
+              "volume": 39740.709876,
+              "relative_volume": 0.026109,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 767.47,
+              "high": 767.58,
+              "volume": 79080.975044,
+              "relative_volume": 0.051955,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 767.58,
+              "high": 767.69,
+              "volume": 118456.181384,
+              "relative_volume": 0.077824,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 767.69,
+              "high": 767.8,
+              "volume": 161480.555104,
+              "relative_volume": 0.106091,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 767.8,
+              "high": 767.91,
+              "volume": 265899.312924,
+              "relative_volume": 0.174692,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 767.91,
+              "high": 768.02,
+              "volume": 449277.597867,
+              "relative_volume": 0.295169,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 768.02,
+              "high": 768.13,
+              "volume": 487687.309479,
+              "relative_volume": 0.320404,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 768.13,
+              "high": 768.24,
+              "volume": 641892.009494,
+              "relative_volume": 0.421714,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 768.24,
+              "high": 768.35,
+              "volume": 782226.206031,
+              "relative_volume": 0.513912,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 768.35,
+              "high": 768.46,
+              "volume": 1194564.168717,
+              "relative_volume": 0.784813,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 768.46,
+              "high": 768.57,
+              "volume": 1429299.154033,
+              "relative_volume": 0.93903,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 768.57,
+              "high": 768.68,
+              "volume": 1522101.063085,
+              "relative_volume": 1.0,
+              "is_poc": true,
+              "in_value_area": true
+            },
+            {
+              "low": 768.68,
+              "high": 768.79,
+              "volume": 1284081.865019,
+              "relative_volume": 0.843625,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 768.79,
+              "high": 768.9,
+              "volume": 1332037.523709,
+              "relative_volume": 0.875131,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 768.9,
+              "high": 769.01,
+              "volume": 1275201.07173,
+              "relative_volume": 0.83779,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 769.01,
+              "high": 769.12,
+              "volume": 1311480.509042,
+              "relative_volume": 0.861625,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 769.12,
+              "high": 769.23,
+              "volume": 991289.07548,
+              "relative_volume": 0.651264,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 769.23,
+              "high": 769.34,
+              "volume": 1095061.809535,
+              "relative_volume": 0.719441,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 769.34,
+              "high": 769.45,
+              "volume": 1061936.998308,
+              "relative_volume": 0.697678,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 769.45,
+              "high": 769.56,
+              "volume": 1136115.46707,
+              "relative_volume": 0.746413,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 769.56,
+              "high": 769.67,
+              "volume": 1055339.306292,
+              "relative_volume": 0.693344,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 769.67,
+              "high": 769.78,
+              "volume": 916222.591545,
+              "relative_volume": 0.601946,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 769.78,
+              "high": 769.89,
+              "volume": 711345.844219,
+              "relative_volume": 0.467345,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 769.89,
+              "high": 770.0,
+              "volume": 461486.51554,
+              "relative_volume": 0.30319,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 770.0,
+              "high": 770.11,
+              "volume": 216134.561657,
+              "relative_volume": 0.141998,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 770.11,
+              "high": 770.22,
+              "volume": 120687.357642,
+              "relative_volume": 0.07929,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 770.22,
+              "high": 770.33,
+              "volume": 120687.357642,
+              "relative_volume": 0.07929,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 770.33,
+              "high": 770.44,
+              "volume": 140497.828955,
+              "relative_volume": 0.092305,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 770.44,
+              "high": 770.55,
+              "volume": 193260.786011,
+              "relative_volume": 0.12697,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 770.55,
+              "high": 770.66,
+              "volume": 193260.786011,
+              "relative_volume": 0.12697,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 770.66,
+              "high": 770.77,
+              "volume": 193260.786011,
+              "relative_volume": 0.12697,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 770.77,
+              "high": 770.88,
+              "volume": 203400.215477,
+              "relative_volume": 0.133631,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 770.88,
+              "high": 770.99,
+              "volume": 406538.871882,
+              "relative_volume": 0.267091,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 770.99,
+              "high": 771.1,
+              "volume": 506392.721627,
+              "relative_volume": 0.332693,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 771.1,
+              "high": 771.21,
+              "volume": 566008.890333,
+              "relative_volume": 0.37186,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 771.21,
+              "high": 771.32,
+              "volume": 537763.074569,
+              "relative_volume": 0.353303,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 771.32,
+              "high": 771.43,
+              "volume": 403616.731396,
+              "relative_volume": 0.265171,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 771.43,
+              "high": 771.54,
+              "volume": 403616.731396,
+              "relative_volume": 0.265171,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 771.54,
+              "high": 771.65,
+              "volume": 426369.475683,
+              "relative_volume": 0.280119,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 771.65,
+              "high": 771.76,
+              "volume": 431277.483541,
+              "relative_volume": 0.283344,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 771.76,
+              "high": 771.87,
+              "volume": 294885.071721,
+              "relative_volume": 0.193736,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 771.87,
+              "high": 771.98,
+              "volume": 175098.378826,
+              "relative_volume": 0.115037,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 771.98,
+              "high": 772.09,
+              "volume": 168191.14687,
+              "relative_volume": 0.110499,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 772.09,
+              "high": 772.2,
+              "volume": 168191.14687,
+              "relative_volume": 0.110499,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 772.2,
+              "high": 772.31,
+              "volume": 97770.450993,
+              "relative_volume": 0.064234,
+              "is_poc": false,
+              "in_value_area": false
+            }
+          ],
+          "included_bar_count": 78,
+          "missing_volume_bar_count": 0
+        },
+        "composite_5": {
+          "status": "observed",
+          "window": "最近5个交易时段复合",
+          "window_start": "2026-10-15",
+          "window_end": "2026-10-21",
+          "bar_interval": "5m",
+          "bin_width": 0.16,
+          "bin_origin": 760.64,
+          "volume_unit": "proxy_shares",
+          "volume_allocation": "OHLCV高低区间按重叠长度均匀分配；H=L全部归入该箱",
+          "volume_total": 155160459.0,
+          "value_area_target": 0.7,
+          "value_area_actual": 0.702341,
+          "poc": 769.36,
+          "val": 766.08,
+          "vah": 772.16,
+          "vwap": 767.792388,
+          "hvn": [
+            {
+              "low": 767.2,
+              "high": 767.36,
+              "relative_volume": 0.816708
+            },
+            {
+              "low": 767.52,
+              "high": 767.68,
+              "relative_volume": 0.73618
+            },
+            {
+              "low": 768.64,
+              "high": 768.8,
+              "relative_volume": 0.832099
+            },
+            {
+              "low": 769.28,
+              "high": 769.44,
+              "relative_volume": 1.0
+            },
+            {
+              "low": 769.76,
+              "high": 769.92,
+              "relative_volume": 0.833436
+            }
+          ],
+          "lvn": [
+            {
+              "low": 763.52,
+              "high": 763.68,
+              "relative_volume": 0.210965
+            },
+            {
+              "low": 763.84,
+              "high": 764.0,
+              "relative_volume": 0.110102
+            },
+            {
+              "low": 764.8,
+              "high": 764.96,
+              "relative_volume": 0.204634
+            }
+          ],
+          "bins": [
+            {
+              "low": 760.64,
+              "high": 760.8,
+              "volume": 85418.064583,
+              "relative_volume": 0.019133,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 760.8,
+              "high": 760.96,
+              "volume": 85425.885556,
+              "relative_volume": 0.019134,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 760.96,
+              "high": 761.12,
+              "volume": 186235.243571,
+              "relative_volume": 0.041715,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 761.12,
+              "high": 761.28,
+              "volume": 342275.424593,
+              "relative_volume": 0.076666,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 761.28,
+              "high": 761.44,
+              "volume": 676284.793306,
+              "relative_volume": 0.15148,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 761.44,
+              "high": 761.6,
+              "volume": 754843.37457,
+              "relative_volume": 0.169076,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 761.6,
+              "high": 761.76,
+              "volume": 840839.806138,
+              "relative_volume": 0.188339,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 761.76,
+              "high": 761.92,
+              "volume": 1414165.549288,
+              "relative_volume": 0.316757,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 761.92,
+              "high": 762.08,
+              "volume": 1639802.360881,
+              "relative_volume": 0.367297,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 762.08,
+              "high": 762.24,
+              "volume": 1687546.563619,
+              "relative_volume": 0.377991,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 762.24,
+              "high": 762.4,
+              "volume": 1994197.715126,
+              "relative_volume": 0.446678,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 762.4,
+              "high": 762.56,
+              "volume": 2125604.522063,
+              "relative_volume": 0.476111,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 762.56,
+              "high": 762.72,
+              "volume": 2011631.092647,
+              "relative_volume": 0.450583,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 762.72,
+              "high": 762.88,
+              "volume": 1693729.152935,
+              "relative_volume": 0.379376,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 762.88,
+              "high": 763.04,
+              "volume": 1666093.236489,
+              "relative_volume": 0.373186,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 763.04,
+              "high": 763.2,
+              "volume": 1953755.25955,
+              "relative_volume": 0.437619,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 763.2,
+              "high": 763.36,
+              "volume": 1723948.584001,
+              "relative_volume": 0.386145,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 763.36,
+              "high": 763.52,
+              "volume": 1573892.744934,
+              "relative_volume": 0.352534,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 763.52,
+              "high": 763.68,
+              "volume": 941854.131968,
+              "relative_volume": 0.210965,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 763.68,
+              "high": 763.84,
+              "volume": 1044583.906701,
+              "relative_volume": 0.233975,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 763.84,
+              "high": 764.0,
+              "volume": 491550.098809,
+              "relative_volume": 0.110102,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 764.0,
+              "high": 764.16,
+              "volume": 504234.943773,
+              "relative_volume": 0.112943,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 764.16,
+              "high": 764.32,
+              "volume": 619038.428847,
+              "relative_volume": 0.138658,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 764.32,
+              "high": 764.48,
+              "volume": 864023.696339,
+              "relative_volume": 0.193532,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 764.48,
+              "high": 764.64,
+              "volume": 1118915.724755,
+              "relative_volume": 0.250625,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 764.64,
+              "high": 764.8,
+              "volume": 1029973.727119,
+              "relative_volume": 0.230703,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 764.8,
+              "high": 764.96,
+              "volume": 913590.554165,
+              "relative_volume": 0.204634,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 764.96,
+              "high": 765.12,
+              "volume": 1009059.722769,
+              "relative_volume": 0.226018,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 765.12,
+              "high": 765.28,
+              "volume": 1195418.729243,
+              "relative_volume": 0.26776,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 765.28,
+              "high": 765.44,
+              "volume": 1574974.053511,
+              "relative_volume": 0.352776,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 765.44,
+              "high": 765.6,
+              "volume": 1385798.785314,
+              "relative_volume": 0.310403,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 765.6,
+              "high": 765.76,
+              "volume": 1459938.111371,
+              "relative_volume": 0.32701,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 765.76,
+              "high": 765.92,
+              "volume": 1723710.64596,
+              "relative_volume": 0.386092,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 765.92,
+              "high": 766.08,
+              "volume": 1513287.062829,
+              "relative_volume": 0.338959,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 766.08,
+              "high": 766.24,
+              "volume": 1869064.822067,
+              "relative_volume": 0.418649,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 766.24,
+              "high": 766.4,
+              "volume": 1867431.643103,
+              "relative_volume": 0.418284,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 766.4,
+              "high": 766.56,
+              "volume": 1913775.687426,
+              "relative_volume": 0.428664,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 766.56,
+              "high": 766.72,
+              "volume": 2331667.258329,
+              "relative_volume": 0.522267,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 766.72,
+              "high": 766.88,
+              "volume": 2320228.931699,
+              "relative_volume": 0.519705,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 766.88,
+              "high": 767.04,
+              "volume": 2911144.748007,
+              "relative_volume": 0.652064,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 767.04,
+              "high": 767.2,
+              "volume": 3517977.991839,
+              "relative_volume": 0.787987,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 767.2,
+              "high": 767.36,
+              "volume": 3646202.508022,
+              "relative_volume": 0.816708,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 767.36,
+              "high": 767.52,
+              "volume": 3250406.875278,
+              "relative_volume": 0.728055,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 767.52,
+              "high": 767.68,
+              "volume": 3286682.667711,
+              "relative_volume": 0.73618,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 767.68,
+              "high": 767.84,
+              "volume": 3258159.445327,
+              "relative_volume": 0.729791,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 767.84,
+              "high": 768.0,
+              "volume": 2949847.886763,
+              "relative_volume": 0.660733,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 768.0,
+              "high": 768.16,
+              "volume": 2779548.839876,
+              "relative_volume": 0.622588,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 768.16,
+              "high": 768.32,
+              "volume": 2743224.010763,
+              "relative_volume": 0.614451,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 768.32,
+              "high": 768.48,
+              "volume": 3278903.219843,
+              "relative_volume": 0.734437,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 768.48,
+              "high": 768.64,
+              "volume": 3625828.419788,
+              "relative_volume": 0.812145,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 768.64,
+              "high": 768.8,
+              "volume": 3714912.341146,
+              "relative_volume": 0.832099,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 768.8,
+              "high": 768.96,
+              "volume": 3412802.4927,
+              "relative_volume": 0.764429,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 768.96,
+              "high": 769.12,
+              "volume": 3797291.334181,
+              "relative_volume": 0.850551,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 769.12,
+              "high": 769.28,
+              "volume": 4295291.40645,
+              "relative_volume": 0.962097,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 769.28,
+              "high": 769.44,
+              "volume": 4464510.090111,
+              "relative_volume": 1.0,
+              "is_poc": true,
+              "in_value_area": true
+            },
+            {
+              "low": 769.44,
+              "high": 769.6,
+              "volume": 4089369.380688,
+              "relative_volume": 0.915973,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 769.6,
+              "high": 769.76,
+              "volume": 3665246.822895,
+              "relative_volume": 0.820974,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 769.76,
+              "high": 769.92,
+              "volume": 3720883.521154,
+              "relative_volume": 0.833436,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 769.92,
+              "high": 770.08,
+              "volume": 3190294.995144,
+              "relative_volume": 0.71459,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 770.08,
+              "high": 770.24,
+              "volume": 2324950.198523,
+              "relative_volume": 0.520763,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 770.24,
+              "high": 770.4,
+              "volume": 1942314.973992,
+              "relative_volume": 0.435057,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 770.4,
+              "high": 770.56,
+              "volume": 1789935.87989,
+              "relative_volume": 0.400925,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 770.56,
+              "high": 770.72,
+              "volume": 1584513.1672,
+              "relative_volume": 0.354913,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 770.72,
+              "high": 770.88,
+              "volume": 1593964.086535,
+              "relative_volume": 0.35703,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 770.88,
+              "high": 771.04,
+              "volume": 1947055.783755,
+              "relative_volume": 0.436119,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 771.04,
+              "high": 771.2,
+              "volume": 2453063.135933,
+              "relative_volume": 0.549459,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 771.2,
+              "high": 771.36,
+              "volume": 2375426.881443,
+              "relative_volume": 0.532069,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 771.36,
+              "high": 771.52,
+              "volume": 2205317.421623,
+              "relative_volume": 0.493966,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 771.52,
+              "high": 771.68,
+              "volume": 2862361.569882,
+              "relative_volume": 0.641137,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 771.68,
+              "high": 771.84,
+              "volume": 2620562.25934,
+              "relative_volume": 0.586976,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 771.84,
+              "high": 772.0,
+              "volume": 2608677.790583,
+              "relative_volume": 0.584314,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 772.0,
+              "high": 772.16,
+              "volume": 2766636.711437,
+              "relative_volume": 0.619695,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 772.16,
+              "high": 772.32,
+              "volume": 2583950.071884,
+              "relative_volume": 0.578776,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 772.32,
+              "high": 772.48,
+              "volume": 1214472.717146,
+              "relative_volume": 0.272028,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 772.48,
+              "high": 772.64,
+              "volume": 1177983.686296,
+              "relative_volume": 0.263855,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 772.64,
+              "high": 772.8,
+              "volume": 610623.492242,
+              "relative_volume": 0.136773,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 772.8,
+              "high": 772.96,
+              "volume": 341762.73628,
+              "relative_volume": 0.076551,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 772.96,
+              "high": 773.12,
+              "volume": 226508.909452,
+              "relative_volume": 0.050735,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 773.12,
+              "high": 773.28,
+              "volume": 184038.48893,
+              "relative_volume": 0.041223,
+              "is_poc": false,
+              "in_value_area": false
+            }
+          ],
+          "included_bar_count": 317,
+          "missing_volume_bar_count": 1
+        }
+      },
+      "current": {
+        "proxy_price": 771.0850219726562,
+        "index_price": 7736.27001953125,
+        "relative_to_poc": 0.0012205779076099876,
+        "relative_to_vwap": 0.0008114322581533884,
+        "relative_to_value_area": "above_vah"
+      },
+      "options": {
+        "status": "observed",
+        "underlying": "SPY",
+        "expiry_dates": [
+          "2026-10-21",
+          "2026-10-22",
+          "2026-10-23",
+          "2026-10-26"
+        ],
+        "oi_as_of_date": null,
+        "oi_as_of_note": "Yahoo期权链未提供可验证结算日；OI按供应商链快照展示，不等同盘中新仓",
+        "options_quote_as_of": "2026-10-21T09:50:00-04:00",
+        "call_oi_dense": [
+          {
+            "strike": 790.0,
+            "value": 42398.0
+          },
+          {
+            "strike": 780.0,
+            "value": 40019.0
+          },
+          {
+            "strike": 785.0,
+            "value": 28107.0
+          },
+          {
+            "strike": 788.0,
+            "value": 26636.0
+          },
+          {
+            "strike": 770.0,
+            "value": 25979.0
+          }
+        ],
+        "put_oi_dense": [
+          {
+            "strike": 745.0,
+            "value": 46580.0
+          },
+          {
+            "strike": 769.0,
+            "value": 38929.0
+          },
+          {
+            "strike": 762.0,
+            "value": 36660.0
+          },
+          {
+            "strike": 725.0,
+            "value": 34233.0
+          },
+          {
+            "strike": 760.0,
+            "value": 31557.0
+          }
+        ],
+        "call_volume_dense": [
+          {
+            "strike": 771.0,
+            "value": 15957.0
+          },
+          {
+            "strike": 770.0,
+            "value": 11023.0
+          },
+          {
+            "strike": 773.0,
+            "value": 10291.0
+          },
+          {
+            "strike": 772.0,
+            "value": 9958.0
+          },
+          {
+            "strike": 775.0,
+            "value": 8788.0
+          }
+        ],
+        "put_volume_dense": [
+          {
+            "strike": 770.0,
+            "value": 16857.0
+          },
+          {
+            "strike": 769.0,
+            "value": 12379.0
+          },
+          {
+            "strike": 771.0,
+            "value": 9691.0
+          },
+          {
+            "strike": 768.0,
+            "value": 7092.0
+          },
+          {
+            "strike": 767.0,
+            "value": 6593.0
+          }
+        ],
+        "put_call_oi_ratio": 1.62333101739971,
+        "put_call_volume_ratio": 1.1385200642647413,
+        "atm_iv": 0.2500075,
+        "gamma_status": "unavailable_greeks_not_verified",
+        "max_pain_status": "not_computed",
+        "coverage": {
+          "expiry_count": 4,
+          "row_count": 1021
+        }
+      },
+      "judgment": {
+        "state": "strong_continuation",
+        "label": "偏强延续",
+        "summary": "代理现价 771.09；POC 770.14，VWAP 770.46；成交重心相对前一窗口上移。",
+        "upside": {
+          "reference_price": 771.03,
+          "unit": "proxy_usd",
+          "timeframe": "完成的两根5分钟K线",
+          "confirmation": "连续两根已完成5分钟K线收在 771.03上方，并有可用成交量支持",
+          "first_attention": 769.83,
+          "second_attention": 769.86,
+          "invalidation": "重新收回VAH下方并回到价值区",
+          "valid_until": "下一次盘中快照或常规时段收盘"
+        },
+        "downside": {
+          "reference_price": 770.04,
+          "unit": "proxy_usd",
+          "timeframe": "完成的两根5分钟K线",
+          "confirmation": "连续两根已完成5分钟K线收在 770.04下方，并有可用成交量支持",
+          "first_attention": 769.8,
+          "second_attention": 769.83,
+          "invalidation": "重新收回VAL上方并回到价值区",
+          "valid_until": "下一次盘中快照或常规时段收盘"
+        },
+        "invalidation": "两根已完成5分钟K线确认相反方向后失效",
+        "poc_shift": 1.5199999999999818
+      },
+      "quality": {
+        "status": "stale",
+        "volume_coverage": {
+          "bar_count": 5,
+          "missing_volume_bar_count": 1
+        },
+        "profile_estimation": "OHLCV分钟K线估算的成交量分布，不是逐笔真实成交价分布",
+        "oi_limitation": "常规OI通常为前一结算日；本快照未将盘中成交量加到OI",
+        "missing_reason": "抓取或计算失败：Too Many Requests. Rate limited. Try after a while."
+      },
+      "fetched_at": "2026-10-21T13:50:26.894939+00:00",
+      "generated_at": "2026-10-22T23:45:28.540753+00:00",
+      "daily_model_as_of": "2026-10-22",
+      "underlying": "SPY",
+      "price_unit": {
+        "index": "index_points",
+        "proxy": "USD",
+        "options": "USD_strike"
+      },
+      "quote_as_of": {
+        "index": "2026-10-21T09:50:00-04:00",
+        "proxy": "2026-10-21T09:50:00-04:00"
+      },
+      "profile_as_of": "2026-10-21T09:50:00-04:00",
+      "options_quote_as_of": "2026-10-21T09:50:00-04:00",
+      "oi_as_of_date": null,
+      "delay_seconds": null,
+      "coverage": {
+        "bar_count": 5,
+        "missing_volume_bar_count": 1
+      },
+      "quality_status": "stale",
+      "missing_reason": "抓取或计算失败：Too Many Requests. Rate limited. Try after a while.",
+      "refresh_status": "failed_using_previous_snapshot"
+    },
+    {
+      "schema_version": "index-intraday-map-v1",
+      "algorithm_version": "volume-profile-uniform-ohlcv-v1.0.0",
+      "status": "observed",
+      "instrument": {
+        "key": "dow",
+        "index_symbol": "^DJI",
+        "index_name": "道琼斯工业平均指数",
+        "proxy_symbol": "DIA",
+        "proxy_name": "DIA",
+        "proxy_role": "道指交易结构代理",
+        "index_unit": "index_points",
+        "proxy_unit": "USD"
+      },
+      "session_date": "2026-10-21",
+      "session_type": "regular_session",
+      "window_start": "2026-10-15",
+      "window_end": "2026-10-21",
+      "bar_interval": "5m",
+      "source": {
+        "provider": "Yahoo Finance via yfinance",
+        "feed_scope": "US regular session",
+        "delay_status": "unknown_or_delayed",
+        "note": "供应商未确认实时权限；最新完整5分钟bar与报价时间分开记录"
+      },
+      "index_quote": {
+        "status": "observed",
+        "price": 52613.16015625,
+        "as_of": "2026-10-21T09:50:00-04:00",
+        "change_pct": 0.0002087455085555412
+      },
+      "proxy_quote": {
+        "status": "observed",
+        "price": 525.4099731445312,
+        "as_of": "2026-10-21T09:50:00-04:00",
+        "change_pct": 0.00037117424120491904
+      },
+      "proxy_mapping": {
+        "method": "DIA→DJIA同目标时点映射参考",
+        "allowed": true,
+        "ratio": 100.137345778507,
+        "index_price_as_of": "2026-10-21T09:50:00-04:00",
+        "proxy_price_as_of": "2026-10-21T09:50:00-04:00",
+        "error_sources": "跨源时差、ETF基差、公司行动与指数非成交性质；不把代理POC改写为现金指数真实成交价"
+      },
+      "windows": {
+        "today": {
+          "status": "observed",
+          "window": "当日常规时段（盘中形成中/收盘后冻结）",
+          "window_start": "2026-10-21",
+          "window_end": "2026-10-21",
+          "bar_interval": "5m",
+          "bin_width": 0.05,
+          "bin_origin": 523.6,
+          "volume_unit": "proxy_shares",
+          "volume_allocation": "OHLCV高低区间按重叠长度均匀分配；H=L全部归入该箱",
+          "volume_total": 601596.0,
+          "value_area_target": 0.7,
+          "value_area_actual": 0.70596,
+          "poc": 524.475,
+          "val": 523.75,
+          "vah": 525.4,
+          "vwap": 524.701245,
+          "hvn": [
+            {
+              "low": 524.45,
+              "high": 524.5,
+              "relative_volume": 1.0
+            },
+            {
+              "low": 524.65,
+              "high": 524.7,
+              "relative_volume": 0.984893
+            },
+            {
+              "low": 524.75,
+              "high": 524.8,
+              "relative_volume": 0.984893
+            },
+            {
+              "low": 524.9,
+              "high": 524.95,
+              "relative_volume": 0.984893
+            },
+            {
+              "low": 525.0,
+              "high": 525.05,
+              "relative_volume": 0.984893
+            }
+          ],
+          "lvn": [],
+          "bins": [
+            {
+              "low": 523.6,
+              "high": 523.65,
+              "volume": 4451.803609,
+              "relative_volume": 0.250954,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 523.65,
+              "high": 523.7,
+              "volume": 5562.717384,
+              "relative_volume": 0.313578,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 523.7,
+              "high": 523.75,
+              "volume": 5562.717384,
+              "relative_volume": 0.313578,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 523.75,
+              "high": 523.8,
+              "volume": 6543.964447,
+              "relative_volume": 0.368892,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 523.8,
+              "high": 523.85,
+              "volume": 10458.196031,
+              "relative_volume": 0.589543,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 523.85,
+              "high": 523.9,
+              "volume": 10458.196031,
+              "relative_volume": 0.589543,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 523.9,
+              "high": 523.95,
+              "volume": 10458.196031,
+              "relative_volume": 0.589543,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 523.95,
+              "high": 524.0,
+              "volume": 10458.196031,
+              "relative_volume": 0.589543,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 524.0,
+              "high": 524.05,
+              "volume": 10458.196031,
+              "relative_volume": 0.589543,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 524.05,
+              "high": 524.1,
+              "volume": 10458.196031,
+              "relative_volume": 0.589543,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 524.1,
+              "high": 524.15,
+              "volume": 10458.196031,
+              "relative_volume": 0.589543,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 524.15,
+              "high": 524.2,
+              "volume": 10458.196031,
+              "relative_volume": 0.589543,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 524.2,
+              "high": 524.25,
+              "volume": 10458.196031,
+              "relative_volume": 0.589543,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 524.25,
+              "high": 524.3,
+              "volume": 10458.196031,
+              "relative_volume": 0.589543,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 524.3,
+              "high": 524.35,
+              "volume": 10458.196031,
+              "relative_volume": 0.589543,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 524.35,
+              "high": 524.4,
+              "volume": 10458.196031,
+              "relative_volume": 0.589543,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 524.4,
+              "high": 524.45,
+              "volume": 10458.196031,
+              "relative_volume": 0.589543,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 524.45,
+              "high": 524.5,
+              "volume": 17739.502274,
+              "relative_volume": 1.0,
+              "is_poc": true,
+              "in_value_area": true
+            },
+            {
+              "low": 524.5,
+              "high": 524.55,
+              "volume": 15649.40449,
+              "relative_volume": 0.882178,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 524.55,
+              "high": 524.6,
+              "volume": 15228.280349,
+              "relative_volume": 0.858439,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 524.6,
+              "high": 524.65,
+              "volume": 17471.516639,
+              "relative_volume": 0.984893,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 524.65,
+              "high": 524.7,
+              "volume": 17471.516639,
+              "relative_volume": 0.984893,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 524.7,
+              "high": 524.75,
+              "volume": 17471.516639,
+              "relative_volume": 0.984893,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 524.75,
+              "high": 524.8,
+              "volume": 17471.516639,
+              "relative_volume": 0.984893,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 524.8,
+              "high": 524.85,
+              "volume": 17471.516639,
+              "relative_volume": 0.984893,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 524.85,
+              "high": 524.9,
+              "volume": 17471.516639,
+              "relative_volume": 0.984893,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 524.9,
+              "high": 524.95,
+              "volume": 17471.516639,
+              "relative_volume": 0.984893,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 524.95,
+              "high": 525.0,
+              "volume": 17471.516639,
+              "relative_volume": 0.984893,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 525.0,
+              "high": 525.05,
+              "volume": 17471.516639,
+              "relative_volume": 0.984893,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 525.05,
+              "high": 525.1,
+              "volume": 17471.516639,
+              "relative_volume": 0.984893,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 525.1,
+              "high": 525.15,
+              "volume": 17471.516639,
+              "relative_volume": 0.984893,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 525.15,
+              "high": 525.2,
+              "volume": 10181.317197,
+              "relative_volume": 0.573935,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 525.2,
+              "high": 525.25,
+              "volume": 8364.881411,
+              "relative_volume": 0.47154,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 525.25,
+              "high": 525.3,
+              "volume": 8364.881411,
+              "relative_volume": 0.47154,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 525.3,
+              "high": 525.35,
+              "volume": 8364.881411,
+              "relative_volume": 0.47154,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 525.35,
+              "high": 525.4,
+              "volume": 6122.329243,
+              "relative_volume": 0.345124,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 525.4,
+              "high": 525.45,
+              "volume": 5562.717384,
+              "relative_volume": 0.313578,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 525.45,
+              "high": 525.5,
+              "volume": 5562.717384,
+              "relative_volume": 0.313578,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 525.5,
+              "high": 525.55,
+              "volume": 5562.717384,
+              "relative_volume": 0.313578,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 525.55,
+              "high": 525.6,
+              "volume": 5562.717384,
+              "relative_volume": 0.313578,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 525.6,
+              "high": 525.65,
+              "volume": 5562.717384,
+              "relative_volume": 0.313578,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 525.65,
+              "high": 525.7,
+              "volume": 5562.717384,
+              "relative_volume": 0.313578,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 525.7,
+              "high": 525.75,
+              "volume": 5562.717384,
+              "relative_volume": 0.313578,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 525.75,
+              "high": 525.8,
+              "volume": 5562.717384,
+              "relative_volume": 0.313578,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 525.8,
+              "high": 525.85,
+              "volume": 5562.717384,
+              "relative_volume": 0.313578,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 525.85,
+              "high": 525.9,
+              "volume": 5562.717384,
+              "relative_volume": 0.313578,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 525.9,
+              "high": 525.95,
+              "volume": 5562.717384,
+              "relative_volume": 0.313578,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 525.95,
+              "high": 526.0,
+              "volume": 5562.717384,
+              "relative_volume": 0.313578,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 526.0,
+              "high": 526.05,
+              "volume": 5562.717384,
+              "relative_volume": 0.313578,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 526.05,
+              "high": 526.1,
+              "volume": 5562.717384,
+              "relative_volume": 0.313578,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 526.1,
+              "high": 526.15,
+              "volume": 5562.717384,
+              "relative_volume": 0.313578,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 526.15,
+              "high": 526.2,
+              "volume": 5562.717384,
+              "relative_volume": 0.313578,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 526.2,
+              "high": 526.25,
+              "volume": 5562.717384,
+              "relative_volume": 0.313578,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 526.25,
+              "high": 526.3,
+              "volume": 5562.717384,
+              "relative_volume": 0.313578,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 526.3,
+              "high": 526.35,
+              "volume": 5562.717384,
+              "relative_volume": 0.313578,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 526.35,
+              "high": 526.4,
+              "volume": 5562.717384,
+              "relative_volume": 0.313578,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 526.4,
+              "high": 526.45,
+              "volume": 5562.717384,
+              "relative_volume": 0.313578,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 526.45,
+              "high": 526.5,
+              "volume": 5562.717384,
+              "relative_volume": 0.313578,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 526.5,
+              "high": 526.55,
+              "volume": 5562.717384,
+              "relative_volume": 0.313578,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 526.55,
+              "high": 526.6,
+              "volume": 5562.717384,
+              "relative_volume": 0.313578,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 526.6,
+              "high": 526.65,
+              "volume": 5562.717384,
+              "relative_volume": 0.313578,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 526.65,
+              "high": 526.7,
+              "volume": 5562.717384,
+              "relative_volume": 0.313578,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 526.7,
+              "high": 526.75,
+              "volume": 5562.717384,
+              "relative_volume": 0.313578,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 526.75,
+              "high": 526.8,
+              "volume": 5562.717384,
+              "relative_volume": 0.313578,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 526.8,
+              "high": 526.85,
+              "volume": 5560.001213,
+              "relative_volume": 0.313425,
+              "is_poc": false,
+              "in_value_area": false
+            }
+          ],
+          "included_bar_count": 5,
+          "missing_volume_bar_count": 1
+        },
+        "previous": {
+          "status": "observed",
+          "window": "前一完整交易日常规时段（冻结参考）",
+          "window_start": "2026-10-20",
+          "window_end": "2026-10-20",
+          "bar_interval": "5m",
+          "bin_width": 0.1,
+          "bin_origin": 518.4,
+          "volume_unit": "proxy_shares",
+          "volume_allocation": "OHLCV高低区间按重叠长度均匀分配；H=L全部归入该箱",
+          "volume_total": 3308912.0,
+          "value_area_target": 0.7,
+          "value_area_actual": 0.706555,
+          "poc": 523.65,
+          "val": 522.5,
+          "vah": 525.2,
+          "vwap": 523.477121,
+          "hvn": [
+            {
+              "low": 523.6,
+              "high": 523.7,
+              "relative_volume": 1.0
+            }
+          ],
+          "lvn": [
+            {
+              "low": 518.6,
+              "high": 518.7,
+              "relative_volume": 0.056631
+            },
+            {
+              "low": 518.8,
+              "high": 518.9,
+              "relative_volume": 0.056631
+            },
+            {
+              "low": 518.9,
+              "high": 519.0,
+              "relative_volume": 0.056631
+            },
+            {
+              "low": 519.1,
+              "high": 519.2,
+              "relative_volume": 0.056631
+            },
+            {
+              "low": 519.3,
+              "high": 519.4,
+              "relative_volume": 0.056631
+            }
+          ],
+          "bins": [
+            {
+              "low": 518.4,
+              "high": 518.5,
+              "volume": 5901.774789,
+              "relative_volume": 0.02264,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 518.5,
+              "high": 518.6,
+              "volume": 14762.546281,
+              "relative_volume": 0.056631,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 518.6,
+              "high": 518.7,
+              "volume": 14762.546281,
+              "relative_volume": 0.056631,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 518.7,
+              "high": 518.8,
+              "volume": 14762.546281,
+              "relative_volume": 0.056631,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 518.8,
+              "high": 518.9,
+              "volume": 14762.546281,
+              "relative_volume": 0.056631,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 518.9,
+              "high": 519.0,
+              "volume": 14762.546281,
+              "relative_volume": 0.056631,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 519.0,
+              "high": 519.1,
+              "volume": 14762.546281,
+              "relative_volume": 0.056631,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 519.1,
+              "high": 519.2,
+              "volume": 14762.546281,
+              "relative_volume": 0.056631,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 519.2,
+              "high": 519.3,
+              "volume": 14762.546281,
+              "relative_volume": 0.056631,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 519.3,
+              "high": 519.4,
+              "volume": 14762.546281,
+              "relative_volume": 0.056631,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 519.4,
+              "high": 519.5,
+              "volume": 14762.546281,
+              "relative_volume": 0.056631,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 519.5,
+              "high": 519.6,
+              "volume": 19605.32721,
+              "relative_volume": 0.075208,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 519.6,
+              "high": 519.7,
+              "volume": 20817.500703,
+              "relative_volume": 0.079858,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 519.7,
+              "high": 519.8,
+              "volume": 20817.500703,
+              "relative_volume": 0.079858,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 519.8,
+              "high": 519.9,
+              "volume": 20817.500703,
+              "relative_volume": 0.079858,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 519.9,
+              "high": 520.0,
+              "volume": 20817.500703,
+              "relative_volume": 0.079858,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 520.0,
+              "high": 520.1,
+              "volume": 20817.500703,
+              "relative_volume": 0.079858,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 520.1,
+              "high": 520.2,
+              "volume": 10484.439133,
+              "relative_volume": 0.040219,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 520.2,
+              "high": 520.3,
+              "volume": 6054.954421,
+              "relative_volume": 0.023227,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 520.3,
+              "high": 520.4,
+              "volume": 6054.954421,
+              "relative_volume": 0.023227,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 520.4,
+              "high": 520.5,
+              "volume": 6054.954421,
+              "relative_volume": 0.023227,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 520.5,
+              "high": 520.6,
+              "volume": 6054.954421,
+              "relative_volume": 0.023227,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 520.6,
+              "high": 520.7,
+              "volume": 6054.954421,
+              "relative_volume": 0.023227,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 520.7,
+              "high": 520.8,
+              "volume": 7623.113609,
+              "relative_volume": 0.029243,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 520.8,
+              "high": 520.9,
+              "volume": 13907.252751,
+              "relative_volume": 0.05335,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 520.9,
+              "high": 521.0,
+              "volume": 13907.252751,
+              "relative_volume": 0.05335,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 521.0,
+              "high": 521.1,
+              "volume": 13907.252751,
+              "relative_volume": 0.05335,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 521.1,
+              "high": 521.2,
+              "volume": 20311.807142,
+              "relative_volume": 0.077918,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 521.2,
+              "high": 521.3,
+              "volume": 21022.266254,
+              "relative_volume": 0.080644,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 521.3,
+              "high": 521.4,
+              "volume": 21022.266254,
+              "relative_volume": 0.080644,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 521.4,
+              "high": 521.5,
+              "volume": 21022.266254,
+              "relative_volume": 0.080644,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 521.5,
+              "high": 521.6,
+              "volume": 20418.396898,
+              "relative_volume": 0.078327,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 521.6,
+              "high": 521.7,
+              "volume": 14967.311833,
+              "relative_volume": 0.057416,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 521.7,
+              "high": 521.8,
+              "volume": 9469.16935,
+              "relative_volume": 0.036325,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 521.8,
+              "high": 521.9,
+              "volume": 7115.013503,
+              "relative_volume": 0.027294,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 521.9,
+              "high": 522.0,
+              "volume": 7115.013503,
+              "relative_volume": 0.027294,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 522.0,
+              "high": 522.1,
+              "volume": 9372.548838,
+              "relative_volume": 0.035954,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 522.1,
+              "high": 522.2,
+              "volume": 14672.728852,
+              "relative_volume": 0.056286,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 522.2,
+              "high": 522.3,
+              "volume": 10403.025925,
+              "relative_volume": 0.039907,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 522.3,
+              "high": 522.4,
+              "volume": 7557.715349,
+              "relative_volume": 0.028992,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 522.4,
+              "high": 522.5,
+              "volume": 13154.676548,
+              "relative_volume": 0.050463,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 522.5,
+              "high": 522.6,
+              "volume": 26819.716174,
+              "relative_volume": 0.102883,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 522.6,
+              "high": 522.7,
+              "volume": 37546.688234,
+              "relative_volume": 0.144033,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 522.7,
+              "high": 522.8,
+              "volume": 53718.152134,
+              "relative_volume": 0.206069,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 522.8,
+              "high": 522.9,
+              "volume": 55544.9549,
+              "relative_volume": 0.213077,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 522.9,
+              "high": 523.0,
+              "volume": 48740.981427,
+              "relative_volume": 0.186976,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 523.0,
+              "high": 523.1,
+              "volume": 31130.416616,
+              "relative_volume": 0.11942,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 523.1,
+              "high": 523.2,
+              "volume": 35158.144198,
+              "relative_volume": 0.134871,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 523.2,
+              "high": 523.3,
+              "volume": 67063.390807,
+              "relative_volume": 0.257263,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 523.3,
+              "high": 523.4,
+              "volume": 98926.909628,
+              "relative_volume": 0.379495,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 523.4,
+              "high": 523.5,
+              "volume": 134520.723045,
+              "relative_volume": 0.516037,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 523.5,
+              "high": 523.6,
+              "volume": 204241.507746,
+              "relative_volume": 0.783494,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 523.6,
+              "high": 523.7,
+              "volume": 260680.511089,
+              "relative_volume": 1.0,
+              "is_poc": true,
+              "in_value_area": true
+            },
+            {
+              "low": 523.7,
+              "high": 523.8,
+              "volume": 220943.839089,
+              "relative_volume": 0.847566,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 523.8,
+              "high": 523.9,
+              "volume": 165113.775713,
+              "relative_volume": 0.633395,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 523.9,
+              "high": 524.0,
+              "volume": 154570.032369,
+              "relative_volume": 0.592948,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 524.0,
+              "high": 524.1,
+              "volume": 138675.875258,
+              "relative_volume": 0.531976,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 524.1,
+              "high": 524.2,
+              "volume": 107196.504806,
+              "relative_volume": 0.411218,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 524.2,
+              "high": 524.3,
+              "volume": 88103.258623,
+              "relative_volume": 0.337974,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 524.3,
+              "high": 524.4,
+              "volume": 71138.089569,
+              "relative_volume": 0.272894,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 524.4,
+              "high": 524.5,
+              "volume": 19614.234814,
+              "relative_volume": 0.075242,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 524.5,
+              "high": 524.6,
+              "volume": 14517.839497,
+              "relative_volume": 0.055692,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 524.6,
+              "high": 524.7,
+              "volume": 19790.963314,
+              "relative_volume": 0.07592,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 524.7,
+              "high": 524.8,
+              "volume": 48932.71043,
+              "relative_volume": 0.187711,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 524.8,
+              "high": 524.9,
+              "volume": 59814.310232,
+              "relative_volume": 0.229454,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 524.9,
+              "high": 525.0,
+              "volume": 53002.459177,
+              "relative_volume": 0.203323,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 525.0,
+              "high": 525.1,
+              "volume": 62846.926369,
+              "relative_volume": 0.241088,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 525.1,
+              "high": 525.2,
+              "volume": 59574.578351,
+              "relative_volume": 0.228535,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 525.2,
+              "high": 525.3,
+              "volume": 55744.420329,
+              "relative_volume": 0.213842,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 525.3,
+              "high": 525.4,
+              "volume": 65242.313932,
+              "relative_volume": 0.250277,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 525.4,
+              "high": 525.5,
+              "volume": 44088.543346,
+              "relative_volume": 0.169129,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 525.5,
+              "high": 525.6,
+              "volume": 38787.273053,
+              "relative_volume": 0.148792,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 525.6,
+              "high": 525.7,
+              "volume": 49262.734995,
+              "relative_volume": 0.188977,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 525.7,
+              "high": 525.8,
+              "volume": 45579.878951,
+              "relative_volume": 0.17485,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 525.8,
+              "high": 525.9,
+              "volume": 36045.580616,
+              "relative_volume": 0.138275,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 525.9,
+              "high": 526.0,
+              "volume": 28848.572849,
+              "relative_volume": 0.110666,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 526.0,
+              "high": 526.1,
+              "volume": 28848.572849,
+              "relative_volume": 0.110666,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 526.1,
+              "high": 526.2,
+              "volume": 13588.257545,
+              "relative_volume": 0.052126,
+              "is_poc": false,
+              "in_value_area": false
+            }
+          ],
+          "included_bar_count": 78,
+          "missing_volume_bar_count": 0
+        },
+        "composite_5": {
+          "status": "observed",
+          "window": "最近5个交易时段复合",
+          "window_start": "2026-10-15",
+          "window_end": "2026-10-21",
+          "bar_interval": "5m",
+          "bin_width": 0.14,
+          "bin_origin": 516.04,
+          "volume_unit": "proxy_shares",
+          "volume_allocation": "OHLCV高低区间按重叠长度均匀分配；H=L全部归入该箱",
+          "volume_total": 15578012.0,
+          "value_area_target": 0.7,
+          "value_area_actual": 0.706024,
+          "poc": 518.91,
+          "val": 517.44,
+          "vah": 522.76,
+          "vwap": 520.86845,
+          "hvn": [
+            {
+              "low": 518.84,
+              "high": 518.98,
+              "relative_volume": 1.0
+            }
+          ],
+          "lvn": [
+            {
+              "low": 516.32,
+              "high": 516.46,
+              "relative_volume": 0.010316
+            },
+            {
+              "low": 516.46,
+              "high": 516.6,
+              "relative_volume": 0.010316
+            },
+            {
+              "low": 517.3,
+              "high": 517.44,
+              "relative_volume": 0.033421
+            },
+            {
+              "low": 520.38,
+              "high": 520.52,
+              "relative_volume": 0.102076
+            },
+            {
+              "low": 521.22,
+              "high": 521.36,
+              "relative_volume": 0.202672
+            }
+          ],
+          "bins": [
+            {
+              "low": 516.04,
+              "high": 516.18,
+              "volume": 780.868215,
+              "relative_volume": 0.000738,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 516.18,
+              "high": 516.32,
+              "volume": 10913.504,
+              "relative_volume": 0.010316,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 516.32,
+              "high": 516.46,
+              "volume": 10913.504,
+              "relative_volume": 0.010316,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 516.46,
+              "high": 516.6,
+              "volume": 10913.504,
+              "relative_volume": 0.010316,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 516.6,
+              "high": 516.74,
+              "volume": 12915.227866,
+              "relative_volume": 0.012208,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 516.74,
+              "high": 516.88,
+              "volume": 19092.844585,
+              "relative_volume": 0.018048,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 516.88,
+              "high": 517.02,
+              "volume": 38836.787562,
+              "relative_volume": 0.036711,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 517.02,
+              "high": 517.16,
+              "volume": 47604.341246,
+              "relative_volume": 0.044999,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 517.16,
+              "high": 517.3,
+              "volume": 47604.341246,
+              "relative_volume": 0.044999,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 517.3,
+              "high": 517.44,
+              "volume": 35356.576548,
+              "relative_volume": 0.033421,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 517.44,
+              "high": 517.58,
+              "volume": 43553.296627,
+              "relative_volume": 0.041169,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 517.58,
+              "high": 517.72,
+              "volume": 97345.870876,
+              "relative_volume": 0.092017,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 517.72,
+              "high": 517.86,
+              "volume": 148697.178685,
+              "relative_volume": 0.140558,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 517.86,
+              "high": 518.0,
+              "volume": 255599.677405,
+              "relative_volume": 0.241609,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 518.0,
+              "high": 518.14,
+              "volume": 364860.52825,
+              "relative_volume": 0.344889,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 518.14,
+              "high": 518.28,
+              "volume": 441914.078511,
+              "relative_volume": 0.417725,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 518.28,
+              "high": 518.42,
+              "volume": 509127.655099,
+              "relative_volume": 0.48126,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 518.42,
+              "high": 518.56,
+              "volume": 493361.926735,
+              "relative_volume": 0.466357,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 518.56,
+              "high": 518.7,
+              "volume": 465265.203377,
+              "relative_volume": 0.439798,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 518.7,
+              "high": 518.84,
+              "volume": 542761.707018,
+              "relative_volume": 0.513053,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 518.84,
+              "high": 518.98,
+              "volume": 1057906.16843,
+              "relative_volume": 1.0,
+              "is_poc": true,
+              "in_value_area": true
+            },
+            {
+              "low": 518.98,
+              "high": 519.12,
+              "volume": 824084.601612,
+              "relative_volume": 0.778977,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 519.12,
+              "high": 519.26,
+              "volume": 427176.853746,
+              "relative_volume": 0.403795,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 519.26,
+              "high": 519.4,
+              "volume": 369526.605996,
+              "relative_volume": 0.3493,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 519.4,
+              "high": 519.54,
+              "volume": 275708.333293,
+              "relative_volume": 0.260617,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 519.54,
+              "high": 519.68,
+              "volume": 336965.046136,
+              "relative_volume": 0.318521,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 519.68,
+              "high": 519.82,
+              "volume": 314677.600277,
+              "relative_volume": 0.297453,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 519.82,
+              "high": 519.96,
+              "volume": 273603.919345,
+              "relative_volume": 0.258628,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 519.96,
+              "high": 520.1,
+              "volume": 243332.783238,
+              "relative_volume": 0.230014,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 520.1,
+              "high": 520.24,
+              "volume": 197095.918778,
+              "relative_volume": 0.186308,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 520.24,
+              "high": 520.38,
+              "volume": 129897.644415,
+              "relative_volume": 0.122787,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 520.38,
+              "high": 520.52,
+              "volume": 107987.023285,
+              "relative_volume": 0.102076,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 520.52,
+              "high": 520.66,
+              "volume": 144190.388857,
+              "relative_volume": 0.136298,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 520.66,
+              "high": 520.8,
+              "volume": 165959.725013,
+              "relative_volume": 0.156876,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 520.8,
+              "high": 520.94,
+              "volume": 267217.390154,
+              "relative_volume": 0.252591,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 520.94,
+              "high": 521.08,
+              "volume": 381695.761357,
+              "relative_volume": 0.360803,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 521.08,
+              "high": 521.22,
+              "volume": 318720.077335,
+              "relative_volume": 0.301274,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 521.22,
+              "high": 521.36,
+              "volume": 214407.824526,
+              "relative_volume": 0.202672,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 521.36,
+              "high": 521.5,
+              "volume": 239298.749892,
+              "relative_volume": 0.2262,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 521.5,
+              "high": 521.64,
+              "volume": 273094.730107,
+              "relative_volume": 0.258146,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 521.64,
+              "high": 521.78,
+              "volume": 91722.926781,
+              "relative_volume": 0.086702,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 521.78,
+              "high": 521.92,
+              "volume": 39920.725756,
+              "relative_volume": 0.037736,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 521.92,
+              "high": 522.06,
+              "volume": 36937.249026,
+              "relative_volume": 0.034915,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 522.06,
+              "high": 522.2,
+              "volume": 68122.451268,
+              "relative_volume": 0.064394,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 522.2,
+              "high": 522.34,
+              "volume": 125959.615265,
+              "relative_volume": 0.119065,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 522.34,
+              "high": 522.48,
+              "volume": 357453.221687,
+              "relative_volume": 0.337887,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 522.48,
+              "high": 522.62,
+              "volume": 173561.968845,
+              "relative_volume": 0.164062,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 522.62,
+              "high": 522.76,
+              "volume": 179735.095983,
+              "relative_volume": 0.169897,
+              "is_poc": false,
+              "in_value_area": true
+            },
+            {
+              "low": 522.76,
+              "high": 522.9,
+              "volume": 219612.018367,
+              "relative_volume": 0.207591,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 522.9,
+              "high": 523.04,
+              "volume": 218093.613321,
+              "relative_volume": 0.206156,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 523.04,
+              "high": 523.18,
+              "volume": 174214.137785,
+              "relative_volume": 0.164678,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 523.18,
+              "high": 523.32,
+              "volume": 167854.790301,
+              "relative_volume": 0.158667,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 523.32,
+              "high": 523.46,
+              "volume": 211646.779479,
+              "relative_volume": 0.200062,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 523.46,
+              "high": 523.6,
+              "volume": 321369.486687,
+              "relative_volume": 0.303779,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 523.6,
+              "high": 523.74,
+              "volume": 426792.824421,
+              "relative_volume": 0.403432,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 523.74,
+              "high": 523.88,
+              "volume": 332747.235761,
+              "relative_volume": 0.314534,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 523.88,
+              "high": 524.02,
+              "volume": 306522.233048,
+              "relative_volume": 0.289744,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 524.02,
+              "high": 524.16,
+              "volume": 266527.200051,
+              "relative_volume": 0.251938,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 524.16,
+              "high": 524.3,
+              "volume": 203999.033652,
+              "relative_volume": 0.192833,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 524.3,
+              "high": 524.44,
+              "volume": 133040.795623,
+              "relative_volume": 0.125759,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 524.44,
+              "high": 524.58,
+              "volume": 100901.309589,
+              "relative_volume": 0.095378,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 524.58,
+              "high": 524.72,
+              "volume": 127689.821378,
+              "relative_volume": 0.120701,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 524.72,
+              "high": 524.86,
+              "volume": 179295.813063,
+              "relative_volume": 0.169482,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 524.86,
+              "high": 525.0,
+              "volume": 158910.296395,
+              "relative_volume": 0.150212,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 525.0,
+              "high": 525.14,
+              "volume": 147426.011393,
+              "relative_volume": 0.139356,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 525.14,
+              "high": 525.28,
+              "volume": 107590.871424,
+              "relative_volume": 0.101702,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 525.28,
+              "high": 525.42,
+              "volume": 109317.015704,
+              "relative_volume": 0.103333,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 525.42,
+              "high": 525.56,
+              "volume": 69877.790948,
+              "relative_volume": 0.066053,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 525.56,
+              "high": 525.7,
+              "volume": 80353.252891,
+              "relative_volume": 0.075955,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 525.7,
+              "high": 525.84,
+              "volume": 76807.779523,
+              "relative_volume": 0.072604,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 525.84,
+              "high": 525.98,
+              "volume": 59047.755673,
+              "relative_volume": 0.055816,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 525.98,
+              "high": 526.12,
+              "volume": 55963.610664,
+              "relative_volume": 0.0529,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 526.12,
+              "high": 526.26,
+              "volume": 23394.151649,
+              "relative_volume": 0.022114,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 526.26,
+              "high": 526.4,
+              "volume": 15575.608675,
+              "relative_volume": 0.014723,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 526.4,
+              "high": 526.54,
+              "volume": 15575.608675,
+              "relative_volume": 0.014723,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 526.54,
+              "high": 526.68,
+              "volume": 15575.608675,
+              "relative_volume": 0.014723,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 526.68,
+              "high": 526.82,
+              "volume": 15575.608675,
+              "relative_volume": 0.014723,
+              "is_poc": false,
+              "in_value_area": false
+            },
+            {
+              "low": 526.82,
+              "high": 526.96,
+              "volume": 3334.91426,
+              "relative_volume": 0.003152,
+              "is_poc": false,
+              "in_value_area": false
+            }
+          ],
+          "included_bar_count": 317,
+          "missing_volume_bar_count": 2
+        }
+      },
+      "current": {
+        "proxy_price": 525.4099731445312,
+        "index_price": 52613.16015625,
+        "relative_to_poc": 0.0017826839115901993,
+        "relative_to_vwap": 0.0013507270113897185,
+        "relative_to_value_area": "above_vah"
+      },
+      "options": {
+        "status": "observed",
+        "underlying": "DIA",
+        "expiry_dates": [
+          "2026-10-23",
+          "2026-10-30",
+          "2026-11-06",
+          "2026-11-13"
+        ],
+        "oi_as_of_date": null,
+        "oi_as_of_note": "Yahoo期权链未提供可验证结算日；OI按供应商链快照展示，不等同盘中新仓",
+        "options_quote_as_of": "2026-10-21T09:50:00-04:00",
+        "call_oi_dense": [
+          {
+            "strike": 532.0,
+            "value": 4418.0
+          },
+          {
+            "strike": 534.0,
+            "value": 4129.0
+          },
+          {
+            "strike": 543.0,
+            "value": 3928.0
+          },
+          {
+            "strike": 541.0,
+            "value": 3832.0
+          },
+          {
+            "strike": 520.0,
+            "value": 3038.0
+          }
+        ],
+        "put_oi_dense": [
+          {
+            "strike": 510.0,
+            "value": 5381.0
+          },
+          {
+            "strike": 520.0,
+            "value": 1814.0
+          },
+          {
+            "strike": 405.0,
+            "value": 1806.0
+          },
+          {
+            "strike": 515.0,
+            "value": 1691.0
+          },
+          {
+            "strike": 495.0,
+            "value": 1451.0
+          }
+        ],
+        "call_volume_dense": [
+          {
+            "strike": 541.0,
+            "value": 3523.0
+          },
+          {
+            "strike": 543.0,
+            "value": 3483.0
+          },
+          {
+            "strike": 529.0,
+            "value": 2587.0
+          },
+          {
+            "strike": 534.0,
+            "value": 870.0
+          },
+          {
+            "strike": 521.0,
+            "value": 495.0
+          }
+        ],
+        "put_volume_dense": [
+          {
+            "strike": 504.0,
+            "value": 838.0
+          },
+          {
+            "strike": 515.0,
+            "value": 829.0
+          },
+          {
+            "strike": 500.0,
+            "value": 700.0
+          },
+          {
+            "strike": 490.0,
+            "value": 420.0
+          },
+          {
+            "strike": 495.0,
+            "value": 402.0
+          }
+        ],
+        "put_call_oi_ratio": 0.7881982330787372,
+        "put_call_volume_ratio": 0.5002601005722213,
+        "atm_iv": 0.1554039538574219,
+        "gamma_status": "unavailable_greeks_not_verified",
+        "max_pain_status": "not_computed",
+        "coverage": {
+          "expiry_count": 4,
+          "row_count": 623
+        }
+      },
+      "judgment": {
+        "state": "strong_continuation",
+        "label": "偏强延续",
+        "summary": "代理现价 525.41；POC 524.48，VWAP 524.70；成交重心相对前一窗口上移。",
+        "upside": {
+          "reference_price": 525.4,
+          "unit": "proxy_usd",
+          "timeframe": "完成的两根5分钟K线",
+          "confirmation": "连续两根已完成5分钟K线收在 525.40上方，并有可用成交量支持",
+          "first_attention": 524.5,
+          "second_attention": 524.7,
+          "invalidation": "重新收回VAH下方并回到价值区",
+          "valid_until": "下一次盘中快照或常规时段收盘"
+        },
+        "downside": {
+          "reference_price": 523.75,
+          "unit": "proxy_usd",
+          "timeframe": "完成的两根5分钟K线",
+          "confirmation": "连续两根已完成5分钟K线收在 523.75下方，并有可用成交量支持",
+          "first_attention": 524.45,
+          "second_attention": 524.65,
+          "invalidation": "重新收回VAL上方并回到价值区",
+          "valid_until": "下一次盘中快照或常规时段收盘"
+        },
+        "invalidation": "两根已完成5分钟K线确认相反方向后失效",
+        "poc_shift": 0.8250000000000455
+      },
+      "quality": {
+        "status": "stale",
+        "volume_coverage": {
+          "bar_count": 5,
+          "missing_volume_bar_count": 1
+        },
+        "profile_estimation": "OHLCV分钟K线估算的成交量分布，不是逐笔真实成交价分布",
+        "oi_limitation": "常规OI通常为前一结算日；本快照未将盘中成交量加到OI",
+        "missing_reason": "抓取或计算失败：Too Many Requests. Rate limited. Try after a while."
+      },
+      "fetched_at": "2026-10-21T13:50:29.408895+00:00",
+      "generated_at": "2026-10-22T23:45:28.859467+00:00",
+      "daily_model_as_of": "2026-10-22",
+      "underlying": "DIA",
+      "price_unit": {
+        "index": "index_points",
+        "proxy": "USD",
+        "options": "USD_strike"
+      },
+      "quote_as_of": {
+        "index": "2026-10-21T09:50:00-04:00",
+        "proxy": "2026-10-21T09:50:00-04:00"
+      },
+      "profile_as_of": "2026-10-21T09:50:00-04:00",
+      "options_quote_as_of": "2026-10-21T09:50:00-04:00",
+      "oi_as_of_date": null,
+      "delay_seconds": null,
+      "coverage": {
+        "bar_count": 5,
+        "missing_volume_bar_count": 1
+      },
+      "quality_status": "stale",
+      "missing_reason": "抓取或计算失败：Too Many Requests. Rate limited. Try after a while.",
+      "refresh_status": "failed_using_previous_snapshot"
+    }
+  ],
+  "notes": [
+    "指数点位没有自身可直接成交的逐笔价格量；POC/VA/VWAP来自明确标注的ETF交易结构代理。",
+    "POC是观察窗口内成交最密集的价格区域，不等于仍持有筹码成本或必然回归磁铁。",
+    "期权OI、成交量、IV和Greeks按字段分别记录；缺失不填0，不进入原方向概率。"
+  ],
+  "daily_model_as_of": "2026-10-22"
+}

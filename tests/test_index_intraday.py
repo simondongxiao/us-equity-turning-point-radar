@@ -5,7 +5,7 @@ from zoneinfo import ZoneInfo
 import numpy as np
 import pandas as pd
 
-from scripts.index_intraday import _profile, _regular, _mapping
+from scripts.index_intraday import _profile, _regular, _mapping, _stale_copy
 
 
 class IndexIntradayProfileTests(unittest.TestCase):
@@ -27,6 +27,14 @@ class IndexIntradayProfileTests(unittest.TestCase):
         item = _mapping({"price": 20000, "as_of": "a"}, {"price": 500, "as_of": "a"}, {"key": "nasdaq", "mapping": "QQQ→NDX only"})
         self.assertFalse(item["allowed"])
         self.assertIsNone(item["ratio"])
+
+    def test_refresh_failure_keeps_last_successful_card_as_stale(self):
+        previous = {"status": "observed", "quality": {"status": "observed"}, "session_date": "2026-10-21"}
+        stale = _stale_copy(previous, "rate limited")
+        self.assertEqual(stale["status"], "observed")
+        self.assertEqual(stale["quality_status"], "stale")
+        self.assertEqual(stale["refresh_status"], "failed_using_previous_snapshot")
+        self.assertEqual(stale["missing_reason"], "rate limited")
 
 
 if __name__ == "__main__":
