@@ -1,6 +1,6 @@
 # 2026-10-24 日更验收：全池顶底雷达与三大指数量价地图
 
-生成时间：2026-10-24；最近完整美股交易日：2026-10-23；本地日线模型：`radar-20261023-afa9c95f`；线上日线模型：`radar-20261023-db454a2b`；线上盘中地图：`index-intraday-20261024T010356Z-9d7bb1`。
+生成时间：2026-10-24；最近完整美股交易日：2026-10-23；本地日线模型：`radar-20261023-afa9c95f`；线上日线模型：`radar-20261023-5a833540`；线上盘中地图：`index-intraday-20261024T053944Z-88acdc`。
 
 | 检查项 | 结果 | 证据 |
 |---|---|---|
@@ -14,13 +14,14 @@
 | Python回归 | PASS | 91个全量测试；盘中地图3个测试 |
 | 排序回归 | PASS | 15个Node排序断言 |
 | 浏览器验收 | PASS | 本地与线上桌面1440px、移动390px；100股表格、三张地图卡、13行指数矩阵、3行极端ATR告警、无JS错误和横向溢出 |
+| 发布一致性复核 | PASS | 定时日更曾在盘中地图后完成部署，重新执行指数地图工作流后，日线与三张地图均统一到2026-10-23 |
 
 ## 发布验收
 
-- 日线发布：[GitHub Actions 40046884704](https://github.com/simondongxiao/us-equity-turning-point-radar/actions/runs/40046884704)，`PASS`，包含全池刷新、审计、渲染、生产校验、日期守卫、状态归档与Pages部署。
-- 指数地图：[GitHub Actions 40048004133](https://github.com/simondongxiao/us-equity-turning-point-radar/actions/runs/40048004133)，`PASS`，三卡均为`observed`且交易日为2026-10-23。
+- 日线发布：[GitHub Actions 40047296712](https://github.com/simondongxiao/us-equity-turning-point-radar/actions/runs/40047296712)，`PASS`，包含全池刷新、审计、渲染、生产校验、日期守卫、状态归档与Pages部署；手动补跑[40046884704](https://github.com/simondongxiao/us-equity-turning-point-radar/actions/runs/40046884704)也通过。
+- 指数地图：[GitHub Actions 40067082336](https://github.com/simondongxiao/us-equity-turning-point-radar/actions/runs/40067082336)，`PASS`，三卡均为`observed`且交易日为2026-10-23；此前[40048004133](https://github.com/simondongxiao/us-equity-turning-point-radar/actions/runs/40048004133)的部署被后续定时日更覆盖，已按时间一致性要求重新发布。
 - 线上数据：`regular_pool=100`、`valid_forecast_records=100`、`observed=102`、`corrected=102`、`unavailable=0`、期权候选区间`100/100`、基本面理论估值`86/100`。
-- 线上页面：[美股阶段顶底概率雷达](https://simondongxiao.github.io/us-equity-turning-point-radar/?v=20261024)，桌面端与移动端验收均通过。
+- 线上页面：[美股阶段顶底概率雷达](https://simondongxiao.github.io/us-equity-turning-point-radar/?v=20261024-rerun-40067082336)，桌面端与移动端验收均通过。
 
 ## 限制
 
